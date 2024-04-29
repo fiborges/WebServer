@@ -1,41 +1,46 @@
+# Definição de Cores
+RED=\033[0;31m
+GREEN=\033[0;32m
+NC=\033[0m # No Color
+
+# Configurações gerais
 NAME		=	webserver
-
 INCLUDES	=	-I include
-
 CC			=	clang++
-
 RM			=	rm -rf
-
 CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
-
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
-
 SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp
-
 BUILD		=	$(subst $(DIR_SRCS), $(DIR_BUILD), $(SRCS:.cpp=.o))
 
+
 $(NAME): $(BUILD)
-		@-$(CC) $(CFLAGS) $(BUILD) -o $(NAME)
-		@echo "Executable $(NAME) created!"
+	@echo " _           _   _                                  ";
+	@echo " \ \        / / | |                                 ";
+	@echo "  \ \  /\  / /__| |__  ___  ___ _ ____   _____ _ __ ";
+	@echo "   \ \/  \/ / _ \ '_ \/ __|/ _ \ '__\ \ / / _ \ '__|";
+	@echo "    \  /\  /  __/ |_| \__ \  __/ |   \ V /  __/ |   ";
+	@echo "     \/  \/ \___|_.__/|___/\___|_|    \_/ \___|_|   ";
+	@echo "                                            		   ";                                          
+	@-$(CC) $(CFLAGS) $(BUILD) -o $(NAME)
+	@echo "${GREEN}Executable $(NAME) created!${NC}"
 
 $(DIR_BUILD)/%.o	:	$(DIR_SRCS)/%.cpp
-			@mkdir -p $(DIR_BUILD)
-			@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-			@echo "Compilation OK!"
+	@mkdir -p $(DIR_BUILD)
+	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	@echo "${GREEN}Compilation of $< OK!${NC}"
 
-all: $(NAME)
+all: loading_effect $(NAME)
 
 clean:
-		@$(RM) $(BUILD)
-		@$(RM) -r $(DIR_BUILD)
-		@echo "Cleaned!!"
+	@$(RM) $(BUILD)
+	@$(RM) -r $(DIR_BUILD)
+	@echo "${RED}Cleaned!!${NC}"
 
 fclean:	clean
-		@$(RM) $(NAME)
-		@$(RM) $(BUILD)
-		@$(RM) -r $(DIR_BUILD)
+	@$(RM) $(NAME)
+	@$(RM) $(BUILD)
+	@$(RM) -r $(DIR_BUILD)
 
 re:		fclean all
-
-PHONY:	all clean fclean re
