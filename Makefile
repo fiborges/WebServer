@@ -11,7 +11,7 @@ CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
 
-SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp
+SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp $(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp
 
 BUILD		=	$(subst $(DIR_SRCS), $(DIR_BUILD), $(SRCS:.cpp=.o))
 
