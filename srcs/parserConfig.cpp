@@ -2,7 +2,7 @@
 #include "../includes/conf_info.hpp"
 #include "../includes/parser_utils.hpp"
 
-ParserConfig::ParserConfig(Directives* directives, const std::string& location)
+ParserConfig::ParserConfig(conf_File_Info* directives, const std::string& location)
     : _directives(directives)
     , _location(location)
 {
@@ -108,7 +108,7 @@ std::string ParserConfig::match(const std::string& path) const
 
 ParserConfig ParserConfig::getContext(const std::string& path) const
 {
-    Directives* ctx = &_directives->locations.at(path);
+    conf_File_Info* ctx = &_directives->locations.at(path);
     ctx->listen = _directives->listen;
     ctx->server_name = _directives->server_name;
     if (ctx->root.empty())

@@ -2,12 +2,12 @@
 
 void ParserClass::debug() const {
     std::cout << "Debugging ConfigParser State:" << std::endl;
-    std::cout << "File being parsed: " << _filename << std::endl;
-    std::cout << "Total directives parsed: " << _directives.size() << std::endl;
+    std::cout << "File being parsed: " << configFilePath << std::endl;
+    std::cout << "Total directives parsed: " << conf_info.size() << std::endl;
 
     int blockCount = 1;
-    for (std::vector<Directives>::const_iterator dir_it = _directives.begin(); dir_it != _directives.end(); ++dir_it) {
-        const Directives& directive = *dir_it;
+    for (std::vector<conf_File_Info>::const_iterator dir_it = conf_info.begin(); dir_it != conf_info.end(); ++dir_it) {
+        const conf_File_Info& directive = *dir_it;
         std::cout << "Server Block " << blockCount++ << ":" << std::endl;
         std::cout << "\tListen: " << directive.listen << std::endl;
         std::cout << "\tServer Name: " << directive.server_name << std::endl;

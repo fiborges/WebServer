@@ -3,8 +3,8 @@
 
 #include "librarie.hpp"
 
-struct Directives;
-typedef std::map<std::string, Directives> Locations;
+struct conf_File_Info;
+typedef std::map<std::string, conf_File_Info> Locations;
 
 struct Redirect
 {
@@ -12,7 +12,7 @@ struct Redirect
     std::string url;
 };
 
-struct Directives
+struct conf_File_Info
 {
     int listen;
     std::string server_name;

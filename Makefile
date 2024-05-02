@@ -6,7 +6,7 @@ CC			=	clang++
 
 RM			=	rm -rf
 
-CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
+CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
 
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build

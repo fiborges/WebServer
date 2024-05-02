@@ -7,7 +7,7 @@
 class ParserConfig
 {
 public:
-    ParserConfig(Directives* directives, const std::string& location = "/");
+    ParserConfig(conf_File_Info* directives, const std::string& location = "/");
     ParserConfig(const ParserConfig& src);
     ~ParserConfig();
     ParserConfig& operator=(const ParserConfig& rhs);
@@ -31,7 +31,7 @@ public:
     bool isMethodAllowed(const std::string& method) const;
 
 private:
-    Directives* _directives;
+    conf_File_Info* _directives;
     std::string _location;
     std::string _empty;
 };

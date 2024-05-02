@@ -3,349 +3,324 @@
 #include "../includes/parser.hpp"
 #include "../includes/parser_utils.hpp"
 
-ParserClass::ParserClass(const std::string& filename)
-    : _filename(filename)
-    , _config(_filename.c_str())
-    , _state(OutsideServerBlock)
-    , _openBlocks(0)
-    , _currentDirectives(NULL)
-    , _lineNumber(0)
-{
-    if (!_config)
-    {
-        throw std::runtime_error(filename + ": " + strerror(errno));
+ParserClass::ParserClass(const std::string& file_path)
+    : configFilePath(file_path), configurationFile(configFilePath.c_str()),
+      currentState("Out"), numberOfModules(0), conFileInProgress(nullptr), lineTracker(0) {
+    if (!configurationFile) {
+        throw std::runtime_error(file_path + ": " + strerror(errno));
     }
-
-    initializeValidationMap();
-    this->parse();
+    checkAndConfirmValidMap();
+    readAndProcessConfig();
 }
 
 ParserClass::~ParserClass()
 {
 }
 
-const ServerConfig& ParserClass::fetchSpecifications()
+const ConfiguredServers& ParserClass::fetchSpecifications()
 {
-    if (_specs.empty())
+    if (serverConfigurations.empty())
     {
-        for (size_t idx = 0; idx < _directives.size(); ++idx)
+        for (size_t index = 0; index < conf_info.size(); ++index)
         {
-            _specs.push_back(ParserConfig(&_directives[idx]));
+            serverConfigurations.push_back(ParserConfig(&conf_info[index]));
         }
     }
-    return _specs;
+    return serverConfigurations;
 }
 
-void ParserClass::parse()
-{
+void ParserClass::readAndProcessConfig() {
     std::string line;
-    while (std::getline(_config, line))
-    {
-        _lineNumber++;
+    while (std::getline(configurationFile, line)) {
+        lineTracker++;
         ParserUtils::trim(line);
-        if (isCommentOrEmpty(line))
-        {
-            continue;
-        }
+        if (lineIsIgnorable(line)) continue;
 
-        ParserUtils::Strings tokens = ParserUtils::strip(ParserUtils::split(line, " "));
-        switch (_state)
-        {
-        case OutsideServerBlock:
-        {
-            findNewServerBlock(tokens);
-            break;
-        }
-        case InsideServerBlock:
-        {
-            parseServerBlock(tokens);
-            break;
-        }
-        case InsideLocationBlock:
-        {
-            parseLocationBlock(tokens);
-            break;
-        }
+        ParserUtils::Strings pieces = ParserUtils::strip(ParserUtils::split(line, " "));
+        if (currentState == "Out") {
+            locateServerModule(pieces);
+        } else if (currentState == "In") {
+            handleServerModule(pieces);
+        } else if (currentState == "In_Location") {
+            parseLocationModule(pieces);
         }
     }
-    checkOpenBlocks();
-    ensureEssentialDirectivesExist();
+    ensureAllModulesClosed();
+    validateRequiredParameters();
 }
 
-void ParserClass::ensureEssentialDirectivesExist()
+void ParserClass::validateRequiredParameters()
 {
-    for (std::vector<Directives>::iterator it = _directives.begin(); it != _directives.end(); ++it)
+    for (std::vector<conf_File_Info>::iterator configIterator = conf_info.begin(); configIterator != conf_info.end(); ++configIterator)
     {
-        if (it->listen == 0)
+        if (configIterator->listen == 0)
         {
-            throw ParseException("Missing 'listen' directive in a server block.");
+            throw ConfigError(RED "Error: Missing 'listen' directive in a server block. " 
+                "Every server block must include a 'listen' directive to specify the port number." RESET);
         }
-        if (it->server_name.empty())
+        if (configIterator->server_name.empty())
         {
-            throw ParseException("Missing 'server_name' directive in a server block.");
+            throw ConfigError(RED "Error: Missing 'server_name' directive in a server block. "
+                "You must define 'server_name' to identify the server within the network." RESET);
         }
     }
 }
 
-inline bool ParserClass::isCommentOrEmpty(const std::string& line)
+inline bool ParserClass::lineIsIgnorable(const std::string& fileLine)
 {
-    return line[0] == '#' || line.empty();
+    return fileLine[0] == '#' || fileLine.empty();
 }
 
-inline void ParserClass::findNewServerBlock(ParserUtils::Strings& tokens)
+inline void ParserClass::locateServerModule(ParserUtils::Strings& segments)
 {
-    if (tokens[0] == "server")
+    if (segments[0] == "server")
     {
-        validateServer(tokens);
-        enterServerContext();
-        _state = InsideServerBlock;
-        _openBlocks++;
+        checkServer(segments);
+        startServerModule();
+        currentState = "In";
+        numberOfModules++;
         return;
     }
-    throw ParseException(fmtError("expecting 'server', got '" + tokens[0] + "'"));
+    throw ConfigError(createErrorMsg(
+    RED "Invalid configuration syntax: expecting 'server' keyword to start a server block, "
+    "but got '" + segments[0] + "'. Please check the syntax and ensure that each server "
+    "block starts with the 'server' keyword." RESET));
 }
 
-inline void ParserClass::parseServerBlock(const ParserUtils::Strings& tokens)
+inline void ParserClass::handleServerModule(const ParserUtils::Strings& pieces)
 {
-    if (_keywords.count(tokens[0]))
-    {
-        ValidationMethod assign = _keywords.at(tokens[0]);
-        (this->*assign)(tokens, _currentDirectives);
+    if (validationMapKeys.count(pieces[0])){
+        confFileHandler assign = validationMapKeys.at(pieces[0]);
+        (this->*assign)(pieces, conFileInProgress);
         return;
     }
-    if (tokens[0] == "}")
-    {
-        _state = OutsideServerBlock;
-        _openBlocks--;
+    if (pieces[0] == "}"){
+        currentState = "Out";
+        numberOfModules--;
         return;
     }
-    if (tokens[0] == "location")
-    {
-        validateLocation(tokens);
-        enterLocationContext(tokens[1]);
-        _state = InsideLocationBlock;
-        _openBlocks++;
+    if (pieces[0] == "location"){
+        checkLocation(pieces);
+        startLocationModule(pieces[1]);
+        currentState = "In_Location";
+        numberOfModules++;
         return;
     }
-    throw ParseException(fmtError("unknown directive '" + tokens[0] + "'"));
+    throw ConfigError(createErrorMsg(
+    RED "Error: Unknown directive '" + pieces[0] + "' encountered. This directive is either "
+    "misspelled or not allowed in this context. Please check your configuration file for errors "
+    "and consult the documentation for a list of valid directives." RESET));
 }
 
-inline void ParserClass::parseLocationBlock(const ParserUtils::Strings& tokens)
+inline void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces)
 {
-    if (tokens[0] == "listen" || tokens[0] == "server_name")
-    {
-        throw ParseException(fmtError("'" + tokens[0] + "' directive is not allowed here"));
+    if (pieces[0] == "listen" || pieces[0] == "server_name"){
+        throw ConfigError(createErrorMsg(RED "Error: The '" + pieces[0] + "' directive is not allowed within a location block. "
+            "Please review your configuration to ensure directives are placed in the correct context." RESET));
     }
-    if (_keywords.count(tokens[0]))
-    {
-        ValidationMethod assign = _keywords.at(tokens[0]);
-        (this->*assign)(tokens, _currentDirectives);
+    if (validationMapKeys.count(pieces[0])){
+        confFileHandler assign = validationMapKeys.at(pieces[0]);
+        (this->*assign)(pieces, conFileInProgress);
         return;
     }
-    if (tokens[0] == "}")
-    {
-        exitContext();
-        _state = InsideServerBlock;
-        _openBlocks--;
+    if (pieces[0] == "}") {
+        endCurrentModule();
+        currentState = "In";
+        numberOfModules--;
         return;
     }
-    throw ParseException(fmtError("unknown directive '" + tokens[0] + "'"));
+    throw ConfigError(createErrorMsg(YELLOW "Warning: Unknown directive '" + pieces[0] + "' encountered. Please check for typos or "
+        "consult the documentation for a list of valid directives within a location block." RESET));
 }
 
-inline void ParserClass::checkOpenBlocks()
+inline void ParserClass::ensureAllModulesClosed()
 {
-    if (_openBlocks == 0)
-    {
+    if (numberOfModules == 0){
         return;
     }
-    throw ParseException(fmtError("unexpected end of file, expecting '}'"));
+    throw ConfigError(createErrorMsg(RED "Configuration Error: Unexpected end of file. "
+        "This usually indicates a missing '}' for a configuration block. "
+        "Please check your configuration to ensure all blocks are properly closed with '}'."RESET));
 }
 
-void ParserClass::initializeValidationMap()
+void ParserClass::checkAndConfirmValidMap()
 {
-    _keywords["listen"] = &ParserClass::validateListen;
-    _keywords["server_name"] = &ParserClass::validateServerName;
-    _keywords["index"] = &ParserClass::validateIndex;
-    _keywords["root"] = &ParserClass::validateRoot;
-    _keywords["autoindex"] = &ParserClass::validateAutoindex;
-    _keywords["error_page"] = &ParserClass::validateErrorPage;
-    _keywords["cgi_pass"] = &ParserClass::validateCGI;
-    _keywords["redirect"] = &ParserClass::validateRedirect;
-    _keywords["limit_except"] = &ParserClass::validateMethods;
-    _keywords["client_body_size"] = &ParserClass::validateClientBodySize;
-    _keywords["upload_dir"] = &ParserClass::validateUploadDir;
+    validationMapKeys["listen"] = &ParserClass::confirmListenSettings;
+    validationMapKeys["server_name"] = &ParserClass::confirmServerName;
+    validationMapKeys["index"] = &ParserClass::checkIndex;
+    validationMapKeys["root"] = &ParserClass::confirmRootPath;
+    validationMapKeys["autoindex"] = &ParserClass::checkAutoindex;
+    validationMapKeys["error_page"] = &ParserClass::verifyErrorPage;
+    validationMapKeys["cgi_pass"] = &ParserClass::confirmCGISettings;
+    validationMapKeys["redirect"] = &ParserClass::confirmRedirect;
+    validationMapKeys["limit_except"] = &ParserClass::checkProcedures;
+    validationMapKeys["client_body_size"] = &ParserClass::ensureClientBodyCapacity;
+    validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDir;
 }
 
-std::string ParserClass::fmtError(const std::string& message)
+std::string ParserClass::createErrorMsg(const std::string& erro_msg)
 {
     std::stringstream ss;
-    ss << message << " in " << _filename << ":" << _lineNumber;
+    ss << erro_msg << " in " << configFilePath << ":" << lineTracker;
     return ss.str();
 }
 
-inline void ParserClass::validateServer(const ParserUtils::Strings& tokens)
+inline void ParserClass::checkServer(const ParserUtils::Strings& pieces)
 {
-    if (tokens.size() != 2 || tokens[1] != "{")
-    {
-        throw ParseException(fmtError("directive 'server' has no opening '{'"));
+    if (pieces.size() != 2 || pieces[1] != "{"){
+        throw ConfigError(createErrorMsg(RED "Configuration Syntax Error: The 'server' directive should be followed by an opening '{'. "
+            "Please ensure each 'server' block starts with 'server {' to define the beginning of a server configuration block correctly." RESET));
     }
 }
 
-inline void ParserClass::validateLocation(const ParserUtils::Strings& tokens)
+inline void ParserClass::checkLocation(const ParserUtils::Strings& pieces)
 {
-    checkArgCount(tokens, tokens[1] == "{");
+    ensureCorrectArgNumber(pieces, pieces[1] == "{");
 
-    if (tokens.size() != 3)
+    if (pieces.size() != 3)
     {
-        throw ParseException(fmtError("directive 'location' has no opening '{'"));
+        throw ConfigError(createErrorMsg(RED "Configuration Syntax Error: Each 'location' directive must be followed by a path and then an opening '{'. "
+            "Example: location /path/ { . Ensure your 'location' directive matches this format." RESET));
     }
 }
 
-void ParserClass::validateListen(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::confirmListenSettings(const ParserUtils::Strings& parameters, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
+    ensureCorrectArgNumber(parameters, parameters.size() != 2);
 
-    int port = std::atoi(tokens[1].c_str());
-    if (port < 3 || port > 65535)
-    {
-        throw ParseException(fmtError("invalid port number '" + tokens[1] + "'"));
+    int portNumber = std::atoi(parameters[1].c_str());
+    if (portNumber < 3 || portNumber > 65535){
+        throw ConfigError(createErrorMsg(RED "Configuration Error: The port number '" + parameters[1] + 
+            "' is invalid. Port numbers must be between 3 and 65535. Please specify a valid port number." RESET));
     }
-    directive->listen = port;
+    Keyword->listen = portNumber;
 }
 
-void ParserClass::validateServerName(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::confirmServerName(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
-    directive->server_name = tokens[1];
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->server_name = commandParts[1];
 }
 
-void ParserClass::validateIndex(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::checkIndex(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
-    directive->index = tokens[1];
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->index = commandParts[1];
 }
 
-void ParserClass::validateRoot(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::confirmRootPath(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
-    directive->root = tokens[1];
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->root = commandParts[1];
 }
 
-void ParserClass::validateAutoindex(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::checkAutoindex(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
-    if (tokens[1] != "on" && tokens[1] != "off")
-    {
-        throw ParseException(fmtError(
-            "invalid value '" + tokens[1]
-            + "' in 'autoindex' directive, it must be 'on' or 'off'"));
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    if (commandParts[1] != "on" && commandParts[1] != "off"){
+        throw ConfigError(createErrorMsg(RED "Configuration Error: The 'autoindex' value '" + commandParts[1] + 
+            "' is invalid. Only 'on' or 'off' are accepted values. Please adjust your 'autoindex' setting to use one of these valid options." RESET));
     }
-    directive->autoindex = (tokens[1] == "on") ? true : false;
+    Keyword->autoindex = (commandParts[1] == "on") ? true : false;
 }
 
-void ParserClass::validateErrorPage(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() < 3);
-    std::string page = tokens[tokens.size() - 1];
-    for (size_t idx = 1; idx < tokens.size() - 1; ++idx)
-    {
-        int error = std::atoi(tokens[idx].c_str());
-        if (error < 300 || error > 599)
-        {
-            throw ParseException(
-                fmtError("value '" + tokens[idx] + "' must be between 300 and 599"));
+    ensureCorrectArgNumber(commandParts, commandParts.size() < 3);
+    std::string errorPageUrl = commandParts[commandParts.size() - 1];
+    for (size_t errorIndex = 1; errorIndex < commandParts.size() - 1; ++errorIndex){
+        int errorCode = std::atoi(commandParts[errorIndex].c_str());
+        if (errorCode < 300 || errorCode > 599){
+            throw ConfigError(
+                createErrorMsg(RED "Configuration Error: The specified HTTP status code '" + commandParts[errorIndex] + 
+                "' is invalid. Valid error codes must be between 300 and 599." RESET));
         }
-        directive->error_page[error] = page;
+        Keyword->error_page[errorCode] = errorPageUrl;
     }
 }
 
-void ParserClass::validateCGI(const ParserUtils::Strings& tokens, Directives* directive)
-{
-    checkArgCount(tokens, tokens.size() != 2);
-    directive->cgi = tokens[1];
-    printf("CGI dentro da funcao validate: %s\n", directive->cgi.c_str());
-    printf("CGI Tokens: %s\n", tokens[1].c_str());
+void ParserClass::confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* keyword) {
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    keyword->cgi = commandParts[1];
+    printf(GREEN "CGI Configuration Validated: " RESET "%s\n", keyword->cgi.c_str());
+    printf(BLUE "CGI Script Path: " RESET "%s\n", commandParts[1].c_str());
 }
 
-void ParserClass::validateRedirect(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::confirmRedirect(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 3);
-    int statusCode = std::atoi(tokens[1].c_str());
-    directive->redirect.code = statusCode;
-    directive->redirect.url = tokens[2];
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 3);
+    int redirectCode = std::atoi(commandParts[1].c_str());
+    Keyword->redirect.code = redirectCode;
+    Keyword->redirect.url = commandParts[2];
 }
 
-void ParserClass::validateMethods(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() < 2);
+    ensureCorrectArgNumber(commandParts, commandParts.size() < 2);
 
-    static std::set<std::string> methods;
-    methods.insert("get");
-    methods.insert("post");
-    methods.insert("delete");
+    static std::set<std::string> permittedHTTPMethods;
+    permittedHTTPMethods.insert("get");
+    permittedHTTPMethods.insert("post");
+    permittedHTTPMethods.insert("delete");
 
-    for (size_t idx = 1; idx < tokens.size(); ++idx)
-    {
-        std::string method = ParserUtils::toLower(tokens[idx]);
-        if (!methods.count(method))
-        {
-            throw ParseException(fmtError("invalid method '" + tokens[idx] + "'"));
+    for (size_t cmd_Index = 1; cmd_Index < commandParts.size(); ++cmd_Index){
+        std::string currentMethod = ParserUtils::toLower(commandParts[cmd_Index]);
+        if (!permittedHTTPMethods.count(currentMethod)){
+            throw ConfigError(createErrorMsg(RED "Configuration Error: Invalid HTTP method '" + commandParts[cmd_Index] + "'. Valid methods are GET, POST, and DELETE." RESET));
         }
-        directive->limit_except.insert(method);
+        Keyword->limit_except.insert(currentMethod);
     }
 }
 
-void ParserClass::validateClientBodySize(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
 
-    std::istringstream iss(tokens[1]);
-    long int value;
-    char extraChar;
-
-    if (!(iss >> value) || value < 0 || iss.get(extraChar))
-    {
-        throw ParseException(fmtError("invalid value for 'client_body_size': " + tokens[1]));
+    std::istringstream inputStream(commandParts[1]);
+    long int bodySize;
+    char extraCharacter;
+    if (!(inputStream >> bodySize) || bodySize < 0 || inputStream.get(extraCharacter)){
+        throw ConfigError(createErrorMsg(RED "Invalid value for 'client_body_size': " + commandParts[1] + ". Please provide a VALID VALUE." RESET));
     }
-    directive->client_max_body_size = std::atoi(tokens[1].c_str()) << 20;
+    Keyword->client_max_body_size = std::atoi(commandParts[1].c_str()) << 20;
 }
 
-void ParserClass::validateUploadDir(const ParserUtils::Strings& tokens, Directives* directive)
+void ParserClass::confirmUploadDir(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    checkArgCount(tokens, tokens.size() != 2);
-    directive->upload_dir = tokens[1];
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->upload_dir = commandParts[1];
 }
 
-inline void ParserClass::enterServerContext()
+inline void ParserClass::startServerModule()
 {
-    _directives.push_back(Directives());
-    _contextStack.push(&_directives.back());
-    _currentDirectives = &_directives.back();
+    conf_info.push_back(conf_File_Info());
+    contextHistory.push(&conf_info.back());
+    conFileInProgress = &conf_info.back();
 }
 
-inline void ParserClass::enterLocationContext(const std::string& location)
+inline void ParserClass::startLocationModule(const std::string& location)
 {
-    _currentDirectives->locations[location] = Directives();
-    _contextStack.push(&_currentDirectives->locations[location]);
-    _currentDirectives = _contextStack.top();
+    conFileInProgress->locations[location] = conf_File_Info();
+    contextHistory.push(&conFileInProgress->locations[location]);
+    conFileInProgress = contextHistory.top();
 }
 
-inline void ParserClass::exitContext()
+inline void ParserClass::endCurrentModule()
 {
-    _contextStack.pop();
-    _currentDirectives = _contextStack.top();
+    contextHistory.pop();
+    conFileInProgress = contextHistory.top();
 }
 
-void ParserClass::checkArgCount(const ParserUtils::Strings& tokens, bool badCondition)
+void ParserClass::ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition)
 {
     if (badCondition)
     {
-        std::string message = "invalid number of arguments for directive '";
-        throw ParseException(fmtError(message + tokens[0] + "'"));
+        throw ConfigError(createErrorMsg(RED "Invalid number of arguments for directive '" + tokens[0] + "'. " +
+        "Please ensure the correct number of arguments is provided." RESET));
     }
 }
 
-ParserClass::ParseException::ParseException(const std::string& err)
+ParserClass::ConfigError::ConfigError(const std::string& err)
     : std::invalid_argument(err)
 {
 }
