@@ -1,0 +1,115 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    research.txt                                       :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/05/02 16:33:18 by brolivei          #+#    #+#              #
+#    Updated: 2024/05/02 17:00:35 by brolivei         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+Parametro do subject a ser analizado:
+
+Em "In the configuration file, you should be able to:"
+
+O parametro "• Setup routes with one or multiple of the following rules/configuration (routes wont
+be using regexp):"
+
+Dentro desse parametro:
+
+"◦ Execute CGI based on certain file extension (for example .php)."
+
+Significado:
+
+	Definir regras especificas para diferentes tipos de requests para diferentes diretorios
+do servidor.
+
+	Executar CGI baseado nume certa extensao de ficheiro, referece a uma pratica comum nos
+Web Servers onde certas extensoes de ficheiros sao associadas a scripts CGI. Por exemplo a
+extensao ".php" e muitas vezes usada para scripts PHP que geram conteudo dinamico nas
+paginas web.
+
+	Entao, no ficheiro de configuracao do servidor, devemos especificar regras que quando
+correspondidas, acionam a execucao de uma programa CGI para tratar solicitacoes de arquivos
+com extensoes especificas.
+
+	Por exemplo, se um "Request" e feito para um ficheiro com a extensao ".php", o servidor
+devera ser configurado para executar o interpretador PHP (programa CGI) para processar o script
+PHP e gerar o conteudo HTML apropriado para enviar ao cliente.
+
+Exemplo de ficheiro de configuracao com essa regra especificada:
+"
+# Web Server Configuration File
+
+# Define server listening port and host
+server {
+    listen 80;
+    server_name example.com;
+
+    # Configure routes
+    location / {
+        # Serve static files from this directory
+        root /var/www/html;
+        index index.html;
+    }
+
+    # Configure CGI execution for PHP files
+    location ~ \.php$ {
+        # Specify CGI script handler (e.g., PHP interpreter)
+        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # Additional route configurations can be added here
+}
+"
+
+	-> Neste exemplo o servidor esta configurado para ouvir a porta 80 com o nome de dominio
+"examplo.com"
+
+	-> Ficheiro estaticos (como HTML, CSS, JavaScript...) sao servidos a partir do diretorio
+"/var/www/html", e o ficheiro padrao e o "index.html".
+
+	-> O CGI esta configurado para ficheiros com a extensao ".php" usando o protocolo FastCGI.
+
+
+Outro exemplo, provavelmente mais indicado para o nosso caso:
+
+"
+# HTTP Server Configuration File
+
+# Define server listening port and host
+server {
+    listen 80;
+    server_name localhost;
+
+    # Configure routes
+    location / {
+        # Serve static files from this directory
+        root /var/www/html;
+        index index.html;
+    }
+
+    # Configure CGI execution for PHP scripts
+    location ~ \.php$ {
+        # Specify CGI script handler (e.g., custom CGI handler)
+        cgi_pass /cgi-bin/cgi-php/php-cgi;
+
+        # Additional CGI parameters as needed
+        cgi_param DOCUMENT_ROOT /var/www/html;
+        cgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    # Additional route configurations can be added here
+}
+"
+
+	-> A execucao do CGI esta configurada para correr ficheiros com a extensao ".php" usando
+um handler proprio (que seremos nos a criar) que esta localizado, por exemplo em "/cgi-bin/cgi-php/".
+
+	-> Adicionalmente sao adicionados parametros como "DOCUMENT_ROOT" e "SCRIPT_FILENAME" que sao
+passados para o CGI handler caso sejam necessario para a execucao 
+
