@@ -2,19 +2,18 @@
 #include "../includes/conf_info.hpp"
 #include "../includes/parser_utils.hpp"
 
-ParserConfig::ParserConfig(conf_File_Info* directives, const std::string& location)
-    : _directives(directives)
-    , _location(location)
+ParserConfig::ParserConfig(conf_File_Info* configData, const std::string& path_location)
+    : Server_configurations(configData)
+    , locationPath(path_location)
 {
-    if (_directives->index.empty())
-    {
-        _directives->index = "index.html";
+    if (Server_configurations->defaultFile.empty()){
+        Server_configurations->defaultFile = "index.html";
     }
 }
 
 ParserConfig::ParserConfig(const ParserConfig& src)
-    : _directives(src._directives)
-    , _location(src._location)
+    : Server_configurations(src.Server_configurations)
+    , locationPath(src.locationPath)
 {
 }
 
@@ -22,123 +21,121 @@ ParserConfig::~ParserConfig()
 {
 }
 
-ParserConfig& ParserConfig::operator=(const ParserConfig& rhs)
+ParserConfig& ParserConfig::operator=(const ParserConfig& src)
 {
-    if (this != &rhs)
+    if (this != &src)
     {
-        _directives = rhs._directives;
-        _location = rhs._location;
+        Server_configurations = src.Server_configurations;
+        locationPath = src.locationPath;
     }
     return *this;
 }
 
-int ParserConfig::getPort() const
+int ParserConfig::obtainPort() const
 {
-    return _directives->listen;
+    return Server_configurations->portListen;
 }
 
-const std::string& ParserConfig::getServerName() const
+const std::string& ParserConfig::retrieveServerName() const
 {
-    return _directives->server_name;
+    return Server_configurations->ServerName;
 }
 
-const std::string& ParserConfig::getIndex() const
+const std::string& ParserConfig::fetchIndex() const
 {
-    return _directives->index;
+    return Server_configurations->defaultFile;
 }
 
-const std::string ParserConfig::getRoot() const
+const std::string ParserConfig::acquireRoot() const
 {
-    if (_directives->root.empty())
+    if (Server_configurations->RootDirectory.empty())
     {
         return "./";
     }
-    return _directives->root + "/";
+    return Server_configurations->RootDirectory + "/";
 }
 
-bool ParserConfig::hasAutoIndex() const
+bool ParserConfig::checkAutoIndex() const
 {
-    return _directives->autoindex;
+    return Server_configurations->directoryListingEnabled;
 }
 
-bool ParserConfig::hasErrorPage(int error) const
+bool ParserConfig::validateErrorPage(int errorNumber) const
 {
-    return _directives->error_page.count(error);
+    return Server_configurations->errorMap.count(errorNumber);
 }
 
-const std::string& ParserConfig::getErrorPage(int error) const
+const std::string& ParserConfig::fetchErrorPage(int errorNumber) const
 {
-    return _directives->error_page.at(error);
+    return Server_configurations->errorMap.at(errorNumber);
 }
 
-/*bool ConfigSpec::hasCGI() const
+bool ParserConfig::confirmCGI() const
 {
-    return !_directives->cgi.empty();
-}*/
-
-/*const std::string& ConfigSpec::getCGI() const
-{
-    printf("1-ConfigSpec::getCGI() called\n");
-    printf("2-CGI dentro da funcao getCGI: %s\n", _directives->cgi.c_str());
-    return _directives->cgi;
-}*/
-
-bool ParserConfig::hasRedirect() const
-{
-    return _directives->redirect.code && !_directives->redirect.url.empty();
+    return !Server_configurations->Path_CGI.empty();
 }
 
-const Redirect& ParserConfig::getRedirect() const
+const std::string& ParserConfig::accessCGIScript() const
 {
-    return _directives->redirect;
+    //debug msg
+    printf("1-ConfigSpec::accessCGIScript() called\n");
+    printf("2-CGI dentro da funcao accessCGIScript: %s\n", Server_configurations->Path_CGI.c_str());
+    return Server_configurations->Path_CGI;
 }
 
-std::string ParserConfig::match(const std::string& path) const
+bool ParserConfig::verifyRedirection() const
 {
-    Locations::iterator it = _directives->locations.begin();
-    for (; it != _directives->locations.end(); ++it)
-    {
-        if (path.find(it->first) != std::string::npos)
-        {
-            return it->first;
+    return Server_configurations->redirectURL.httpStatusCode && !Server_configurations->redirectURL.destinationURL.empty();
+}
+
+const ForwardingURL& ParserConfig::fetchRedirection() const
+{
+    return Server_configurations->redirectURL;
+}
+
+std::string ParserConfig::matchPath(const std::string& searchPath) const
+{
+    Locations::iterator locationIterator = Server_configurations->LocationsMap.begin();
+    for (; locationIterator != Server_configurations->LocationsMap.end(); ++locationIterator){
+        if (searchPath.find(locationIterator->first) != std::string::npos){
+            return locationIterator->first;
         }
     }
-    return _empty;
+    return emptyString;
 }
 
-ParserConfig ParserConfig::getContext(const std::string& path) const
+ParserConfig ParserConfig::extractContext(const std::string& requestedPath) const
 {
-    conf_File_Info* ctx = &_directives->locations.at(path);
-    ctx->listen = _directives->listen;
-    ctx->server_name = _directives->server_name;
-    if (ctx->root.empty())
-    {
-        ctx->root = _directives->root;
+    conf_File_Info* environmentInfo = &Server_configurations->LocationsMap.at(requestedPath);
+    environmentInfo->portListen = Server_configurations->portListen;
+    environmentInfo->ServerName = Server_configurations->ServerName;
+    
+    if (environmentInfo->RootDirectory.empty()){
+        environmentInfo->RootDirectory = Server_configurations->RootDirectory;
     }
-    if (ctx->index.empty())
-    {
-        ctx->index = _directives->index;
+    if (environmentInfo->defaultFile.empty()){
+        environmentInfo->defaultFile = Server_configurations->defaultFile;
     }
-    return ParserConfig(ctx, path);
+    return ParserConfig(environmentInfo, requestedPath);
 }
 
-std::string ParserConfig::getLocation() const
+std::string ParserConfig::determineLocation() const
 {
-    return _location;
+    return locationPath;
 }
 
-int ParserConfig::getClientBodySize() const
+int ParserConfig::calculateClientBodySize() const
 {
-    return _directives->client_max_body_size;
+    return Server_configurations->maxRequestSize;
 }
 
-const std::string& ParserConfig::getUploadDir() const
+const std::string& ParserConfig::obtainUploadDirectory() const
 {
-    return _directives->upload_dir;
+    return Server_configurations->fileUploadDirectory;
 }
 
-bool ParserConfig::isMethodAllowed(const std::string& method) const
+bool ParserConfig::validateMethod(const std::string& httpMethod) const
 {
-    return _directives->limit_except.empty()
-           || _directives->limit_except.count(ParserUtils::toLower(method));
+    return Server_configurations->allowedMethods.empty()
+           || Server_configurations->allowedMethods.count(ParserUtils::toLower(httpMethod));
 }

@@ -53,12 +53,12 @@ void ParserClass::validateRequiredParameters()
 {
     for (std::vector<conf_File_Info>::iterator configIterator = conf_info.begin(); configIterator != conf_info.end(); ++configIterator)
     {
-        if (configIterator->listen == 0)
+        if (configIterator->portListen == 0)
         {
             throw ConfigError(RED "Error: Missing 'listen' directive in a server block. " 
                 "Every server block must include a 'listen' directive to specify the port number." RESET);
         }
-        if (configIterator->server_name.empty())
+        if (configIterator->ServerName.empty())
         {
             throw ConfigError(RED "Error: Missing 'server_name' directive in a server block. "
                 "You must define 'server_name' to identify the server within the network." RESET);
@@ -193,25 +193,25 @@ void ParserClass::confirmListenSettings(const ParserUtils::Strings& parameters, 
         throw ConfigError(createErrorMsg(RED "Configuration Error: The port number '" + parameters[1] + 
             "' is invalid. Port numbers must be between 3 and 65535. Please specify a valid port number." RESET));
     }
-    Keyword->listen = portNumber;
+    Keyword->portListen = portNumber;
 }
 
 void ParserClass::confirmServerName(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    Keyword->server_name = commandParts[1];
+    Keyword->ServerName = commandParts[1];
 }
 
 void ParserClass::checkIndex(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    Keyword->index = commandParts[1];
+    Keyword->defaultFile = commandParts[1];
 }
 
 void ParserClass::confirmRootPath(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    Keyword->root = commandParts[1];
+    Keyword->RootDirectory = commandParts[1];
 }
 
 void ParserClass::checkAutoindex(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
@@ -221,7 +221,7 @@ void ParserClass::checkAutoindex(const ParserUtils::Strings& commandParts, conf_
         throw ConfigError(createErrorMsg(RED "Configuration Error: The 'autoindex' value '" + commandParts[1] + 
             "' is invalid. Only 'on' or 'off' are accepted values. Please adjust your 'autoindex' setting to use one of these valid options." RESET));
     }
-    Keyword->autoindex = (commandParts[1] == "on") ? true : false;
+    Keyword->directoryListingEnabled = (commandParts[1] == "on") ? true : false;
 }
 
 void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
@@ -235,14 +235,14 @@ void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf
                 createErrorMsg(RED "Configuration Error: The specified HTTP status code '" + commandParts[errorIndex] + 
                 "' is invalid. Valid error codes must be between 300 and 599." RESET));
         }
-        Keyword->error_page[errorCode] = errorPageUrl;
+        Keyword->errorMap[errorCode] = errorPageUrl;
     }
 }
 
 void ParserClass::confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* keyword) {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    keyword->cgi = commandParts[1];
-    printf(GREEN "CGI Configuration Validated: " RESET "%s\n", keyword->cgi.c_str());
+    keyword->Path_CGI = commandParts[1];
+    printf(GREEN "CGI Configuration Validated: " RESET "%s\n", keyword->Path_CGI.c_str());
     printf(BLUE "CGI Script Path: " RESET "%s\n", commandParts[1].c_str());
 }
 
@@ -250,8 +250,8 @@ void ParserClass::confirmRedirect(const ParserUtils::Strings& commandParts, conf
 {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 3);
     int redirectCode = std::atoi(commandParts[1].c_str());
-    Keyword->redirect.code = redirectCode;
-    Keyword->redirect.url = commandParts[2];
+    Keyword->redirectURL.httpStatusCode = redirectCode;
+    Keyword->redirectURL.destinationURL = commandParts[2];
 }
 
 void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
@@ -268,7 +268,7 @@ void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf
         if (!permittedHTTPMethods.count(currentMethod)){
             throw ConfigError(createErrorMsg(RED "Configuration Error: Invalid HTTP method '" + commandParts[cmd_Index] + "'. Valid methods are GET, POST, and DELETE." RESET));
         }
-        Keyword->limit_except.insert(currentMethod);
+        Keyword->allowedMethods.insert(currentMethod);
     }
 }
 
@@ -282,13 +282,13 @@ void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandPa
     if (!(inputStream >> bodySize) || bodySize < 0 || inputStream.get(extraCharacter)){
         throw ConfigError(createErrorMsg(RED "Invalid value for 'client_body_size': " + commandParts[1] + ". Please provide a VALID VALUE." RESET));
     }
-    Keyword->client_max_body_size = std::atoi(commandParts[1].c_str()) << 20;
+    Keyword->maxRequestSize = std::atoi(commandParts[1].c_str()) << 20;
 }
 
 void ParserClass::confirmUploadDir(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    Keyword->upload_dir = commandParts[1];
+    Keyword->fileUploadDirectory = commandParts[1];
 }
 
 inline void ParserClass::startServerModule()
@@ -300,8 +300,8 @@ inline void ParserClass::startServerModule()
 
 inline void ParserClass::startLocationModule(const std::string& location)
 {
-    conFileInProgress->locations[location] = conf_File_Info();
-    contextHistory.push(&conFileInProgress->locations[location]);
+    conFileInProgress->LocationsMap[location] = conf_File_Info();
+    contextHistory.push(&conFileInProgress->LocationsMap[location]);
     conFileInProgress = contextHistory.top();
 }
 
