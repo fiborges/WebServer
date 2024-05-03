@@ -62,7 +62,7 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
                     msg.state = HTTrequestMSG::FINISH;
                     return true;
                 }
-                if (msg.process_bytes + chunk_size > maxSize) {
+                if (static_cast<size_t>(msg.process_bytes) + chunk_size > maxSize) {
                     msg.error = "Request entity too large";
                     msg.state = HTTrequestMSG::FINISH;
                     return false;
