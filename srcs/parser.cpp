@@ -138,9 +138,9 @@ inline void ParserClass::ensureAllModulesClosed()
     if (numberOfModules == 0){
         return;
     }
-    throw ConfigError(createErrorMsg(RED "Configuration Error: Unexpected end of file. "
+    throw ConfigError(createErrorMsg("Configuration Error: Unexpected end of file. "
         "This usually indicates a missing '}' for a configuration block. "
-        "Please check your configuration to ensure all blocks are properly closed with '}'."RESET));
+        "Please check your configuration to ensure all blocks are properly closed with '}'."));
 }
 
 void ParserClass::checkAndConfirmValidMap()
@@ -263,19 +263,23 @@ void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf
     permittedHTTPMethods.insert("post");
     permittedHTTPMethods.insert("delete");
 
+    Keyword->allowedMethods.clear();//???
     for (size_t cmd_Index = 1; cmd_Index < commandParts.size(); ++cmd_Index){
         std::string currentMethod = ParserUtils::toLower(commandParts[cmd_Index]);
         if (!permittedHTTPMethods.count(currentMethod)){
             throw ConfigError(createErrorMsg(RED "Configuration Error: Invalid HTTP method '" + commandParts[cmd_Index] + "'. Valid methods are GET, POST, and DELETE." RESET));
         }
         Keyword->allowedMethods.insert(currentMethod);
+        printf(GREEN "HTTP Method Allowed: " RESET "%s\n", currentMethod.c_str());
     }
 }
 
 void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-
+    //ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    if (commandParts.size() != 2) {
+        throw ConfigError(createErrorMsg(RED "Configuration Error: 'client_body_size' requires exactly one argument." RESET));
+    }
     std::istringstream inputStream(commandParts[1]);
     long int bodySize;
     char extraCharacter;
@@ -283,12 +287,18 @@ void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandPa
         throw ConfigError(createErrorMsg(RED "Invalid value for 'client_body_size': " + commandParts[1] + ". Please provide a VALID VALUE." RESET));
     }
     Keyword->maxRequestSize = std::atoi(commandParts[1].c_str()) << 20;
+    printf(RED "Client Body Size Validated: " RESET "%s bytes\n", commandParts[1].c_str());
 }
 
 void ParserClass::confirmUploadDir(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
 {
-    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    if (commandParts.size() != 2) {
+        throw ConfigError(createErrorMsg(RED "Configuration Error: 'upload_dir' directive requires exactly one path as argument." RESET));
+    }
     Keyword->fileUploadDirectory = commandParts[1];
+    printf(GREEN "Upload Directory Validated: " RESET "%s\n", Keyword->fileUploadDirectory.c_str());
+    //ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    //Keyword->fileUploadDirectory = commandParts[1];
 }
 
 inline void ParserClass::startServerModule()

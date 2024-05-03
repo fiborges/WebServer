@@ -16,7 +16,6 @@ void ParserClass::debug() const {
         std::cout << "\tAutoindex: " << (directive.directoryListingEnabled ? "Enabled" : "Disabled") << std::endl;
         std::cout << "\tClient Max Body Size: " << directive.maxRequestSize << " bytes" << std::endl;
         std::cout << "\tUpload Directory: " << directive.fileUploadDirectory << std::endl;
-        std::cout << "\tCGI Path: " << directive.Path_CGI << std::endl;
         
         if (directive.redirectURL.httpStatusCode) {
             std::cout << "\tRedirect Code: " << directive.redirectURL.httpStatusCode << " to " << directive.redirectURL.destinationURL << std::endl;
