@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/29 16:58:42 by brolivei          #+#    #+#             */
-/*   Updated: 2024/04/30 09:01:29 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/03 12:25:50 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,11 +44,17 @@ void	CGI::PerformCGI(const int ClientSocket)
 
 		const char*	args[2];
 
-		args[0] = "./testExecutable/a.out";
-		args[1] = NULL;
+		args[0] = "./testExecutable/PmergeMe";
+		args[1] = "5";
+		args[2] = "2";
+		args[3] = "4";
+		args[4] = "1";
+		args[5] = "1";
+		args[6] = "0";
+		args[7] = NULL;
 
 		execve(args[0], const_cast<char**>(args), NULL);
- 
+
 		write(STDERR_FILENO, "Execve fail\n", 12);
 		exit(EXIT_FAILURE);
 	}
@@ -60,6 +66,9 @@ void	CGI::PerformCGI(const int ClientSocket)
 		char	buffer[1024];
 		int		bytes;
 
+		std::string	header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+		write(this->ClientSocket_, header.c_str(), header.length());
+
 		while ((bytes = read(this->P_FD[0], buffer, sizeof(buffer))) > 0)
 		{
 			write(this->ClientSocket_, buffer, strlen(buffer));
@@ -69,3 +78,4 @@ void	CGI::PerformCGI(const int ClientSocket)
 		wait(NULL);
 	}
 }
+

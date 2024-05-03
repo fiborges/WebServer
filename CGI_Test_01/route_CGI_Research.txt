@@ -1,12 +1,12 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    research.txt                                       :+:      :+:    :+:    #
+#    route_CGI_Research.txt                             :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/02 16:33:18 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/02 17:00:35 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/03 11:57:42 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -111,5 +111,4 @@ server {
 um handler proprio (que seremos nos a criar) que esta localizado, por exemplo em "/cgi-bin/cgi-php/".
 
 	-> Adicionalmente sao adicionados parametros como "DOCUMENT_ROOT" e "SCRIPT_FILENAME" que sao
-passados para o CGI handler caso sejam necessario para a execucao 
-
+passados para o CGI handler caso sejam necessario para a execucao

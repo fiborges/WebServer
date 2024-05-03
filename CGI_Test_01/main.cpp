@@ -69,7 +69,7 @@ int	main(int argc, char **argv, char **envp)
 		valread = read(new_socket, buffer, 30000);
 		printf("%s\n", buffer);
 
-		if (strstr(buffer, "/cgi-bin/") != NULL)
+		if (strstr(buffer, "/cgi-bin/PmergeMe") != NULL)
 			cgi_.PerformCGI(new_socket);
 		else
 			write(new_socket, hello.c_str(), hello.length());
