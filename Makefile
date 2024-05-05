@@ -4,7 +4,7 @@ NC=\033[0m
 
 NAME		=	webserver
 INCLUDES	=	-I include
-CC			=	clang++
+CC			=	g++
 RM			=	rm -rf
 CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
 DIR_SRCS	=	srcs

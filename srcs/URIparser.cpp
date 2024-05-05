@@ -51,7 +51,7 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
             }
             break;
         case HTTrequestMSG::CHUNKED:
-            // Processa cada chunk até encontrar o chunk final "0"
+            // Processa cada chunk(MODULO) até encontrar o chunk final "0"
             while (raw.find(FINAL_CHUNK) == std::string::npos) {
                 size_t chunk_size_end = raw.find(HTTP_LINE_BREAK);
                 if (chunk_size_end == std::string::npos) {
@@ -97,17 +97,24 @@ bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
     return true;
 }
 
-
+// detecta se a requisição é CGI
 void HTTPParser::readRequestLine(std::istringstream& stream, HTTrequestMSG& msg) {
-    std::string method;
-    stream >> method >> msg.path >> msg.version;
+    std::string method, path, version;
+    stream >> method >> path >> version;
     setMethod(method, msg);
+    msg.version = version;
 
-    size_t delim = msg.path.find("?");
-    if (delim != std::string::npos) {
-        msg.query = msg.path.substr(delim + 1);
-        msg.path.resize(delim);
+    if (path.find("/cgi-bin/") != std::string::npos ||
+        (path.size() >= 4 && path.substr(path.size() - 4) == ".cgi")) {
+        msg.is_cgi = true;
     }
+
+    size_t delim = path.find("?");
+    if (delim != std::string::npos) {
+        msg.query = path.substr(delim + 1);
+        path.erase(delim);
+    }
+    msg.path = path;
 }
 
 void HTTPParser::readHeaders(std::istringstream& stream, HTTrequestMSG& msg) {
@@ -119,7 +126,22 @@ void HTTPParser::readHeaders(std::istringstream& stream, HTTrequestMSG& msg) {
             std::string key = line.substr(0, colonPos);
             std::string value = line.substr(colonPos + 2);
             msg.headers[key] = value;
+
+            // Configurar variáveis de ambiente cgi
+            if (msg.is_cgi) {
+                if (key == "Content-Length") {
+                    msg.cgi_env["CONTENT_LENGTH"] = value;
+                } else if (key == "Content-Type") {
+                    msg.cgi_env["CONTENT_TYPE"] = value;
+                }
+            }
         }
+    }
+
+    if (msg.is_cgi) {
+        msg.cgi_env["REQUEST_METHOD"] = methodToString(msg.method);
+        msg.cgi_env["SCRIPT_NAME"] = msg.path;
+        msg.cgi_env["QUERY_STRING"] = msg.query;
     }
 }
 
@@ -136,8 +158,8 @@ void HTTPParser::setMethod(const std::string& method, HTTrequestMSG& msg) {
 }
 
 void HTTPParser::removeCarriageReturn(std::string& s) {
-    if (!s.empty() && s.back() == '\r') {
-        s.pop_back();
+    if (!s.empty() && s[s.size() - 1] == '\r') {
+        s.erase(s.size() - 1);
     }
 }
 
@@ -171,110 +193,3 @@ std::string HTTPParser::methodToString(HTTrequestMSG::Method method) {
         default: return "UNKNOWN";
     }
 }
-/*
-#include <iostream>
-#include <string>
-#include "URIparser.hpp" // Supondo que o arquivo de cabeçalho contém a definição de Message e a implementação de HTTPParser
-
-int main() {
-    std::string request = "GET /index.html HTTP/1.1\r\n"
-                          "Host: www.example.com\r\n"
-                          "User-Agent: Mozilla/5.0\r\n"
-                          "Content-Length: 0\r\n"
-                          "\r\n";
-
-    HTTPParser parser;
-    Message msg;
-
-    size_t maxSize = 1024;
-
-    // Processamento da requisição
-    bool result = parser.parseRequest(request, msg, maxSize);
-
-    if (result) {
-        std::cout << "Request successfully processed!" << std::endl;
-        std::cout << "Method: " << msg.method << std::endl;
-        std::cout << "Path: " << msg.path << std::endl;
-        std::cout << "Version: " << msg.version << std::endl;
-        std::cout << "Host: " << msg.headers["Host"] << std::endl;
-        std::cout << "User-Agent: " << msg.headers["User-Agent"] << std::endl;
-        std::cout << "Content-Length: " << msg.headers["Content-Length"] << std::endl;
-    } else {
-        std::cerr << "Failed to process request!" << std::endl;
-    }
-
-    return 0;
-}
-
-
-std::string receiveDataFromSocket() {
-    // Suponho que temos uma função para receber dados da conexão de socket
-    // vou simular que recebo uma requisição GET básica
-    std::string requestData = "GET /index.html HTTP/1.1\r\n"
-                              "Host: example.com\r\n"
-                              "User-Agent: Mozilla/5.0\r\n"
-                              "Accept: text/html\r\n"
-                              "\r\n";
-    return requestData;
-}
-
-
-// Estrutura para armazenar a mensagem da requisição HTTP
-struct HttpRequest {
-    std::string method;
-    std::string path;
-    std::map<std::string, std::string> headers;
-};
-
-// Função para processar a string da requisição e extrair informações relevantes
-
-HttpRequest processHttpRequest(const std::string& requestData) 
-{
-    HttpRequest request;
-
-    // Uso stringstream para analisar a string da requisição
-    std::istringstream iss(requestData);
-
-    // Leio a linha de requisição para obter o método e o caminho
-    iss >> request.method >> request.path;
-
-    // Processo os cabeçalhos HTTP
-    std::string line;
-    while (std::getline(iss, line) && !line.empty()) 
-    {
-        // Separo o cabeçalho em chave e valor
-        std::size_t pos = line.find(": ");
-        if (pos != std::string::npos) 
-        {
-            std::string key = line.substr(0, pos);
-            std::string value = line.substr(pos + 2);
-            request.headers[key] = value;
-        }
-    }
-
-    return request;
-}
-
-int main() {
-    // Recebo os dados da conexão de socket
-    std::string requestData = "GET /index.html HTTP/1.1\r\n"
-                              "Host: example.com\r\n"
-                              "User-Agent: Mozilla/5.0\r\n"
-                              "Accept: text/html\r\n"
-                              "\r\n";
-
-    // Processo a requisição HTTP
-    HttpRequest request = processHttpRequest(requestData);
-
-    // Exibo as informações extraídas
-    std::cout << "Método: " << request.method << std::endl;
-    std::cout << "Caminho do recurso: " << request.path << std::endl;
-    std::cout << "Cabeçalhos HTTP:" << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = request.headers.begin(); it != request.headers.end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
-
-    return 0;
-}
-
-*/
