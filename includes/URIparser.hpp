@@ -29,9 +29,12 @@ public:
     int content_lenght;                            // Comprimento do conteúdo da requisição (Content-Length)
     int process_bytes;                            // Quantidade de bytes já processados
     std::string error;                      // Mensagem de erro, se houver
+    bool is_cgi;                             //flag para cgi
+    std::map<std::string, std::string> cgi_env;  // // Variáveis de ambiente para o CGI
+
 
     // Construtor padrão inicializa alguns atributos
-    HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_lenght(0), process_bytes(0) {}
+    HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_lenght(0), process_bytes(0), is_cgi(false) {}
 };
 
 class HTTPParser 
@@ -46,7 +49,7 @@ public:
     static bool parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize);
 
     // Método para converter HTTP numa string so para teste basicamente
-    std::string methodToString(HTTrequestMSG::Method method);
+    static std::string methodToString(HTTrequestMSG::Method method);
 
 private:
 

@@ -4,12 +4,12 @@ NC=\033[0m
 
 NAME		=	webserver
 INCLUDES	=	-I include
-CC			=	clang++
+CC			=	g++
 RM			=	rm -rf
 CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
-SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp $(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp
+SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp $(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp $(DIR_SRCS)/URIparser.cpp 
 BUILD		=	$(subst $(DIR_SRCS), $(DIR_BUILD), $(SRCS:.cpp=.o))
 
 

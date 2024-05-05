@@ -1,0 +1,57 @@
+As variáveis de ambiente são usadas no CGI para passar informações sobre a requisição HTTP para o script externo. 
+O CGI usa essas variáveis para entender o contexto da requisição e gerar uma resposta apropriada. 
+
+Algumas das variáveis de ambiente mais comuns e suas utilidades:
+
+    REQUEST_METHOD: Indica o método HTTP da requisição (GET, POST, etc.). 
+        Útil para scripts que comportam-se diferente com base no tipo de requisição.
+
+    QUERY_STRING: Contém a string de consulta da URL, que pode incluir parâmetros que influenciam a execução do CGI.
+
+    CONTENT_TYPE e CONTENT_LENGTH: Para requisições POST, essas variáveis informam o tipo e o tamanho do corpo da mensagem, respectivamente.
+
+    SCRIPT_NAME: Indica o caminho para o script a ser executado, essencial para o servidor saber qual programa iniciar.
+
+    PATH_INFO e PATH_TRANSLATED: Fornecem informações adicionais sobre o caminho solicitado, que pode ser útil para scripts que acessam diretamente arquivos ou recursos.
+
+Onde e Como são Usadas:
+
+As variáveis de ambiente são definidas pelo servidor web antes de chamar o script CGI. 
+O script, então, acessa essas variáveis tipicamente através das APIs disponíveis na linguagem em que foi escrito. 
+Por exemplo, em Python, as variáveis de ambiente são acessíveis através do módulo os, que fornece uma maneira conveniente 
+de usar funcionalidades dependentes do sistema operacional, como as variáveis de ambiente.
+Para acessar as variáveis de ambiente em Python, você usará o dicionário os.environ. 
+Este dicionário é preenchido com todas as variáveis de ambiente disponíveis no momento em que o script é executado. 
+
+
+exemplo de como acessar em python!:
+
+import os
+
+# Acessar a variável de ambiente METHOD que contém o método HTTP usado na requisição
+request_method = os.environ.get('REQUEST_METHOD')
+
+# Acessar outras variáveis de ambiente
+content_length = os.environ.get('CONTENT_LENGTH')
+content_type = os.environ.get('CONTENT_TYPE')
+query_string = os.environ.get('QUERY_STRING')
+script_name = os.environ.get('SCRIPT_NAME')
+
+# Exemplo de uso dessas variáveis
+print("Content-Type: text/html\n")  # Cabeçalho necessário para a resposta HTTP
+print("<html><body>")
+print("<h1>Informações da Requisição CGI</h1>")
+print(f"<p>Método da Requisição: {request_method}</p>")
+print(f"<p>Comprimento do Conteúdo: {content_length}</p>")
+print(f"<p>Tipo do Conteúdo: {content_type}</p>")
+print(f"<p>String de Consulta: {query_string}</p>")
+print(f"<p>Nome do Script: {script_name}</p>")
+print("</body></html>")
+
+Fluxo Típico de Uso:
+
+    Receber Requisição: O servidor recebe uma requisição HTTP destinada a um CGI.
+    Preparar o Ambiente: O servidor configura as variáveis de ambiente baseadas nos detalhes da requisição.
+    Executar o CGI: O servidor inicia o script ou programa CGI, passando quaisquer dados necessários (como o corpo da requisição) através de entradas padrão ou arquivos temporários.
+    Capturar Resposta: O servidor captura a saída do CGI, que inclui cabeçalhos de resposta e o corpo, geralmente por meio de saída padrão.
+    Enviar Resposta ao Cliente: Finalmente, o servidor envia essa resposta ao cliente que fez a requisição original.
