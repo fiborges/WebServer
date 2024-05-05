@@ -5,7 +5,7 @@
 
 ParserClass::ParserClass(const std::string& file_path)
     : configFilePath(file_path), configurationFile(configFilePath.c_str()),
-      currentState("Out"), numberOfModules(0), conFileInProgress(nullptr), lineTracker(0) {
+      currentState("Out"), numberOfModules(0), conFileInProgress(NULL), lineTracker(0) {
     if (!configurationFile) {
         throw std::runtime_error(file_path + ": " + strerror(errno));
     }
