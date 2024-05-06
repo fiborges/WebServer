@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/04/29 16:58:42 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/03 12:25:50 by brolivei         ###   ########.fr       */
+/*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
+/*   Updated: 2024/05/06 17:01:20 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,64 +18,108 @@ CGI::CGI()
 CGI::~CGI()
 {}
 
-// ==========PublicMethod==========
-
-void	CGI::PerformCGI(const int ClientSocket)
+void	CGI::PerformCGI(const int ClientSocket, char buffer_in[30000])
 {
-	this->ClientSocket_ = ClientSocket;
+	// Read the HTTP request headers
+	std::string	header(buffer_in);
+
+// ===============================================================
+
+	// Extract the boundary string from the content-Type header
+	std::string	boundary;
+	size_t	boundary_pos = header.find("boundary=");
+	if (boundary_pos != std::string::npos)
+		boundary = header.substr(boundary_pos + 9); //Length of "boundary="
+
+	// Read the request body and extract file data
+
+	std::string	file_data;
+	size_t	body_start = header.find("\r\n\r\n");
+
+	if (body_start != std::string::npos)
+	{
+		body_start += 4;
+		file_data = header.substr(body_start);
+	}
+
+	// Construct the command-line argument containing the request body
+    std::string python_arg = "--request-body=" + file_data;
+// ===============================================================
+
+	// Pipe creation
 	if (pipe(this->P_FD) == -1)
 	{
-		write(STDERR_FILENO, "Pipe error\n", 11);
+		std::cout << "Error in pipe\n";
 		exit(EXIT_FAILURE);
 	}
 
+	// Fork
 	this->pid = fork();
-
-	if (pid < 0)
+	if (this->pid == -1)
 	{
-		write(STDERR_FILENO, "Fork error\n", 11);
+		std::cout << "Error in fork\n";
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0)
+	if (this->pid == 0)
 	{
 		close(this->P_FD[0]);
+
 		dup2(this->P_FD[1], STDOUT_FILENO);
 
-		const char*	args[2];
+		const char*	python_args[4];
 
-		args[0] = "./testExecutable/PmergeMe";
-		args[1] = "5";
-		args[2] = "2";
-		args[3] = "4";
-		args[4] = "1";
-		args[5] = "1";
-		args[6] = "0";
-		args[7] = NULL;
+		python_args[0] = "/usr/bin/python3";
+		python_args[1] = "./testExecutable/U_File_test2.py";
+		python_args[2] = python_arg.c_str(); // Pass request body as argument
+		python_args[3] = NULL;
 
-		execve(args[0], const_cast<char**>(args), NULL);
+		execve(python_args[0], const_cast<char**>(python_args), NULL);
 
-		write(STDERR_FILENO, "Execve fail\n", 12);
+		std::cout << "Error in execve\n";
 		exit(EXIT_FAILURE);
 	}
 
 	else
 	{
+		int	read_bytes;
+		char	buffer[1024];
+
 		close(this->P_FD[1]);
 
-		char	buffer[1024];
-		int		bytes;
+		// Write file data to the read end of the pipe
+		//write(this->P_FD[0], file_data.c_str(), file_data.length());
+		//size_t	bytes_written = 0;
 
-		std::string	header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-		write(this->ClientSocket_, header.c_str(), header.length());
+		//while (bytes_written < file_data.length())
+		//{
+		//	ssize_t	bytes_written_now = write(this->P_FD[0], file_data.c_str() + bytes_written, file_data.length() - bytes_written);
+		//	if (bytes_written_now < 0)
+		//	{
+		//		std::cerr << "Error writing to pipe\n";
+		//		exit(EXIT_FAILURE);
+		//	}
+		//	bytes_written += bytes_written_now;
+		//}
 
-		while ((bytes = read(this->P_FD[0], buffer, sizeof(buffer))) > 0)
+		// Read output of the Python script from the pipe
+		std::string	pyOutPut;
+
+		while ((read_bytes = read(this->P_FD[0], buffer, 1024)) > 0)
 		{
-			write(this->ClientSocket_, buffer, strlen(buffer));
+			pyOutPut.append(buffer);
 		}
-
-		close(this->P_FD[0]);
 		wait(NULL);
+		close(this->P_FD[0]);
+
+		// Send the Python script output back to the client
+
+		std::stringstream	s;
+
+		s << "HTTP/1.1 200 OK\r\nContent-Length: " << pyOutPut.length() << "\r\n\r\n" << pyOutPut;
+
+		std::string	response = s.str();
+
+		write(ClientSocket, response.c_str(), response.length());
 	}
 }
-

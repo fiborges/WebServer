@@ -1,20 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CGI.hpp                                            :+:      :+:    :+:   */
+/*   CGI_Test.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/06 14:56:49 by brolivei         ###   ########.fr       */
+/*   Created: 2024/04/29 16:53:21 by brolivei          #+#    #+#             */
+/*   Updated: 2024/05/06 13:59:49 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CGI_HPP
-#define CGI_HPP
+#ifndef CGI_TEST_HPP
+#define CGI_TEST_HPP
 
 #include <iostream>
-#include <sstream>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -36,7 +35,7 @@ class CGI
 		~CGI();
 
 		// Public Method
-		void	PerformCGI(const int ClientSocket, char buffer_in[30000]);
+		void	PerformCGI(const int ClientSocket);
 };
 
 #endif

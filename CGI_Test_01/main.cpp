@@ -10,11 +10,28 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fstream>
+#include <string>
 
 #include "CGI.hpp"
 
 #define PORT 8080
 
+void send_html_page(int client_socket) {
+    std::ifstream file("./html_test/index.html");
+    if (!file.is_open()) {
+        std::cerr << "Failed to open HTML file." << std::endl;
+        return;
+    }
+
+    std::string line;
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+    while (std::getline(file, line)) {
+        response += line;
+    }
+
+    send(client_socket, response.c_str(), response.size(), 0);
+}
 
 int	main(int argc, char **argv, char **envp)
 {
@@ -22,13 +39,12 @@ int	main(int argc, char **argv, char **envp)
 	(void)argv;
 	(void)envp;
 	int		server_fd, new_socket;
-	long	valread;
+	//long	valread = 1;
 	struct	sockaddr_in	address;
 
+	CGI	cgi;
+
 	int		addrlen = sizeof(address);
-
-	CGI		cgi_;
-
 	std::string	hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
 	// Creating socket file descriptor
@@ -66,11 +82,16 @@ int	main(int argc, char **argv, char **envp)
 		}
 
 		char	buffer[30000] = {0};
-		valread = read(new_socket, buffer, 30000);
+		//while (valread > 0)
+		//{
+		read(new_socket, buffer, 30000);
 		printf("%s\n", buffer);
+		//}
 
-		if (strstr(buffer, "/cgi-bin/PmergeMe") != NULL)
-			cgi_.PerformCGI(new_socket);
+		if (strstr(buffer, "GET /index.html") != NULL)
+			send_html_page(new_socket);
+		else if (strstr(buffer, "POST /upload") != NULL)
+			cgi.PerformCGI(new_socket, buffer);
 		else
 			write(new_socket, hello.c_str(), hello.length());
 		printf("==========Response sent==========\n");
