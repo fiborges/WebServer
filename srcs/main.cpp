@@ -1,4 +1,5 @@
 #include "../includes/parser.hpp"
+#include "../includes/erros.hpp"
 
 void ParserClass::debug() const {
     std::cout << "Debugging ConfigParser State:" << std::endl;
@@ -47,6 +48,7 @@ void ParserClass::debug() const {
 
 int main(int argc, char **argv)
 {
+    ServerErrorHandler::initialize();
    if (argc != 2)
 	{
 	    std::cout << RED << "Error: Incorrect number of parameters provided.\n" << RESET;

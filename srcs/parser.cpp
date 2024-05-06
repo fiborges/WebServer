@@ -2,6 +2,7 @@
 #include "../includes/conf_info.hpp"
 #include "../includes/parser.hpp"
 #include "../includes/parser_utils.hpp"
+#include "../includes/erros.hpp"
 
 ParserClass::ParserClass(const std::string& file_path)
     : configFilePath(file_path), configurationFile(configFilePath.c_str()),

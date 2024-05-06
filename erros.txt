@@ -1,0 +1,80 @@
+1. 400 Bad Request
+Este erro deve ser retornado quando o servidor não consegue entender a requisição devido a má sintaxe. 
+Pode ser usado quando:
+
+A requisição não segue o formato correto esperado pelo servidor.
+Os dados do formulário ou parâmetros da URL não estão corretos ou são inválidos.
+Exemplo de Uso:
+
+if (!isValidRequest(request)) {
+    throw std::runtime_error("400");  // Você pode usar exceções para controlar o fluxo
+}
+
+2. 404 Not Found
+Este erro é retornado quando o servidor não consegue encontrar o recurso solicitado. 
+Isso geralmente acontece quando:
+
+O URL aponta para um arquivo ou diretório que não existe no servidor.
+A rota especificada na requisição não é reconhecida pelo servidor.
+Exemplo de Uso:
+
+if (!fileExists(filePath)) {
+    throw std::runtime_error("404");  // Assume-se que o controle de exceção é configurado para lidar com isso
+}
+
+3. 500 Internal Server Error
+Este é um erro genérico indicando que o servidor encontrou uma situação que não sabe como manusear. 
+Deve ser utilizado quando:
+
+Ocorre uma exceção ou erro inesperado durante o processamento da requisição.
+Problemas internos do servidor, como falhas de configuração ou erros em scripts de servidor.
+Exemplo de Uso:
+
+try {
+    processRequest(request);
+} catch (...) {
+    throw std::runtime_error("500");
+}
+
+4. 501 Not Implemented
+Este erro é usado quando o servidor não suporta a funcionalidade necessária para atender à requisição. 
+Isso pode ocorrer quando:
+
+O método da requisição HTTP não é suportado pelo servidor, por exemplo, PUT ou DELETE em servidores que só 
+suportam GET e POST.
+Exemplo de Uso:
+
+if (request.method == "PUT") {
+    throw std::runtime_error("501");
+}
+
+5. 503 Service Unavailable
+Este erro é apropriado quando o servidor está temporariamente fora de serviço e incapaz de tratar requisições. 
+Pode ser usado em casos como:
+
+Manutenção programada ou atualizações estão acontecendo.
+O servidor está sobrecarregado e não pode tratar requisições adicionais no momento.
+Exemplo de Uso:
+
+if (!serverIsOperational()) {
+    throw std::runtime_error("503");
+}
+
+Implementação no Código
+Você pode centralizar o manejo de erros em um manipulador específico que verifica as condições acima e lança exceções ou retorna respostas de erro conforme necessário. Aqui está um exemplo simplificado de como essas verificações podem ser integradas ao processamento de requisições:
+
+void handleRequest(const HttpRequest& request, HttpResponse& response) {
+    try {
+        if (requestIsMalformed(request)) {
+            response.sendError(400, ServerErrorHandler::getErrorMessage(400));
+            return;
+        }
+        if (!resourceExists(request.uri)) {
+            response.sendError(404, ServerErrorHandler::getErrorMessage(404));
+            return;
+        }
+    } catch (const std::exception& e) {
+        int errorCode = std::stoi(e.what());
+        response.sendError(errorCode, ServerErrorHandler::getErrorMessage(errorCode));
+    }
+}
