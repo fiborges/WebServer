@@ -13,13 +13,15 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         switch (msg.state) {
         case HTTrequestMSG::HEADERS:
             if (!parseHeader(raw, msg)) {
+                //sendErrorResponse(response, 501, msg.error);
                 return false;
             }
             msg.state = (msg.method == HTTrequestMSG::GET || msg.method == HTTrequestMSG::DELETE || msg.method == HTTrequestMSG::UNKNOWN) ? HTTrequestMSG::FINISH : HTTrequestMSG::TRANSFER_CONTROL;
             break;
         case HTTrequestMSG::BODY:
             if (msg.process_bytes + raw.length() > maxSize) {
-                msg.error = "Request entity too large";
+                msg.error = ServerErrorHandler::getErrorMessage(413);
+                //sendErrorResponse(response, 413, msg.error);
                 msg.state = HTTrequestMSG::FINISH;
                 return false;
             }
@@ -40,7 +42,8 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
             break;
         case HTTrequestMSG::CONTENT_LENGTH:
             if (msg.process_bytes + raw.length() > maxSize) {
-                msg.error = ServerErrorHandler::getErrorMessage(413); // "Request Entity Too Large"
+                msg.error = ServerErrorHandler::getErrorMessage(413);
+                //sendErrorResponse(response, 413, msg.error);
                 msg.state = HTTrequestMSG::FINISH;
                 return false;
             }
@@ -57,6 +60,7 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
                 size_t chunk_size_end = raw.find(HTTP_LINE_BREAK);
                 if (chunk_size_end == std::string::npos) {
                     msg.error = ServerErrorHandler::getErrorMessage(400); // "Bad Request"
+                    //sendErrorResponse(response, 400, msg.error);
                     return false;
                 }
                 int chunk_size = parseHex(raw.substr(0, chunk_size_end));
@@ -65,7 +69,8 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
                     return true;
                 }
                 if (static_cast<size_t>(msg.process_bytes) + chunk_size > maxSize) {
-                    msg.error = "Request entity too large";
+                    msg.error = ServerErrorHandler::getErrorMessage(413);
+                    //sendErrorResponse(response, 413, msg.error); // "Request Entity Too Large"
                     msg.state = HTTrequestMSG::FINISH;
                     return false;
                 }
@@ -89,6 +94,7 @@ bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
     size_t end = raw.find(DELIMITER);
     if (end == std::string::npos) {
         msg.error = ServerErrorHandler::getErrorMessage(400);
+        //sendErrorResponse(response, 400, msg.error);
         return false;
     }
 
@@ -157,7 +163,8 @@ void HTTPParser::setMethod(const std::string& method, HTTrequestMSG& msg) {
         msg.method = HTTrequestMSG::DELETE;
     } else {
         msg.method = HTTrequestMSG::UNKNOWN;
-        msg.error = ServerErrorHandler::getErrorMessage(501); // "Not Implemented"
+        msg.error = ServerErrorHandler::getErrorMessage(501);
+        // "Not Implemented"
     }
 }
 
