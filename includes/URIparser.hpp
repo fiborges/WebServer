@@ -26,15 +26,16 @@ public:
     std::string query;                      // Parâmetros de consulta da URL
     std::map<std::string, std::string> headers; // Cabeçalhos HTTP
     std::string body;                       // Corpo da requisição
-    int content_lenght;                            // Comprimento do conteúdo da requisição (Content-Length)
+    int content_length;                            // Comprimento do conteúdo da requisição (Content-Length)
     int process_bytes;                            // Quantidade de bytes já processados
     std::string error;                      // Mensagem de erro, se houver
+    std::string boundary;   
     bool is_cgi;                             //flag para cgi
     std::map<std::string, std::string> cgi_env;  // // Variáveis de ambiente para o CGI
 
 
     // Construtor padrão inicializa alguns atributos
-    HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_lenght(0), process_bytes(0), is_cgi(false) {}
+    HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_length(0), process_bytes(0), is_cgi(false) {}
 };
 
 class HTTPParser 
@@ -45,11 +46,12 @@ public:
     static const std::string HTTP_LINE_BREAK;          // Caracteres de retorno e nova linha
     static const std::string DELIMITER;     // Delimitador para separar cabeçalhos e corpo da mensagem
 
-    // funcao main de analise de uma requisição HTTP
     static bool parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize);
-
-    // Método para converter HTTP numa string so para teste basicamente
     static std::string methodToString(HTTrequestMSG::Method method);
+    static bool processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t maxSize);
+    static bool processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize);
+    static void parsePart(const std::string& part, HTTrequestMSG& msg);
+    static std::string getBoundary(const std::string& contentType);
 
 private:
 
