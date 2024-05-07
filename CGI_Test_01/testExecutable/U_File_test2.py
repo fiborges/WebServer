@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/06 16:52:56 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/06 17:22:47 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/07 14:42:16 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -46,7 +46,9 @@ if filename and file_content:
     with open(filename, 'wb') as f:
         f.write(file_content.encode())
 
-    print("Content-Type: text/html\n")
+    print("HTTP/1.1 200 OK\r\n")
+    print("Content-Type: text/html\r\n")
+    print("<!DOCTYPE html>")
     print("<html><body>")
     print("<h2>File uploaded successfully!</h2>")
     print("<p>Filename: %s</p>" % filename)

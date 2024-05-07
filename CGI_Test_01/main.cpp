@@ -29,7 +29,7 @@ void send_html_page(int client_socket) {
     while (std::getline(file, line)) {
         response += line;
     }
-
+	std::cout << "==========\n\n" << response << "==========\n\n";
     send(client_socket, response.c_str(), response.size(), 0);
 }
 
@@ -82,6 +82,7 @@ int	main(int argc, char **argv, char **envp)
 		}
 
 		char	buffer[30000] = {0};
+		std::string	buffer_in_string;
 		//while (valread > 0)
 		//{
 		read(new_socket, buffer, 30000);
@@ -90,7 +91,7 @@ int	main(int argc, char **argv, char **envp)
 
 		if (strstr(buffer, "GET /index.html") != NULL)
 			send_html_page(new_socket);
-		else if (strstr(buffer, "POST /upload") != NULL)
+		else if (strstr(buffer, "POST /cgi-bin") != NULL)
 			cgi.PerformCGI(new_socket, buffer);
 		else
 			write(new_socket, hello.c_str(), hello.length());

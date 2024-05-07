@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/06 14:56:49 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/07 09:57:57 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 class CGI
 {
 	private:
-		int	ClientSocket_;
+		//int	ClientSocket_;
 		int	P_FD[2];
 		int	pid;
 	public:
