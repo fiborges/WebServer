@@ -2,7 +2,7 @@
 #define SERVER_ERROR_HANDLER_HPP
 
 #include "librarie.hpp"
-#include "URIparser.hpp"
+#include "RequestParser.hpp"
 #include "parser.hpp"
 
 class ServerErrorHandler {

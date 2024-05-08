@@ -21,14 +21,14 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
             msg.error = "Bad Request: No boundary in multipart/form-data";
             return false;
         }
-        return processMultipartData(raw, boundary, msg, maxSize);
+        return processMultipartData(raw, boundary, msg);
 
     } else if (msg.headers["transfer-encoding"].find("chunked") != std::string::npos) {
         return processChunkedBody(raw, msg, maxSize);
     } else {
         setContentLength(msg);
         if (msg.content_length > 0) {
-            if (raw.length() < msg.content_length) {
+            if (raw.length() < static_cast<size_t>(msg.content_length)) {
                 msg.error = "Incomplete Data";
                 return false;
             }
@@ -128,7 +128,7 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
 
         // Atualiza o processamento de bytes
         msg.process_bytes += chunkSize;
-        if (msg.process_bytes > maxSize) {
+        if (static_cast<size_t>(msg.process_bytes) > maxSize) {
             msg.error = "Request entity too large";
             msg.state = HTTrequestMSG::FINISH;
             return false;
@@ -304,7 +304,7 @@ bool HTTPParser::saveRequestBodyToFile(const std::string& body, std::string& fil
     return true;  // Retorna verdadeiro se tudo ocorrer bem
 }
 
-bool HTTPParser::processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize) {
+bool HTTPParser::processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg) {
     std::string delimiter = "--" + boundary + "\r\n";
     std::string endDelimiter = "--" + boundary + "--";
     size_t pos = 0;

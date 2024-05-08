@@ -44,7 +44,7 @@ public:
     static bool parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize);
     static std::string methodToString(HTTrequestMSG::Method method);
     static bool processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t maxSize);
-    static bool processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize);
+    static bool processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg);
     static void parsePart(const std::string& part, HTTrequestMSG& msg);
     static std::string getBoundary(const std::string& contentType);
     static void setupCGIEnvironment(HTTrequestMSG& msg);
