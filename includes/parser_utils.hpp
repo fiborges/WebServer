@@ -2,7 +2,6 @@
 #define PARSER_UTILS_HPP
 
 #include "librarie.hpp"
-#include <cctype>
 
 class ParserUtils {
 public:

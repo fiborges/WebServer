@@ -11,8 +11,10 @@
 #include <set>
 #include <stack>
 #include <cstring>
+#include <fcntl.h>
 #include <algorithm>
 #include <cctype>
+#include <unistd.h>
 #include <cstdlib>
 #include <functional>
 

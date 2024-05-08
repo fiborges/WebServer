@@ -1,6 +1,5 @@
 #include "../includes/librarie.hpp"
-#include "../includes/URIparser.hpp"
-
+#include "../includes/RequestParser.hpp"
 
 void printHttpRequest(const HTTrequestMSG& msg) {
     std::cout << "Method: " << HTTPParser::methodToString(msg.method) << "\n";
@@ -9,7 +8,7 @@ void printHttpRequest(const HTTrequestMSG& msg) {
     std::cout << "Version: " << msg.version << "\n";
     std::cout << "Headers:\n";
     for (std::map<std::string, std::string>::const_iterator it = msg.headers.begin(); it != msg.headers.end(); ++it) {
-        std::cout << "  " << it->first << ": " << it->second << "\n\n";
+        std::cout << "  " << it->first << ": " << it->second << "\n";
     }
     if (!msg.body.empty()) {
         std::cout << "Body: " << msg.body << "\n";
@@ -23,6 +22,7 @@ void printHttpRequest(const HTTrequestMSG& msg) {
     }
     std::cout << "\n";
 }
+
 
 int main() {
     // Simulação de uma requisição HTTP GET
@@ -46,14 +46,31 @@ int main() {
         "DELETE /resource/12345 HTTP/1.1\r\n"
         "Host: www.example.com\r\n\r\n";
 
-    // Simulação de uma requisição CGI
     std::string cgiRequest = 
-        "POST /cgi-bin/script.cgi?name=value HTTP/1.1\r\n"
-        "Host: www.example.com\r\n"
-        "Content-Type: application/x-www-form-urlencoded\r\n"
-        "Content-Length: 13\r\n"
-        "\r\n"
-        "data=hello+world";
+    "POST /bin-cgi HTTP/1.1\r\n"
+    "Host: localhost:8080\r\n"
+    "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0\r\n"
+    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
+    "Accept-Language: en-US,en;q=0.5\r\n"
+    "Accept-Encoding: gzip, deflate, br\r\n"
+    "Content-Type: multipart/form-data; boundary=---------------------------269449056911015867562387764176\r\n"
+    "Content-Length: 1276\r\n"
+    "Origin: http://localhost:8080\r\n"
+    "Connection: keep-alive\r\n"
+    "Referer: http://localhost:8080/index.html\r\n"
+    "Upgrade-Insecure-Requests: 1\r\n"
+    "Sec-Fetch-Dest: document\r\n"
+    "Sec-Fetch-Mode: navigate\r\n"
+    "Sec-Fetch-Site: same-origin\r\n"
+    "Sec-Fetch-User: ?1\r\n"
+    "\r\n"
+    "-----------------------------269449056911015867562387764176\r\n"
+    "Content-Disposition: form-data; name=\"file\"; filename=\"main.cpp\"\r\n"
+    "Content-Type: text/x-c++src\r\n"
+    "\r\n"
+    "Conteúdo do arquivo aqui\r\n"
+    "-----------------------------269449056911015867562387764176--\r\n";
+
 
     HTTPParser parser;
     HTTrequestMSG msg;
@@ -89,77 +106,20 @@ int main() {
     msg = HTTrequestMSG();
 
     // Testar a requisição CGI
-    std::cout << GREEN << "Testa requisição CGI:\n" << RESET;
+   std::cout << GREEN << "Testa requisição CGI:\n" << RESET;
     if (parser.parseRequest(cgiRequest, msg, 10000)) {
         printHttpRequest(msg);
+        if (msg.is_cgi) {
+            std::cout << BLUE << "CGI Environment Variables:\n" << RESET;
+            for (int i = 0; i < msg.cgi_env.size(); ++i) {
+                std::map<std::string, std::string>::const_iterator it = msg.cgi_env.begin();
+                std::advance(it, i);
+                std::cout << "  " << it->first << ": " << it->second << "\n";
+            }
+        }
     } else {
         std::cout << RED << "Erro parser da requisição CGI.\n" << RESET;
     }
 
     return 0;
 }
-
-
-
-
-/*int main() {
-    // Simulação de uma requisição HTTP normal
-    std::string httpRequest = 
-        "GET /index.html HTTP/1.1\r\n"
-        "Host: www.example.com\r\n"
-        "Connection: keep-alive\r\n"
-        "Accept-Language: en-US,en;q=0.9\r\n"
-        "Content-Length: 0\r\n\r\n";
-
-    // Simulação de uma requisição CGI
-    std::string cgiRequest = 
-        "POST /cgi-bin/script.cgi?name=value HTTP/1.1\r\n"
-        "Host: www.example.com\r\n"
-        "Content-Type: application/x-www-form-urlencoded\r\n"
-        "Content-Length: 13\r\n"
-        "\r\n"
-        "data=hello+world";
-
-    HTTPParser parser;
-    HTTrequestMSG msg;
-
-    std::cout << GREEN << "Teste da requisição HTTP normal:\n" << RESET;
-    if (parser.parseRequest(httpRequest, msg, 10000)) {
-        std::cout << "Method: " << parser.methodToString(msg.method) << std::endl;
-        std::cout << "Path: " << msg.path << std::endl;
-        std::cout << "Query: " << msg.query << std::endl;
-        std::cout << "Version: " << msg.version << std::endl;
-        std::cout << "Headers:\n";
-        for (std::map<std::string, std::string>::iterator it = msg.headers.begin(); it != msg.headers.end(); ++it) {
-            std::cout << "  " << it->first << ": " << it->second << std::endl;
-        }
-        std::cout << "Body: " << msg.body << "\n\n";
-    } else {
-        std::cout << "Erro ao parsear a requisição HTTP normal.\n";
-    }
-
-    // LIMPA msg para o próximo teste
-    msg = HTTrequestMSG();
-
-    std::cout << GREEN << "Teste da requisição CGI:\n" << RESET;
-    if (parser.parseRequest(cgiRequest, msg, 10000)) {
-        std::cout << "Method: " << parser.methodToString(msg.method) << std::endl;
-        std::cout << "Path: " << msg.path << std::endl;
-        std::cout << "Query: " << msg.query << std::endl;
-        std::cout << "Version: " << msg.version << std::endl;
-        std::cout << "CGI: " << (msg.is_cgi ? "Yes" : "No") << std::endl;
-        std::cout << "CGI Environment Variables:\n";
-        for (std::map<std::string, std::string>::iterator it = msg.cgi_env.begin(); it != msg.cgi_env.end(); ++it) {
-            std::cout << "  " << it->first << ": " << it->second << std::endl;
-        }
-        std::cout << "Headers:\n";
-        for (std::map<std::string, std::string>::iterator it = msg.headers.begin(); it != msg.headers.end(); ++it) {
-            std::cout << "  " << it->first << ": " << it->second << std::endl;
-        }
-        std::cout << "Body: " << msg.body << "\n\n";
-    } else {
-        std::cout << "Erro ao parsear a requisição CGI.\n";
-    }
-
-    return 0;
-}*/

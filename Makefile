@@ -29,7 +29,7 @@ $(DIR_BUILD)/%.o	:	$(DIR_SRCS)/%.cpp
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 	@echo "${GREEN}Compilation of $< OK!${NC}"
 
-all: loading_effect $(NAME)
+all: $(NAME)
 
 clean:
 	@$(RM) $(BUILD)
