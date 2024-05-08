@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <netinet/in.h>
@@ -29,8 +30,83 @@ void send_html_page(int client_socket) {
     while (std::getline(file, line)) {
         response += line;
     }
-	std::cout << "==========\n\n" << response << "==========\n\n";
+	//std::cout << "==========\n\n" << response << "==========\n\n";
     send(client_socket, response.c_str(), response.size(), 0);
+}
+
+std::string	read_all_body(int client_socket)
+{
+	char	line[1024];
+	std::string	until_body;
+
+	//while (1)
+	//{
+	//	int bytes = read(client_socket, line, 1024);
+	//	if (bytes == -1)
+	//	{
+	//		std::cerr << "Error on recv\n";
+	//		exit(EXIT_FAILURE);
+	//	}
+	//	else if (bytes == 0)
+	//		break;
+	//	std::string	tmp(line);
+	//	until_body.append(tmp);
+	//	//if (until_body.find("\r\n\r\n"))
+	//	//	break;
+	//}
+
+
+	while (1)
+	{
+		memset(line, 0, 1024);
+		ssize_t bytesRead = read(client_socket, line, 1023);
+
+		if (bytesRead < 0)
+		{
+			//handleError("Error reading from socket.");
+			exit(-1);
+		}
+
+		//until_body += line;
+		until_body.append(line, bytesRead);
+
+		if (bytesRead < 1023)
+			break;
+	}
+
+	std::cout << "\n\n=====What we extract from client request here:=====\n\n";
+	std::cout << until_body;
+
+	//if (until_body.find("Content-Length:") != std::string::npos)
+	//{
+	//	std::cout << "\nWe found the Content-Length header!\n";
+	//	int	content_length;
+
+	//	int i = 16;
+	//	std::string	n_bytes;
+
+	//	while(std::isdigit(until_body[until_body.find("Content-Length: ") + i]))
+	//	{
+	//		std::cout << until_body[until_body.find("Content-Length: ") + i] << std::endl;
+	//		n_bytes = n_bytes + until_body[until_body.find("Content-Length: ") + i];
+	//		i++;
+	//	}
+
+	//	content_length = atoi(n_bytes.c_str());
+	//	std::cout << "\nn_bytes string = " << n_bytes << std::endl;
+	//	std::cout << "\nContent length found = " << content_length << std::endl;
+
+	//	char	rest_of_body[content_length];
+
+	//	recv(client_socket, rest_of_body, content_length, 0);
+
+	//	until_body.append(rest_of_body);
+
+	//	std::cout << "\n\n=====ALL body=====\n\n";
+	//	std::cout << until_body;
+	//}
+
+	return (until_body);
 }
 
 int	main(int argc, char **argv, char **envp)
@@ -81,18 +157,18 @@ int	main(int argc, char **argv, char **envp)
 			exit(EXIT_FAILURE);
 		}
 
-		char	buffer[30000] = {0};
+		//char	buffer[30000] = {0};
 		std::string	buffer_in_string;
-		//while (valread > 0)
-		//{
-		read(new_socket, buffer, 30000);
-		printf("%s\n", buffer);
-		//}
 
-		if (strstr(buffer, "GET /index.html") != NULL)
+		buffer_in_string = read_all_body(new_socket);
+
+		//read(new_socket, buffer, 30000);
+		//printf("%s\n", buffer);
+
+		if (strstr(buffer_in_string.c_str(), "GET /index.html") != NULL)
 			send_html_page(new_socket);
-		else if (strstr(buffer, "POST /cgi-bin") != NULL)
-			cgi.PerformCGI(new_socket, buffer);
+		else if (strstr(buffer_in_string.c_str(), "POST /cgi-bin") != NULL)
+			cgi.PerformCGI(new_socket, buffer_in_string);
 		else
 			write(new_socket, hello.c_str(), hello.length());
 		printf("==========Response sent==========\n");

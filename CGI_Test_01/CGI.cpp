@@ -6,11 +6,12 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/07 16:00:48 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/08 17:13:22 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGI.hpp"
+#include <fstream>
 
 CGI::CGI()
 {}
@@ -18,13 +19,26 @@ CGI::CGI()
 CGI::~CGI()
 {}
 
-void	CGI::PerformCGI(const int ClientSocket, char buffer_in[30000])
+void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
 {
 	// Read the HTTP request headers
 	std::string	header(buffer_in);
 
-	std::cout << "Buffer_in:\n\n";
-	std::cout << buffer_in;
+    // Open a file for writing
+    std::ofstream outputFile("output_file.txt", std::ios::out | std::ios::binary);
+    if (!outputFile.is_open())
+    {
+        std::cerr << "Error: Unable to open file for writing." << std::endl;
+        return;
+    }
+
+    // Write the contents of buffer_in to the file
+    outputFile.write(buffer_in.c_str(), buffer_in.size());
+
+    // Close the file
+    outputFile.close();
+	//std::cout << "Buffer_in:\n\n";
+	//std::cout << buffer_in;
 
 // ===============================================================
 
@@ -41,10 +55,10 @@ void	CGI::PerformCGI(const int ClientSocket, char buffer_in[30000])
 			boundary_pos++;
 		}
 	}
-	std::cout << "Here is the Boundary:\n\n";
-	std::cout << boundary;
+	//std::cout << "Here is the Boundary:\n\n";
+	//std::cout << boundary;
 
-	std::cout << "\nFinish here!!!!\n";
+	//std::cout << "\nFinish here!!!!\n";
 	// Read the request body and extract file data
 
 	std::string	file_data;
@@ -59,9 +73,9 @@ void	CGI::PerformCGI(const int ClientSocket, char buffer_in[30000])
 		file_data = header.substr(body_start);
 	}
 
-	std::cout << "Here is the File_Data:\n\n";
-	std::cout << file_data;
-	std::cout << "\nFinish here!!\n";
+	//std::cout << "Here is the File_Data:\n\n";
+	//std::cout << file_data;
+	//std::cout << "\nFinish here!!\n";
 	// Construct the command-line argument containing the request body
     //std::string python_arg = "--request-body=" + file_data;
 	std::string python_arg = file_data;
@@ -95,8 +109,8 @@ void	CGI::PerformCGI(const int ClientSocket, char buffer_in[30000])
 		python_args[2] = python_arg.c_str(); // Pass request body as argument
 		python_args[3] = NULL;
 
-		std::cout << "Request body argument sending to the script:\n";
-		std::cout << python_args[2];
+		//std::cout << "Request body argument sending to the script:\n";
+		//std::cout << python_args[2];
 		dup2(this->P_FD[1], STDOUT_FILENO);
 
 		execve(python_args[0], const_cast<char**>(python_args), NULL);

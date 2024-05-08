@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/07 09:57:57 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/08 16:55:49 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ class CGI
 		~CGI();
 
 		// Public Method
-		void	PerformCGI(const int ClientSocket, char buffer_in[30000]);
+		void	PerformCGI(const int ClientSocket, std::string buffer_in);
 };
 
 #endif
