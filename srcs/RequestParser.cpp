@@ -17,7 +17,6 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
     }
     if (msg.is_cgi && msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
-        //printf("----------Boundary FUNCAO PRINCIPAL: %s\n", boundary.c_str());
         if (boundary.empty()) {
             msg.error = "Bad Request: No boundary in multipart/form-data";
             return false;
@@ -36,6 +35,17 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
             msg.body = raw.substr(0, msg.content_length);
             raw.erase(0, msg.content_length);
         }
+    }
+    if (!msg.body.empty()) {
+        std::string tempFilePath = generateTempFileName();
+        if (!saveRequestBodyToFile(msg.body, tempFilePath)) {
+            msg.error = "Failed to save request body to file";
+            return false;
+        } else {
+            std::cout << "Request body saved to " << tempFilePath << std::endl;
+        }
+        msg.temp_file_path = tempFilePath;
+        printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
     }
     return true;
 }
@@ -233,28 +243,6 @@ std::string HTTPParser::methodToString(HTTrequestMSG::Method method) {
     }
 }
 
-bool HTTPParser::processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize) {
-    std::string delimiter = "--" + boundary + "\r\n";
-    std::string endDelimiter = "--" + boundary + "--";
-    size_t pos = 0;
-    size_t endPos = 0;
-
-    while ((pos = raw.find(delimiter, pos)) != std::string::npos) {
-        pos += delimiter.length();
-        endPos = raw.find(delimiter, pos);
-        if (endPos == std::string::npos) {
-            endPos = raw.find(endDelimiter, pos);
-            if (endPos != std::string::npos) {
-                parsePart(raw.substr(pos, endPos - pos), msg);
-                break;
-            }
-        }
-        parsePart(raw.substr(pos, endPos - pos - 2), msg); // -2 to handle the trailing "\r\n"
-        pos = endPos;
-    }
-    return true;  // Garanta que este método retorna um bool
-}
-
 void HTTPParser::parsePart(const std::string& part, HTTrequestMSG& msg) {
     std::istringstream stream(part);
     std::string line;
@@ -270,21 +258,77 @@ void HTTPParser::parsePart(const std::string& part, HTTrequestMSG& msg) {
         if (inHeader) {
             headers += line + "\n";
         } else {
-            content += line + "\n";
+            content += line;
         }
     }
+
     // Process headers and content here
     std::istringstream headerStream(headers);
     std::string header;
-    while (std::getline(headerStream, header, '\n')) {
+    while (std::getline(headerStream, header)) {
+        if (header.empty()) continue;
         size_t pos = header.find(": ");
         if (pos != std::string::npos) {
             std::string key = header.substr(0, pos);
             std::string value = header.substr(pos + 2);
-            msg.headers[key] = value;
+            msg.headers[key] = value;  // Atualiza os cabeçalhos do HTTPrequestMSG
         }
     }
 
-    // Save content to msg.body or do additional processing if needed
-    msg.body = content;
+    // Anexa o conteúdo extraído ao corpo do HTTPrequestMSG
+    msg.body += content;
 }
+
+
+std::string HTTPParser::generateTempFileName() {
+    char buffer[] = "/tmp/tempfileXXXXXX";  // Path para o arquivo temporário com placeholders para mkstemp
+    int fd = mkstemp(buffer);  // Cria um arquivo temporário seguro
+    if (fd == -1) {
+        std::cerr << "Failed to create a temporary file: " << std::strerror(errno) << std::endl;
+        return "";  // Retorna string vazia em caso de erro
+    }
+
+    close(fd);  // Fecha o arquivo pois apenas queremos o nome
+    return std::string(buffer);  // Retorna o caminho para o arquivo temporário
+}
+
+bool HTTPParser::saveRequestBodyToFile(const std::string& body, std::string& filePath) {
+    std::ofstream outputFile(filePath.c_str(), std::ofstream::out | std::ofstream::trunc | std::ofstream::binary);  // Abre o arquivo para escrita
+    if (!outputFile) {
+        std::cerr << "Failed to open the file for writing: " << filePath << std::endl;
+        return false;  // Retorna falso se falhar ao abrir o arquivo
+    }
+
+    outputFile << body;  // Escreve o corpo no arquivo
+    outputFile.close();  // Fecha o arquivo
+    return true;  // Retorna verdadeiro se tudo ocorrer bem
+}
+
+bool HTTPParser::processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize) {
+    std::string delimiter = "--" + boundary + "\r\n";
+    std::string endDelimiter = "--" + boundary + "--";
+    size_t pos = 0;
+    size_t endPos = raw.find(delimiter);
+
+    while (endPos != std::string::npos) {
+        size_t start = pos + delimiter.length();
+        endPos = raw.find(delimiter, start);
+        if (endPos == std::string::npos) endPos = raw.find(endDelimiter, start);
+        if (endPos != std::string::npos) {
+            parsePart(raw.substr(start, endPos - start), msg); // Processa cada parte
+            pos = endPos + delimiter.length();
+        }
+    }
+
+    // Após processar todas as partes, salva o corpo completo no arquivo temporário
+    std::string tempFilePath = generateTempFileName();
+    if (!saveRequestBodyToFile(msg.body, tempFilePath)) {
+        msg.error = "Failed to save request body to file";
+        return false;
+    }
+    std::cout << BLUE << "Request body saved to " << RESET << tempFilePath << std::endl;
+    msg.temp_file_path = tempFilePath;
+
+    return true;
+}
+

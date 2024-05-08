@@ -189,7 +189,7 @@ void ParserClass::confirmListenSettings(const ParserUtils::Strings& parameters, 
     ensureCorrectArgNumber(parameters, parameters.size() != 2);
 
     int portNumber = std::atoi(parameters[1].c_str());
-    if (portNumber < 3 || portNumber > 65535){
+    if (portNumber < 1025 || portNumber > 9999 || portNumber == 3306 || portNumber == 5432){
         throw ConfigError(createErrorMsg(RED "Configuration Error: The port number '" + parameters[1] + 
             "' is invalid. Port numbers must be between 3 and 65535. Please specify a valid port number." RESET));
     }

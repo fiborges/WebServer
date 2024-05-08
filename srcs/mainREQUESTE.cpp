@@ -3,9 +3,9 @@
 
 void printHttpRequest(const HTTrequestMSG& msg) {
     // Impressão dos headers
-    std::cout << "Headers:\n";
+    std::cout << YELLOW << "Headers:\n" << RESET;
     for (std::map<std::string, std::string>::const_iterator it = msg.headers.begin(); it != msg.headers.end(); ++it) {
-        std::cout << "  " << it->first << ": " << it->second << "\n";
+        std::cout << "  " << it->first << YELLOW << "-----------> " << RESET << it->second << "\n";
     }
     // Impressão das variáveis de ambiente CGI
     if (msg.is_cgi) {
@@ -16,8 +16,6 @@ void printHttpRequest(const HTTrequestMSG& msg) {
     }
     std::cout << "\n";
 }
-
-
 
 int main() 
 {
