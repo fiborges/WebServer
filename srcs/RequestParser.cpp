@@ -5,108 +5,87 @@ const std::string HTTPParser::FINAL_CHUNK = "0\r\n\r\n";
 const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
-    // Parse headers first
     if (!parseHeader(raw, msg)) {
+        msg.error = "Header parsing failed";
         return false;
     }
 
-    // Check if it's multipart/form-data
-    std::string contentType = msg.headers["Content-Type"];
-    if (contentType.find("multipart/form-data") != std::string::npos) {
-    std::string boundary = getBoundary(contentType);
-    if (boundary.empty()) {
-        msg.error = "Bad Request: No boundary in multipart/form-data";
-        return false;
-    }
-    // Treat multipart/form-data requests as CGI if it meets additional criteria
     if (msg.path.find("cgi") != std::string::npos) {
         msg.is_cgi = true;
-        printf("entrei aqui\n");
-        printf("msg.is_cgi: %d\n", msg.is_cgi);
-        setupCGIEnvironment(msg); // Configure CGI environment variables
-    }
-    // Process multipart data
-    return processMultipartData(raw, boundary, msg, maxSize);
-}
-    printf("\n\nRequest Path: %s\n\n", msg.path.c_str());
-    if (msg.path.find("cgi") != std::string::npos) {
-        printf("entrei aqui");
-        printf("msg.isggi: %d", msg.is_cgi);
-        msg.is_cgi = true;
-        setupCGIEnvironment(msg); // Configure CGI environment variables
-    }
-
-    // Continue with other processing if not multipart/form-data
-    while (msg.state != HTTrequestMSG::FINISH) {
-        switch (msg.state) {
-        case HTTrequestMSG::TRANSFER_CONTROL:
-            if (isChunkedTransferEncoding(msg)) {
-                msg.state = HTTrequestMSG::CHUNKED;
-            } else {
-                setContentLength(msg);
-                msg.state = msg.content_length > 0 ? HTTrequestMSG::CONTENT_LENGTH : HTTrequestMSG::FINISH;
-            }
-            break;
-        case HTTrequestMSG::BODY:
-        case HTTrequestMSG::CONTENT_LENGTH:
-            if (msg.process_bytes + raw.length() > maxSize) {
-                msg.error = "Request entity too large";
-                msg.state = HTTrequestMSG::FINISH;
-                return false;
-            }
-            msg.body.append(raw);
-            raw.clear();
-            msg.process_bytes = msg.body.length();
-            if (msg.process_bytes >= msg.content_length) {
-                msg.state = HTTrequestMSG::FINISH;
-            }
-            break;
-        case HTTrequestMSG::CHUNKED:
-            return processChunkedBody(raw, msg, maxSize);
-        }
-    }
-
-    // Set CGI environment variables if it's a CGI request
-    if (msg.is_cgi) {
+        std::string boundary = getBoundary(msg.headers["Content-Type"]);
         setupCGIEnvironment(msg);
     }
+    if (msg.is_cgi && msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
+        std::string boundary = getBoundary(msg.headers["Content-Type"]);
+        //printf("----------Boundary FUNCAO PRINCIPAL: %s\n", boundary.c_str());
+        if (boundary.empty()) {
+            msg.error = "Bad Request: No boundary in multipart/form-data";
+            return false;
+        }
+        return processMultipartData(raw, boundary, msg, maxSize);
 
+    } else if (msg.headers["transfer-encoding"].find("chunked") != std::string::npos) {
+        return processChunkedBody(raw, msg, maxSize);
+    } else {
+        setContentLength(msg);
+        if (msg.content_length > 0) {
+            if (raw.length() < msg.content_length) {
+                msg.error = "Incomplete Data";
+                return false;
+            }
+            msg.body = raw.substr(0, msg.content_length);
+            raw.erase(0, msg.content_length);
+        }
+    }
     return true;
 }
 
-void HTTPParser::setupCGIEnvironment(const HTTrequestMSG& msg) {
-    // Cria uma cópia do mapa de cabeçalhos
-    std::map<std::string, std::string> headers_copy = msg.headers;
+std::string HTTPParser::getBoundary(const std::string& contentType) {
+    size_t pos = contentType.find("boundary=");
+    if (pos == std::string::npos) {
+        return "";  // Não foi encontrado boundary.
+    }
+    pos += 9; // Tamanho de "boundary="
+    size_t end = contentType.find(';', pos);
+    if (end == std::string::npos) {
+        end = contentType.length();
+    }
+    
+    while (pos < end && std::isspace(contentType[pos])) {
+        ++pos;
+    }
+    while (end > pos && std::isspace(contentType[end - 1])) {
+        --end;
+    }
+    return contentType.substr(pos, end - pos);
+}
 
-    // Cria uma cópia do mapa de variáveis de ambiente
-    std::map<std::string, std::string> cgi_env_copy = msg.cgi_env;
+void HTTPParser::setupCGIEnvironment(HTTrequestMSG& msg) {
+    msg.cgi_env["REQUEST_METHOD"] = methodToString(msg.method);
+    msg.cgi_env["REQUEST_URI"] = msg.path;
+    msg.cgi_env["SERVER_PROTOCOL"] = msg.version;
+    msg.cgi_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    msg.cgi_env["SCRIPT_NAME"] = msg.path;
+    msg.cgi_env["SERVER_NAME"] = msg.headers["Host"];
 
-    // Define as variáveis de ambiente relevantes
-    cgi_env_copy["REQUEST_METHOD"] = methodToString(msg.method);
-    cgi_env_copy["REQUEST_URI"] = msg.path;
-    cgi_env_copy["SERVER_PROTOCOL"] = msg.version;
-    if (msg.method == HTTrequestMSG::POST) {
-        cgi_env_copy["CONTENT_TYPE"] = headers_copy["Content-Type"];
-        cgi_env_copy["CONTENT_LENGTH"] = utils::to_string(msg.content_length);
+    if (msg.is_cgi) {
+        // Definir variáveis de ambiente específicas para CGI
+        if (msg.method == HTTrequestMSG::POST) {
+            msg.cgi_env["CONTENT_TYPE"] = msg.headers["Content-Type"];
+            msg.cgi_env["CONTENT_LENGTH"] = std::to_string(msg.content_length);
+        }
+        if (msg.method == HTTrequestMSG::GET && !msg.query.empty()) {
+            msg.cgi_env["QUERY_STRING"] = msg.query;
+        }
+        // Verificar se a solicitação é multipart e incluir o boundary, se aplicável
+        if (!msg.boundary.empty()) {
+            msg.cgi_env["BOUNDARY"] = msg.boundary;
+        }
     }
-    if (msg.method == HTTrequestMSG::GET && !msg.query.empty()) {
-        cgi_env_copy["QUERY_STRING"] = msg.query;
-    }
-    if (!msg.boundary.empty()) {
-        cgi_env_copy["BOUNDARY"] = msg.boundary;
-    }
-    cgi_env_copy["GATEWAY_INTERFACE"] = "CGI/1.1";
-    cgi_env_copy["SCRIPT_NAME"] = msg.path;
-    cgi_env_copy["SERVER_NAME"] = headers_copy["Host"];
-    size_t colonPos = headers_copy["Host"].find(":");
-    std::string serverPort = (colonPos != std::string::npos) ? headers_copy["Host"].substr(colonPos + 1) : "80";
-    cgi_env_copy["SERVER_PORT"] = serverPort;
-
-    // Print statements for debugging
-    printf("CGI Environment Variables:\n");
-    for (const auto& cgi_var : cgi_env_copy) {
-        printf("  %s: %s\n", cgi_var.first.c_str(), cgi_var.second.c_str());
-    }
+    // Configurar o número da porta do servidor
+    size_t colonPos = msg.headers["Host"].find(":");
+    std::string serverPort = (colonPos != std::string::npos) ? msg.headers["Host"].substr(colonPos + 1) : "80";
+    msg.cgi_env["SERVER_PORT"] = serverPort;
 }
 
 bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
@@ -115,9 +94,8 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
         // Encontra o final da linha que contém o tamanho do chunk
         size_t chunkSizeEnd = raw.find(HTTP_LINE_BREAK, pos);
         if (chunkSizeEnd == std::string::npos) {
-            return false; // Não foi possível encontrar o final da linha do tamanho do chunk
+            return false; // Não foi possível encontrar o final da linha
         }
-
         // Extrai o tamanho do chunk e converte de hex para decimal
         std::string chunkSizeHex = raw.substr(pos, chunkSizeEnd - pos);
         int chunkSize = parseHex(chunkSizeHex);
@@ -126,7 +104,6 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
             msg.state = HTTrequestMSG::FINISH;
             return true;
         }
-
         // Calcula a posição inicial dos dados do chunk
         size_t chunkDataStart = chunkSizeEnd + HTTP_LINE_BREAK.length();
         size_t chunkDataEnd = chunkDataStart + chunkSize;
@@ -293,7 +270,7 @@ void HTTPParser::parsePart(const std::string& part, HTTrequestMSG& msg) {
         if (inHeader) {
             headers += line + "\n";
         } else {
-            content += line;
+            content += line + "\n";
         }
     }
     // Process headers and content here
@@ -311,20 +288,3 @@ void HTTPParser::parsePart(const std::string& part, HTTrequestMSG& msg) {
     // Save content to msg.body or do additional processing if needed
     msg.body = content;
 }
-
-
-std::string HTTPParser::getBoundary(const std::string& contentType) {
-    size_t pos = contentType.find("boundary=");
-    if (pos == std::string::npos) {
-        return "";  // Return an empty string if no boundary is found
-    }
-    std::string boundary = contentType.substr(pos + 9); // 9 is the length of "boundary="
-    if (boundary.front() == '"') {
-        boundary = boundary.substr(1, boundary.size() - 2); // Remove quotes if present
-    }
-    return boundary;
-}
-
-
-
-

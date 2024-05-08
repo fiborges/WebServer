@@ -13,6 +13,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cctype>
+#include <unistd.h>
 #include <cstdlib>
 #include <functional>
 

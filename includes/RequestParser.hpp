@@ -30,6 +30,7 @@ public:
     std::string boundary;
     bool is_cgi;
     std::map<std::string, std::string> cgi_env;
+    //std::string temp_file_path;
 
     HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_length(0), process_bytes(0), is_cgi(false) {}
 };
@@ -46,7 +47,9 @@ public:
     static bool processMultipartData(const std::string& raw, const std::string& boundary, HTTrequestMSG& msg, size_t maxSize);
     static void parsePart(const std::string& part, HTTrequestMSG& msg);
     static std::string getBoundary(const std::string& contentType);
-    static void setupCGIEnvironment(const HTTrequestMSG& msg);
+    static void setupCGIEnvironment(HTTrequestMSG& msg);
+    //static std::string generateTempFileName();
+    //static bool saveRequestBodyToFile(const std::string& body, std::string& filePath);
 
 private:
     static void readRequestLine(std::istringstream& stream, HTTrequestMSG& msg);
