@@ -47,6 +47,10 @@ public:
     //Verifica se um método HTTP específico é permitido para este contexto de configuração
     bool validateMethod(const std::string& httpMethod) const;
 
+    conf_File_Info* getServerConfigurations() const {
+        return Server_configurations;
+    }
+
 private:
     //Armazena as configurações do servidor associadas ao ParserConfig, incluem informações como a porta, o nome, o índice padrão, o diretório raiz, etc.
     conf_File_Info* Server_configurations;

@@ -5,6 +5,7 @@
 #include "parser_utils.hpp"
 #include "parserConfig.hpp"
 #include "conf_info.hpp"
+#include "get.hpp"
 
 class ParserClass;
 //Ponteiro para mapear o conf_File_Info que valida e aplica diretivas.

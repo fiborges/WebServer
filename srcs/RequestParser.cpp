@@ -1,4 +1,5 @@
 #include "../includes/RequestParser.hpp"
+#include <sstream>
 
 const std::string HTTPParser::HTTP_LINE_BREAK = "\r\n";
 const std::string HTTPParser::FINAL_CHUNK = "0\r\n\r\n";
@@ -82,7 +83,10 @@ void HTTPParser::setupCGIEnvironment(HTTrequestMSG& msg) {
         // Definir variáveis de ambiente específicas para CGI
         if (msg.method == HTTrequestMSG::POST) {
             msg.cgi_env["CONTENT_TYPE"] = msg.headers["Content-Type"];
-            msg.cgi_env["CONTENT_LENGTH"] = std::to_string(msg.content_length);
+            //msg.cgi_env["CONTENT_LENGTH"] = std::to_string(msg.content_length);
+            std::stringstream ss;
+            ss << msg.content_length;
+            msg.cgi_env["CONTENT_LENGTH"] = ss.str();
         }
         if (msg.method == HTTrequestMSG::GET && !msg.query.empty()) {
             msg.cgi_env["QUERY_STRING"] = msg.query;
@@ -231,7 +235,14 @@ bool HTTPParser::isChunkedTransferEncoding(const HTTrequestMSG& msg) {
 void HTTPParser::setContentLength(HTTrequestMSG& msg){
     if (msg.headers.count("Content-Length") > 0) {
         std::string contentLengthStr = msg.headers["Content-Length"];
-        if (!contentLengthStr.empty() && std::all_of(contentLengthStr.begin(), contentLengthStr.end(), ::isdigit)) {
+        bool allDigits = true;
+        for (std::string::const_iterator it = contentLengthStr.begin(); it != contentLengthStr.end(); ++it) {
+            if (!::isdigit(*it)) {
+                allDigits = false;
+                break;
+            }
+        }
+        if (!contentLengthStr.empty() && allDigits) {
             int contentLength = std::atoi(contentLengthStr.c_str());
             msg.content_length = contentLength;
         } else {
