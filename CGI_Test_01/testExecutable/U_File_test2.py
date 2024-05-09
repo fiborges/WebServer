@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/06 16:52:56 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/08 17:11:46 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/09 16:48:14 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -44,7 +44,8 @@ if filename and file_content:
     # Save the file to the upload directory
     filename = os.path.join(upload_dir, filename)
     with open(filename, 'wb') as f:
-        f.write(file_content.encode())
+        f.write(file_content)
+        #f.write(file_content.encode())
 
     print("HTTP/1.1 200 OK\r\n")
     print("Content-Type: text/html\r\n")

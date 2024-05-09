@@ -18,43 +18,68 @@
 
 #define PORT 8080
 
-void send_html_page(int client_socket) {
-    std::ifstream file("./html_test/index.html");
-    if (!file.is_open()) {
-        std::cerr << "Failed to open HTML file." << std::endl;
-        return;
-    }
+void send_html_page(int client_socket)
+{
+	std::ifstream file("./html_test/index.html");
 
-    std::string line;
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
-    while (std::getline(file, line)) {
-        response += line;
-    }
-	//std::cout << "==========\n\n" << response << "==========\n\n";
-    send(client_socket, response.c_str(), response.size(), 0);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open HTML file." << std::endl;
+		return;
+	}
+
+	std::string line;
+	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+
+	while (std::getline(file, line))
+	{
+		response += line;
+	}
+
+	send(client_socket, response.c_str(), response.size(), 0);
+}
+
+void	print_the_request(std::string& total_request)
+{
+	// std::cout << "\n\n===============WRITING ONE TEST===============\n\n";
+
+	// std::string	testString;
+
+	// for (int i = 0; i < 10; i++)
+	// {
+	// 	if (i == 2)
+	// 		testString.append(1, '\0');
+	// 	else
+	// 		testString.append(1, 'a' + i);
+	// }
+
+	// std::cout << testString << std::endl;
+
+	std::cout << "\n\n===============END POINT OF THE TEST===============\n\n";
+
+	std::cout << "\n\n===============WRITING ALL THE REQUEST IN THE SCREEN===============\n\n";
+
+	std::cout << total_request;
+
+	std::cout << "\n\n===============END POINT OF THE REQUEST===============\n\n";
+
+	std::ofstream	out("LOG.txt", std::ios::binary | std::ios::app);
+
+	if (!out.is_open())
+	{
+		return ;
+	}
+
+	out.write(total_request.c_str(), total_request.size());
+
+	out.close();
+
 }
 
 std::string	read_all_body(int client_socket)
 {
-	char	line[1024];
-	std::string	until_body;
-
-	//while (1)
-	//{
-	//	int bytes = read(client_socket, line, 1024);
-	//	if (bytes == -1)
-	//	{
-	//		std::cerr << "Error on recv\n";
-	//		exit(EXIT_FAILURE);
-	//	}
-	//	else if (bytes == 0)
-	//		break;
-	//	std::string	tmp(line);
-	//	until_body.append(tmp);
-	//	//if (until_body.find("\r\n\r\n"))
-	//	//	break;
-	//}
-
+	char		line[1024];
+	std::string	total_request;
 
 	while (1)
 	{
@@ -63,50 +88,19 @@ std::string	read_all_body(int client_socket)
 
 		if (bytesRead < 0)
 		{
-			//handleError("Error reading from socket.");
+			std::cerr << "Error in read\n";
 			exit(-1);
 		}
 
-		//until_body += line;
-		until_body.append(line, bytesRead);
+		total_request.append(line, bytesRead);
 
 		if (bytesRead < 1023)
 			break;
 	}
 
-	std::cout << "\n\n=====What we extract from client request here:=====\n\n";
-	std::cout << until_body;
+	print_the_request(total_request);
 
-	//if (until_body.find("Content-Length:") != std::string::npos)
-	//{
-	//	std::cout << "\nWe found the Content-Length header!\n";
-	//	int	content_length;
-
-	//	int i = 16;
-	//	std::string	n_bytes;
-
-	//	while(std::isdigit(until_body[until_body.find("Content-Length: ") + i]))
-	//	{
-	//		std::cout << until_body[until_body.find("Content-Length: ") + i] << std::endl;
-	//		n_bytes = n_bytes + until_body[until_body.find("Content-Length: ") + i];
-	//		i++;
-	//	}
-
-	//	content_length = atoi(n_bytes.c_str());
-	//	std::cout << "\nn_bytes string = " << n_bytes << std::endl;
-	//	std::cout << "\nContent length found = " << content_length << std::endl;
-
-	//	char	rest_of_body[content_length];
-
-	//	recv(client_socket, rest_of_body, content_length, 0);
-
-	//	until_body.append(rest_of_body);
-
-	//	std::cout << "\n\n=====ALL body=====\n\n";
-	//	std::cout << until_body;
-	//}
-
-	return (until_body);
+	return (total_request);
 }
 
 int	main(int argc, char **argv, char **envp)
@@ -115,7 +109,6 @@ int	main(int argc, char **argv, char **envp)
 	(void)argv;
 	(void)envp;
 	int		server_fd, new_socket;
-	//long	valread = 1;
 	struct	sockaddr_in	address;
 
 	CGI	cgi;
@@ -157,23 +150,24 @@ int	main(int argc, char **argv, char **envp)
 			exit(EXIT_FAILURE);
 		}
 
-		//char	buffer[30000] = {0};
 		std::string	buffer_in_string;
 
 		buffer_in_string = read_all_body(new_socket);
 
-		//read(new_socket, buffer, 30000);
-		//printf("%s\n", buffer);
-
-		if (strstr(buffer_in_string.c_str(), "GET /index.html") != NULL)
+		if (buffer_in_string.find("GET /index.html") != std::string::npos)
 			send_html_page(new_socket);
-		else if (strstr(buffer_in_string.c_str(), "POST /cgi-bin") != NULL)
+		else if (buffer_in_string.find("POST /cgi-bin") != std::string::npos)
 			cgi.PerformCGI(new_socket, buffer_in_string);
+		else if (buffer_in_string.find("GET /close_server") != std::string::npos)
+		{
+			close(new_socket);
+			close(server_fd);
+			break;
+		}
 		else
 			write(new_socket, hello.c_str(), hello.length());
 		printf("==========Response sent==========\n");
 		close(new_socket);
 	}
-	close(server_fd);
 	return (0);
 }
