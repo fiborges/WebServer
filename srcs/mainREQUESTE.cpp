@@ -85,8 +85,8 @@ int main()
         "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
         "Accept-Language: en-US,en;q=0.5\r\n"
         "Accept-Encoding: gzip, deflate, br\r\n"
-        "Content-Type: application/x-www-form-urlencoded\r\n"
-        "Content-Length: 27\r\n"
+        "Content-Type: multipart/form-data; boundary=---------------------------1234567890\r\n"
+        "Content-Length: 329\r\n"
         "Connection: keep-alive\r\n"
         "Referer: http://localhost:8080/index.html\r\n"
         "Upgrade-Insecure-Requests: 1\r\n"
@@ -95,7 +95,17 @@ int main()
         "Sec-Fetch-Site: same-origin\r\n"
         "Sec-Fetch-User: ?1\r\n"
         "\r\n"
-        "name=John+Doe&age=23";
+        "-----------------------------1234567890\r\n"
+        "Content-Disposition: form-data; name=\"text\"\r\n"
+        "\r\n"
+        "This is some text content.\r\n"
+        "-----------------------------1234567890\r\n"
+        "Content-Disposition: form-data; name=\"file\"; filename=\"example.txt\"\r\n"
+        "Content-Type: text/plain\r\n"
+        "\r\n"
+        "This is the content of the file.\r\n"
+        "-----------------------------1234567890--\r\n";
+
 
          std::string postRequestCGI= 
         "POST /bin-cgi HTTP/1.1\r\n"
