@@ -4,12 +4,13 @@ const std::string HTTPParser::HTTP_LINE_BREAK = "\r\n";
 const std::string HTTPParser::FINAL_CHUNK = "0\r\n\r\n";
 const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 
+
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
     if (!parseHeader(raw, msg)) {
         msg.error = "Header parsing failed";
         return false;
     }
-
+    setContentLength(msg);
     if (msg.path.find("cgi") != std::string::npos) {
         msg.is_cgi = true;
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
@@ -26,7 +27,6 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
     } else if (msg.headers["transfer-encoding"].find("chunked") != std::string::npos) {
         return processChunkedBody(raw, msg, maxSize);
     } else {
-        setContentLength(msg);
         if (msg.content_length > 0) {
             if (raw.length() < msg.content_length) {
                 msg.error = "Incomplete Data";
@@ -228,11 +228,20 @@ bool HTTPParser::isChunkedTransferEncoding(const HTTrequestMSG& msg) {
     return false;
 }
 
-void HTTPParser::setContentLength(HTTrequestMSG& msg) {
-    if (msg.headers.count("content-length") > 0) {
-        msg.content_length = std::atoi(msg.headers["content-length"].c_str());
+void HTTPParser::setContentLength(HTTrequestMSG& msg){
+    if (msg.headers.count("Content-Length") > 0) {
+        std::string contentLengthStr = msg.headers["Content-Length"];
+        if (!contentLengthStr.empty() && std::all_of(contentLengthStr.begin(), contentLengthStr.end(), ::isdigit)) {
+            int contentLength = std::atoi(contentLengthStr.c_str());
+            msg.content_length = contentLength;
+        } else {
+            msg.error = "Invalid Content-Length value";
+        }
+    } else {
+        msg.content_length = 0;
     }
 }
+
 
 std::string HTTPParser::methodToString(HTTrequestMSG::Method method) {
     switch (method) {
