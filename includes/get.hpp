@@ -6,12 +6,15 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/09 16:01:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/10 14:58:47 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// para POST -> depois de corre ./webserver config.confabrimos novo terminal e corremos 
+// para post depois de correr  ./webserver config.conf  abrimos novo terminal e corremos
 // curl -X POST -d "param1=value1&param2=value2" http://localhost:8080
+
+// abrir outro terminal e verificar as portas que estam a ouvir e se estam a ler
+// netstat -tuln ou netstat -tuln | grep 8081 ou netstat -tuln | grep '808[0-6]'
 
 #ifndef GET_HPP
 # define GET_HPP
@@ -51,98 +54,81 @@
 # include <iostream>
 # include <fstream>
 # include <sstream>
-# include <iomanip>
 # include <cstdlib> // for exit() // OK
 # include <dirent.h> // for opendir() and closedir() // OK
+# include <sys/stat.h> // for mkdir()
 
-#include <sys/stat.h>
+#include <ftw.h>
 
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
 
-
 class ServerInfo
 {
-    private:
-        int sockfd;
-        sockaddr_in serv_addr;
-        std::vector<sockaddr_in> cli_addrs;
-        std::string response;
-        std::string rootUrl;
-        std::vector<int> clientSockets;
+	private:
+		int sockfd;
+		sockaddr_in serv_addr;
+		std::vector<sockaddr_in> cli_addrs;
+		std::string response;
+		std::string rootUrl;
+		std::vector<int> clientSockets;
 
-    public:
-        ServerInfo();
-        ~ServerInfo();
+	public:
+		ServerInfo();
+		~ServerInfo();
 
-        std::vector<int>& getSockets() { return clientSockets; }
+		std::vector<int>& getSockets();
 
-        void setSocketFD(int socket);
-        int getSocketFD() const;
+		void	setSocketFD(int socket);
+		int	getSocketFD() const;
 
-        sockaddr_in& getAddress();
-        const sockaddr_in& getAddress() const;
+		sockaddr_in&	getAddress();
+		const sockaddr_in& getAddress() const;
 
-        sockaddr_in& getClientAddress();
-        const sockaddr_in& getClientAddress() const;
+		sockaddr_in&	getClientAddress();
+		const sockaddr_in&	getClientAddress() const;
 
-        void setPort(int port);
-        int getPort() const;
+		void	setResponse(const std::string& response);
+		std::string	getResponse() const;
 
-        void setResponse(const std::string& response);
-        std::string getResponse() const;
-
-        void setAddress(const sockaddr_in& address);
+		void	setAddress(const sockaddr_in& address);
 		
-		void handleGetRequest(const std::string& path, ServerInfo& server);
-        void handleUnknownRequest();
-        void handlePostRequest(const std::string& path, HTTrequestMSG& request);
+		void	handleGetRequest(const std::string& path, ServerInfo& server);
+		void	handleUnknownRequest();
+		void	handlePostRequest(const std::string& path, HTTrequestMSG& request);
 
-        void decodeAndStoreUrl(const std::string& url);
-        std::string getRootUrl() const;
+		void	decodeAndStoreUrl(const std::string& url);
+		std::string	getRootUrl() const;
 
-        std::string	decodeUrl(const std::string& url);
+		std::string	decodeUrl(const std::string& url);
 
-        std::vector<int>& getClientSockets() {
-            return clientSockets;
-        }
+		std::vector<int>&	getClientSockets();
 
-        void addSocketToList(int sockfd) {
-            clientSockets.push_back(sockfd);
-        }
+		void	addSocketToList(int sockfd);
 
-        void addClient(int clientSocket, sockaddr_in clientAddress) {
-            clientSockets.push_back(clientSocket);
-            cli_addrs.push_back(clientAddress);
-        }
+		void	addClient(int clientSocket, sockaddr_in clientAddress);
 
-        void removeSocketFromList(int sockfd) {
-            clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), sockfd), clientSockets.end());
-        }
-
+		void	removeSocketFromList(int sockfd);
 };
 
 void		handleError(const std::string& errorMessage); //, int errorCode);
-
 bool		is_directory(const std::string &path);
+void		setupDirectory(ServerInfo& server, conf_File_Info& config);
+int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+//int print_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf); // *DEBUG*
+int remove_directory(const char *path);
 
-void handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
+void		handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
+int			acceptConnection(ServerInfo& server, sockaddr_in& cli_addr);
+std::string	readRequest(int sockfd);
+void		processRequest(const std::string& request, ServerInfo& server);
 
+void		setupServer(ServerInfo& server, conf_File_Info& config);
 
-int acceptConnection(ServerInfo& server, sockaddr_in& cli_addr);
-std::string readRequest(int sockfd);
-void processRequest(const std::string& request, ServerInfo& server);
+int			acceptConnection(std::vector<int>& sockets, ServerInfo& server, sockaddr_in& cli_addr);
+std::string	readRequest(int sockfd);
+void		processRequest(const std::string& request, ServerInfo& server);
 
-void setupServer(ServerInfo& server, conf_File_Info& config);
-
-
-int acceptConnection(std::vector<int>& sockets, ServerInfo& server, sockaddr_in& cli_addr);
-
-std::string readRequest(int sockfd);
-void processRequest(const std::string& request, ServerInfo& server);
-
-void runServer(std::vector<ServerInfo>& servers);
-
+void		runServer(std::vector<ServerInfo>& servers);
 
 #endif
-

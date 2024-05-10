@@ -6,36 +6,29 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/09 16:00:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/10 14:29:49 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/get.hpp"
-#include "../includes/librarie.hpp"
-#include "../includes/parser.hpp"
-
-#include <fcntl.h>
-
-// abrir outro terminal e verificar as portas que estam a ouvir
-// netstat -tuln | grep 8081
 
 ServerInfo::ServerInfo()
 {
-    std::cout << "\nCriando o socket..." << std::endl; // *DEBUG*
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-    {
-        handleError("Error opening socket.");
-        exit(-1);
-    }
-	this->rootUrl = "resources/website";
-    std::cout << "Socket criado com sucesso." << std::endl; // *DEBUG*
+	//std::cout << "\nCriando o socket..." << std::endl; // *DEBUG*
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0)
+	{
+		handleError("Error opening socket.");
+		exit(-1);
+	}
+	this->rootUrl = "resources";
+	//std::cout << "Socket criado com sucesso." << std::endl; // *DEBUG*
 }
 ServerInfo::~ServerInfo()
 {
-	std::cout << "Before closing socket, file descriptor: " << sockfd << std::endl; // *DEBUG*
+	//std::cout << "Before closing socket, file descriptor: " << sockfd << std::endl; // *DEBUG*
 	//close(sockfd);
-	std::cout << "After closing socket, file descriptor: " << sockfd << std::endl; // *DEBUG*
+	//std::cout << "After closing socket, file descriptor: " << sockfd << std::endl; // *DEBUG*
 }
 
 void	ServerInfo::setSocketFD(int socket)
@@ -79,6 +72,30 @@ std::string ServerInfo::getRootUrl() const
 	return rootUrl;
 }
 
+std::vector<int>& ServerInfo::getSockets()
+{
+	return clientSockets;
+}
+
+std::vector<int>& ServerInfo::getClientSockets() {
+	return clientSockets;
+}
+
+void ServerInfo::addSocketToList(int sockfd)
+{
+	clientSockets.push_back(sockfd);
+}
+
+void ServerInfo::addClient(int clientSocket, sockaddr_in clientAddress)
+{
+	clientSockets.push_back(clientSocket);
+	cli_addrs.push_back(clientAddress);
+}
+
+void ServerInfo::removeSocketFromList(int sockfd)
+{
+	clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), sockfd), clientSockets.end());
+}
 
 
 // Function to decode the URL
@@ -110,7 +127,7 @@ std::string ServerInfo::decodeUrl(const std::string& url)
 // Function to handle errors without exiting the program
 void handleError(const std::string& errorMessage) //, int errorCode)
 {
-	std::cerr << RED1 << errorMessage << RESET << std::endl;
+	std::cerr << RED1 << "\n" << errorMessage << RESET << std::endl;
 	//exit(-1);
 }
 
@@ -135,20 +152,95 @@ bool is_directory(const std::string &path)
 //     return S_ISDIR(buf.st_mode);
 // }
 
+void setupDirectory(ServerInfo& server, conf_File_Info& config)
+{
+    //std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
+    //std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
+
+    chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    std::string rootDir = config.RootDirectory;
+    std::string rootUrl = server.getRootUrl();
+    if(rootDir.substr(0, rootUrl.length()) != rootUrl)
+    {
+        handleError("Error: Root URL should star with \'resources\' directory.");
+        exit(-1);
+    }
+
+    std::string subDir = rootDir.substr(rootUrl.length());
+
+    if(!subDir.empty() && subDir[0] == '/')
+        subDir = subDir.substr(1);
+
+    std::string path = "resources/";
+    std::stringstream ss(subDir);
+    std::string token;
+
+    while(std::getline(ss, token, '/')) {
+        path += token + "/";
+        if(!is_directory(path)) {
+            if(mkdir(path.c_str(), 0777) == -1) {
+                perror("Error creating directory");
+                exit(EXIT_FAILURE);
+            }
+
+            if(chmod(path.c_str(), 0777) == -1) {
+                perror("Error changing directory permissions");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+}
+
+int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+	(void)sb;
+	(void)ftwbuf;
+	std::string filename(fpath);
+
+	// std::cout << RED << "Processing file: " << filename << RESET << std::endl; // *DEBUG*
+	if(filename.find("/website") == std::string::npos && filename.find("/upload") == std::string::npos) {
+		// std::cout << RED << "Removing file or directory: " << filename << RESET << std::endl; // *DEBUG*
+		if(typeflag == FTW_D) {
+			return rmdir(fpath);
+		} else {
+			return remove(fpath);
+		}
+	}
+	return 0;
+}
+
+// int print_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) // *DEBUG*
+// {
+// 	(void)sb;
+// 	(void)ftwbuf;
+// 	(void)typeflag;
+// 	std::cout << RED << "Found file or directory: " << fpath << RESET << std::endl;
+// 	return 0;
+// }
+
+int remove_directory(const char *path)
+{
+	//std::cout << RED << "Path provided to remove_directory: " << path << RESET << std::endl; // *DEBUG*
+	//std::cout << RED << "Calling nftw for directory: " << path << RESET << std::endl; // *DEBUG*
+	int result = nftw(path, remove_file, 64, FTW_DEPTH | FTW_PHYS);
+	return result;
+}
+
+
 void setupServer(ServerInfo& server, conf_File_Info& config)
 {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        perror("Error on socket creation");
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "Socket created, file descriptor: " << sockfd << std::endl; // *DEBUG*
+	if (sockfd < 0) {
+		perror("Error on socket creation");
+		exit(EXIT_FAILURE);
+	}
+	//std::cout << "Socket created, file descriptor: " << sockfd << std::endl; // *DEBUG*
 
 	server.addSocketToList(sockfd);
 
-    server.setSocketFD(sockfd);
-    std::cout << "Socket file descriptor stored in server object: " << server.getSocketFD() << std::endl; // *DEBUG*
-
+	server.setSocketFD(sockfd);
+	//std::cout << "Socket file descriptor stored in server object: " << server.getSocketFD() << std::endl; // *DEBUG*
 
 	sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
@@ -156,25 +248,18 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(config.portListen);
 
-	std::cout << "Setting up server on port: " << config.portListen << std::endl; // *DEBUG*
+	//std::cout << "Setting up server on port: " << config.portListen << std::endl; // *DEBUG*
 
-	if (config.portListen <= 0 || config.portListen > 65535) {
-	std::cerr << "Invalid port number: " << config.portListen << std::endl;
-	exit(EXIT_FAILURE);
-    }
+	if (config.portListen <= 0 || config.portListen > 65535) // acho que a Filipa ja trata
+	{
+		std::cerr << "Invalid port number: " << config.portListen << std::endl;
+		exit(EXIT_FAILURE);
+	}
 
-	std::cout << GREEN << "\nWaiting for client...\n" << RESET << std::endl;
 
 	server.setAddress(serv_addr);
 
-	std::cout << "Root directory: " << config.RootDirectory << std::endl; // *DEBUG*
-	std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
-
-	// if(config.RootDirectory != server.getRootUrl())
-	// {
-	// 	handleError("Error in conf file root");
-	// 	exit(-1);
-	// }
+	setupDirectory(server,config);
 
 	int opt = 1;
 	if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
@@ -185,68 +270,24 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 	}
 
 	server.setSocketFD(sockfd);
-	std::cout << "Socket file descriptor stored in server object: " << server.getSocketFD() << std::endl; // *DEBUG*
+	//std::cout << "Socket file descriptor stored in server object: " << server.getSocketFD() << std::endl; // *DEBUG*
 
 	if (bind(server.getSocketFD(), (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		perror("Error on binding");
+		handleError("Error on binding.");
 		exit(EXIT_FAILURE);
 	}
 
-	std::cout << "Socket file descriptor before listen: " << server.getSocketFD() << std::endl; // *DEBUG*
+	//std::cout << "Socket file descriptor before listen: " << server.getSocketFD() << std::endl; // *DEBUG*
 	if (listen(server.getSocketFD(), 128) < 0)
 	{
 		perror("Error on listen");
 		exit(EXIT_FAILURE);
 	}
-}
-
-
-int acceptConnection(std::vector<int>& sockets, ServerInfo& server, sockaddr_in& cli_addr)
-{
-    fd_set read_fds;
-    struct timeval timeout;
-
-    FD_ZERO(&read_fds);
-
-    int max_fd = -1;
-    for (std::vector<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
-        FD_SET(*it, &read_fds);
-        if (*it > max_fd) {
-            max_fd = *it;
-        }
-    }
-
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-
-    std::cout << "Before select" << std::endl;
 	
-    int selectResult = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
-    if (selectResult < 0) {
-        perror("Error on select");
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "After select, result: " << selectResult << std::endl;
-
-    for (std::vector<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
-        if (FD_ISSET(*it, &read_fds)) {
-            std::cout << "Socket file descriptor before accept: " << *it << std::endl;
-
-            socklen_t clilen = sizeof(cli_addr);
-            int newsockfd = accept(*it, (struct sockaddr *)&cli_addr, &clilen);
-            if (newsockfd < 0) {
-                perror("Error on accept");
-                exit(EXIT_FAILURE);
-            }
-            server.addClient(newsockfd, cli_addr);
-            std::cout << "New socket file descriptor: " << newsockfd << std::endl;
-            return newsockfd;
-        }
-    }
-
-    std::cout << "No client was ready to connect" << std::endl;
-    return -1;
+	std::cout << std::endl;
+	std::cout << CYAN << "Server with port: " << RESET << config.portListen << CYAN << " is ready!" << RESET;// << std::endl;
 }
 
 // Read the request from the client and return it as a string
@@ -323,12 +364,10 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	}
 }
 
-
 void ServerInfo::handleUnknownRequest()
 {
 		std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
 }
-
 
 void ServerInfo::handleGetRequest(const std::string& path, ServerInfo& server)
 {
@@ -352,30 +391,61 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo& server)
 	}
 }
 
+void* handleConnection(void* arg)
+{
+	int newsockfd = *(int*)arg;
+	ServerInfo& server = *(ServerInfo*)arg;
+	std::string request = readRequest(newsockfd);
+	processRequest(request, server);
+	write(newsockfd, server.getResponse().c_str(), server.getResponse().length());
+	close(newsockfd);
+	return NULL;
+}
+
 void runServer(std::vector<ServerInfo>& servers)
 {
-    for(std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it) {
-        ServerInfo& server = *it;
-        std::vector<int>& sockets = server.getSockets();
-        std::cout << "Running server with socket file descriptors: ";
-        for (std::vector<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
-            std::cout << *it << " ";
-        }
-        std::cout << std::endl;
-        sockaddr_in cli_addr;
-        while (1)
-        {
-            int newsockfd = acceptConnection(sockets, server, cli_addr);
-            if (newsockfd < 0)
-                continue;
-            std::string request = readRequest(newsockfd);
-            //std::string request = receiveRequest(newsockfd);
-			//std::cout << "Running server on port: " << server.getPortListen() << std::endl;
-            processRequest(request, server);
-            write(newsockfd, server.getResponse().c_str(), server.getResponse().length());
-            std::cout << "Before close, socket file descriptor: " << newsockfd << std::endl; // *DEBUG*
-			close(newsockfd);
-			server.removeSocketFromList(newsockfd);
-        }
-    }
+	fd_set read_fds;
+	FD_ZERO(&read_fds);
+
+	int max_fd = -1;
+	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+	{
+		int sockfd = it->getSocketFD();
+		FD_SET(sockfd, &read_fds);
+		if (sockfd > max_fd)
+			max_fd = sockfd;
+	}
+	
+	std::cout << GREEN << "\n\n<========== Waiting for client ==========>\n" << RESET << std::endl;
+
+	while (1)
+	{
+		fd_set temp_fds = read_fds;
+		if (select(max_fd + 1, &temp_fds, NULL, NULL, NULL) < 0)
+		{
+			perror("Error on select");
+			exit(EXIT_FAILURE);
+		}
+
+		for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+		{
+			int sockfd = it->getSocketFD();
+			if (FD_ISSET(sockfd, &temp_fds))
+			{
+				sockaddr_in cli_addr;
+				socklen_t clilen = sizeof(cli_addr);
+				int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+				if (newsockfd < 0)
+				{
+					perror("Error on accept");
+					exit(EXIT_FAILURE);
+				}
+
+				std::string request = readRequest(newsockfd);
+				processRequest(request, *it);
+				write(newsockfd, it->getResponse().c_str(), it->getResponse().length());
+				close(newsockfd);
+			}
+		}
+	}
 }

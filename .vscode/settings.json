@@ -1,6 +1,7 @@
 {
-    "files.associations": {
-        "stdexcept": "cpp",
-        "iosfwd": "cpp"
-    }
+  "files.associations": {
+    "stdexcept": "cpp",
+    "iosfwd": "cpp"
+  },
+  "C_Cpp_Runner.msvcBatchPath": ""
 }
