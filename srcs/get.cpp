@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/10 14:29:49 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/12 20:42:48 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,9 +48,11 @@ void ServerInfo::setAddress(const sockaddr_in& address)
 
 const sockaddr_in& ServerInfo::getAddress() const
 {
-	return serv_addr;
+	if (cli_addrs.empty()) {
+		throw std::runtime_error("No addresses available");
+	}
+	return cli_addrs[0];
 }
-
 
 void	ServerInfo::setResponse(const std::string& response)
 {
@@ -154,42 +156,42 @@ bool is_directory(const std::string &path)
 
 void setupDirectory(ServerInfo& server, conf_File_Info& config)
 {
-    //std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
-    //std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
+	//std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
+	//std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
 
-    chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    std::string rootDir = config.RootDirectory;
-    std::string rootUrl = server.getRootUrl();
-    if(rootDir.substr(0, rootUrl.length()) != rootUrl)
-    {
-        handleError("Error: Root URL should star with \'resources\' directory.");
-        exit(-1);
-    }
+	std::string rootDir = config.RootDirectory;
+	std::string rootUrl = server.getRootUrl();
+	if(rootDir.substr(0, rootUrl.length()) != rootUrl)
+	{
+		handleError("Error: Root URL should star with \'resources\' directory.");
+		exit(-1);
+	}
 
-    std::string subDir = rootDir.substr(rootUrl.length());
+	std::string subDir = rootDir.substr(rootUrl.length());
 
-    if(!subDir.empty() && subDir[0] == '/')
-        subDir = subDir.substr(1);
+	if(!subDir.empty() && subDir[0] == '/')
+		subDir = subDir.substr(1);
 
-    std::string path = "resources/";
-    std::stringstream ss(subDir);
-    std::string token;
+	std::string path = "";
+	std::stringstream ss(rootDir);
+	std::string token;
 
-    while(std::getline(ss, token, '/')) {
-        path += token + "/";
-        if(!is_directory(path)) {
-            if(mkdir(path.c_str(), 0777) == -1) {
-                perror("Error creating directory");
-                exit(EXIT_FAILURE);
-            }
+	while(std::getline(ss, token, '/')) {
+		path += token + "/";
+		if(!is_directory(path)) {
+			if(mkdir(path.c_str(), 0777) == -1) {
+				perror("Error creating directory");
+				exit(EXIT_FAILURE);
+			}
 
-            if(chmod(path.c_str(), 0777) == -1) {
-                perror("Error changing directory permissions");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+			if(chmod(path.c_str(), 0777) == -1) {
+				perror("Error changing directory permissions");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
 }
 
 int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -255,7 +257,6 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 		std::cerr << "Invalid port number: " << config.portListen << std::endl;
 		exit(EXIT_FAILURE);
 	}
-
 
 	server.setAddress(serv_addr);
 
@@ -369,26 +370,109 @@ void ServerInfo::handleUnknownRequest()
 		std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
 }
 
-void ServerInfo::handleGetRequest(const std::string& path, ServerInfo& server)
-{
-	std::string fullPath = "resources/website" + (path == "/" ? "/index.html" : path);
-	std::ifstream file(fullPath.c_str());
+std::string readDirectoryContent(const std::string& directoryPath) {
+	DIR* dir;
+	struct dirent* ent;
+	std::vector<std::string> files;
 
-	if (!file)
+	if ((dir = opendir(directoryPath.c_str())) != NULL) {
+		// Add all the files and directories within directory to the files vector
+		while ((ent = readdir(dir)) != NULL) {
+			std::string filename = ent->d_name;
+			if (filename != "." && filename != "..") { // Skip the current directory and parent directory
+				files.push_back(filename);
+			}
+		}
+		closedir(dir);
+	} else {
+		// Could not open directory
+		std::cerr << "Could not open directory: " << directoryPath << std::endl;
+		std::cout << "Failed to open directory: " << directoryPath << std::endl; // Print the directory path
+		return "";
+	}
+
+	// Sort the files vector
+	std::sort(files.begin(), files.end());
+
+	// Convert the files vector to a string
+	std::string directoryContent;
+	for (std::vector<std::string>::const_iterator i = files.begin(); i != files.end(); ++i) {
+		directoryContent += *i;
+		directoryContent += "\n";
+	}
+
+	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
+	return directoryContent;
+}
+
+std::string readFileContent(const std::string& filePath) {
+	std::ifstream fileStream(filePath.c_str()); // Use c_str() to convert std::string to const char*
+	if (!fileStream) {
+		std::cerr << "File could not be opened: " << filePath << std::endl;
+		return "";
+	}
+	std::string fileContent((std::istreambuf_iterator<char>(fileStream)), std::istreambuf_iterator<char>());
+	return fileContent;
+}
+
+bool ends_with(const std::string& value, const std::string& ending) {
+	if (ending.size() > value.size()) return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+std::string ServerInfo::getContentType(const std::string& filePath) {
+	std::string contentType;
+	if (ends_with(filePath, ".html")) {
+		contentType = "text/html";
+	} else if (ends_with(filePath, ".css")) {
+		contentType = "text/css";
+	} else if (ends_with(filePath, ".js")) {
+		contentType = "application/javascript";
+	} else {
+		// Default to text/plain for unknown file types
+		contentType = "text/plain";
+	}
+
+	//std::cout << "Content type for " << filePath << ": " << contentType << std::endl; // *DEBUG*
+	return contentType;
+}
+
+
+void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
+{
+	std::string fullPath = "resources/website" + path;
+	//std::cout << "Full path: " << fullPath << std::endl; // Print the full path
+
+	struct stat buffer;
+	if (stat(fullPath.c_str(), &buffer) == 0)
 	{
+		if (S_ISDIR(buffer.st_mode))
+		{
+			if (path == "/") // Special case for root directory // comment to pass google test
+			{
+				fullPath += "index.html";
+				std::string fileContent = readFileContent(fullPath);
+				std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
+				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+			}
+			else // Handle other directories
+			{
+				std::string directoryContent = readDirectoryContent(fullPath);
+				if (!directoryContent.empty())
+					server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + directoryContent);
+				else
+					server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nDirectory not found\nERROR 404\n");
+			}
+		}
+		else if (S_ISREG(buffer.st_mode)) // Handle file
+		{
+			std::string fileContent = readFileContent(fullPath);
+			std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
+			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+		}
+	}
+	else // Handle non-existent file or directory
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-	}
-	else if (is_directory(fullPath))
-	{
-		// If the path is a directory, return a response with the directory content
-		server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nDirectory content");
-	}
-	else
-	{
-		// If the file exists and is not a directory, return a response with the file content
-		std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-		server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + fileContent);
-	}
 }
 
 void* handleConnection(void* arg)

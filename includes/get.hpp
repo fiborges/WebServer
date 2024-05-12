@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/10 14:58:47 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/12 20:42:05 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,10 +58,12 @@
 # include <dirent.h> // for opendir() and closedir() // OK
 # include <sys/stat.h> // for mkdir()
 
-#include <ftw.h>
+# include <ftw.h>
+# include <signal.h>
 
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
+# include "parser.hpp"
 
 class ServerInfo
 {
@@ -82,11 +84,7 @@ class ServerInfo
 		void	setSocketFD(int socket);
 		int	getSocketFD() const;
 
-		sockaddr_in&	getAddress();
 		const sockaddr_in& getAddress() const;
-
-		sockaddr_in&	getClientAddress();
-		const sockaddr_in&	getClientAddress() const;
 
 		void	setResponse(const std::string& response);
 		std::string	getResponse() const;
@@ -109,6 +107,14 @@ class ServerInfo
 		void	addClient(int clientSocket, sockaddr_in clientAddress);
 
 		void	removeSocketFromList(int sockfd);
+
+		void setRootUrl(const std::string& url) {
+			rootUrl = url;
+		}
+
+		std::string getContentType(const std::string& filePath);
+
+	
 };
 
 void		handleError(const std::string& errorMessage); //, int errorCode);
@@ -130,5 +136,9 @@ std::string	readRequest(int sockfd);
 void		processRequest(const std::string& request, ServerInfo& server);
 
 void		runServer(std::vector<ServerInfo>& servers);
+
+
+std::string readDirectoryContent(const std::string& directoryPath);
+std::string readFileContent(const std::string& filePath);
 
 #endif

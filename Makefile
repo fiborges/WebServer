@@ -6,7 +6,7 @@ NAME		=	webserver
 INCLUDES	=	-I include
 CC			=	g++
 RM			=	rm -rf
-CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
+CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -g #-fsanitize=address
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
 SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp\
