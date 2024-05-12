@@ -6,15 +6,20 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/12 20:42:05 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/12 21:39:47 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 // para post depois de correr  ./webserver config.conf  abrimos novo terminal e corremos
 // curl -X POST -d "param1=value1&param2=value2" http://localhost:8080
+// curl -X POST -d "param1=value1&param2=value2" http://localhost:8085/post_endpoint
+
 
 // abrir outro terminal e verificar as portas que estam a ouvir e se estam a ler
 // netstat -tuln ou netstat -tuln | grep 8081 ou netstat -tuln | grep '808[0-6]'
+
+// para testar o get
+// curl -v http://localhost:8080/index.html
 
 #ifndef GET_HPP
 # define GET_HPP
@@ -94,6 +99,7 @@ class ServerInfo
 		void	handleGetRequest(const std::string& path, ServerInfo& server);
 		void	handleUnknownRequest();
 		void	handlePostRequest(const std::string& path, HTTrequestMSG& request);
+		void	parseMultipartFormData(const std::string& body, std::string& text, std::string& file); //
 
 		void	decodeAndStoreUrl(const std::string& url);
 		std::string	getRootUrl() const;
@@ -112,7 +118,6 @@ class ServerInfo
 			rootUrl = url;
 		}
 
-		std::string getContentType(const std::string& filePath);
 
 	
 };
@@ -138,6 +143,8 @@ void		processRequest(const std::string& request, ServerInfo& server);
 void		runServer(std::vector<ServerInfo>& servers);
 
 
+bool ends_with(const std::string& value, const std::string& ending);
+std::string getContentType(const std::string& filePath);
 std::string readDirectoryContent(const std::string& directoryPath);
 std::string readFileContent(const std::string& filePath);
 

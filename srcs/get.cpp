@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/12 20:42:48 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/12 21:38:06 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,7 +353,7 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	}
 	else if (request.method == HTTrequestMSG::POST)
 	{
-		//server.handlePostRequest(path, request);
+		server.handlePostRequest(path, request);
 	}
 	else if (request.method == HTTrequestMSG::DELETE)
 	{
@@ -370,44 +370,11 @@ void ServerInfo::handleUnknownRequest()
 		std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
 }
 
-std::string readDirectoryContent(const std::string& directoryPath) {
-	DIR* dir;
-	struct dirent* ent;
-	std::vector<std::string> files;
-
-	if ((dir = opendir(directoryPath.c_str())) != NULL) {
-		// Add all the files and directories within directory to the files vector
-		while ((ent = readdir(dir)) != NULL) {
-			std::string filename = ent->d_name;
-			if (filename != "." && filename != "..") { // Skip the current directory and parent directory
-				files.push_back(filename);
-			}
-		}
-		closedir(dir);
-	} else {
-		// Could not open directory
-		std::cerr << "Could not open directory: " << directoryPath << std::endl;
-		std::cout << "Failed to open directory: " << directoryPath << std::endl; // Print the directory path
-		return "";
-	}
-
-	// Sort the files vector
-	std::sort(files.begin(), files.end());
-
-	// Convert the files vector to a string
-	std::string directoryContent;
-	for (std::vector<std::string>::const_iterator i = files.begin(); i != files.end(); ++i) {
-		directoryContent += *i;
-		directoryContent += "\n";
-	}
-
-	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
-	return directoryContent;
-}
-
-std::string readFileContent(const std::string& filePath) {
-	std::ifstream fileStream(filePath.c_str()); // Use c_str() to convert std::string to const char*
-	if (!fileStream) {
+std::string readFileContent(const std::string& filePath)
+{
+	std::ifstream fileStream(filePath.c_str());
+	if (!fileStream)
+	{
 		std::cerr << "File could not be opened: " << filePath << std::endl;
 		return "";
 	}
@@ -415,28 +382,16 @@ std::string readFileContent(const std::string& filePath) {
 	return fileContent;
 }
 
-bool ends_with(const std::string& value, const std::string& ending) {
-	if (ending.size() > value.size()) return false;
-	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+void* handleConnection(void* arg)
+{
+	int newsockfd = *(int*)arg;
+	ServerInfo& server = *(ServerInfo*)arg;
+	std::string request = readRequest(newsockfd);
+	processRequest(request, server);
+	write(newsockfd, server.getResponse().c_str(), server.getResponse().length());
+	close(newsockfd);
+	return NULL;
 }
-
-std::string ServerInfo::getContentType(const std::string& filePath) {
-	std::string contentType;
-	if (ends_with(filePath, ".html")) {
-		contentType = "text/html";
-	} else if (ends_with(filePath, ".css")) {
-		contentType = "text/css";
-	} else if (ends_with(filePath, ".js")) {
-		contentType = "application/javascript";
-	} else {
-		// Default to text/plain for unknown file types
-		contentType = "text/plain";
-	}
-
-	//std::cout << "Content type for " << filePath << ": " << contentType << std::endl; // *DEBUG*
-	return contentType;
-}
-
 
 void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 {
@@ -475,15 +430,59 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 }
 
-void* handleConnection(void* arg)
+void ServerInfo::handlePostRequest(const std::string& /*path*/, HTTrequestMSG& request)
 {
-	int newsockfd = *(int*)arg;
-	ServerInfo& server = *(ServerInfo*)arg;
-	std::string request = readRequest(newsockfd);
-	processRequest(request, server);
-	write(newsockfd, server.getResponse().c_str(), server.getResponse().length());
-	close(newsockfd);
-	return NULL;
+    // Parse the request body
+    std::string body = request.body; // This depends on how your HTTrequestMSG is structured
+
+    // Process the data (this will depend on your application)
+    // For example, let's say you're expecting two parts: text and file
+    std::string text, file;
+    parseMultipartFormData(body, text, file);
+
+    // Do something with the parts
+    // ...
+
+    // Send a response
+    std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+    response += "Received text: " + text + ", file: " + file;
+
+    // Send the response
+    // This will depend on how your server is set up
+    // ...
+}
+
+void ServerInfo::parseMultipartFormData(const std::string& body, std::string& text, std::string& file)
+{
+    std::string boundary = "-----------------------------1234567890";
+    size_t pos = body.find(boundary);
+    while (pos != std::string::npos) {
+        size_t endPos = body.find(boundary, pos + boundary.length());
+        if (endPos != std::string::npos) {
+            std::string part = body.substr(pos + boundary.length(), endPos - pos - boundary.length());
+
+            size_t namePos = part.find("name=\"");
+            if (namePos != std::string::npos) {
+                size_t nameEndPos = part.find("\"", namePos + 6);
+                if (nameEndPos != std::string::npos) {
+                    std::string name = part.substr(namePos + 6, nameEndPos - namePos - 6);
+
+                    size_t valuePos = part.find("\r\n\r\n", nameEndPos);
+                    if (valuePos != std::string::npos) {
+                        std::string value = part.substr(valuePos + 4);
+
+                        if (name == "text") {
+                            text = value;
+                        } else if (name == "file") {
+                            file = value;
+                        }
+                    }
+                }
+            }
+        }
+
+        pos = body.find(boundary, endPos + boundary.length());
+    }
 }
 
 void runServer(std::vector<ServerInfo>& servers)
@@ -533,3 +532,72 @@ void runServer(std::vector<ServerInfo>& servers)
 		}
 	}
 }
+
+
+
+
+
+
+std::string readDirectoryContent(const std::string& directoryPath)
+{
+	DIR* dir;
+	struct dirent* ent;
+	std::vector<std::string> files;
+
+	if ((dir = opendir(directoryPath.c_str())) != NULL)
+	{
+		// Add all the files and directories within directory to the files vector
+		while ((ent = readdir(dir)) != NULL)
+		{
+			std::string filename = ent->d_name;
+			if (filename != "." && filename != "..") // Skip the current directory and parent directory
+				files.push_back(filename);
+		}
+		closedir(dir);
+	}
+	else
+	{
+		// Could not open directory
+		std::cerr << "Could not open directory: " << directoryPath << std::endl;
+		std::cout << "Failed to open directory: " << directoryPath << std::endl; // Print the directory path
+		return "";
+	}
+
+	// Sort the files vector
+	std::sort(files.begin(), files.end());
+
+	// Convert the files vector to a string
+	std::string directoryContent;
+	for (std::vector<std::string>::const_iterator i = files.begin(); i != files.end(); ++i)
+	{
+		directoryContent += *i;
+		directoryContent += "\n";
+	}
+
+	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
+	return directoryContent;
+}
+
+bool ends_with(const std::string& value, const std::string& ending)
+{
+	if (ending.size() > value.size()) return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+std::string getContentType(const std::string& filePath)
+{
+	std::string contentType;
+	if (ends_with(filePath, ".html"))
+		contentType = "text/html";
+	else if (ends_with(filePath, ".css"))
+		contentType = "text/css";
+	else if (ends_with(filePath, ".js"))
+		contentType = "application/javascript";
+	else // Default to text/plain for unknown file types
+		contentType = "text/plain";
+
+	//std::cout << "Content type for " << filePath << ": " << contentType << std::endl; // *DEBUG*
+	return contentType;
+}
+
+
