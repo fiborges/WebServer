@@ -1,0 +1,24 @@
+POST /cgi-bin HTTP/1.1
+Host: localhost:8082
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: pt-PT,pt;q=0.8,en;q=0.5,en-US;q=0.3
+Accept-Encoding: gzip, deflate, br
+Content-Type: multipart/form-data; boundary=---------------------------13939045011664916734814684704
+Content-Length: 237
+Origin: http://localhost:8082
+Connection: keep-alive
+Referer: http://localhost:8082/index.html
+Upgrade-Insecure-Requests: 1
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: same-origin
+Sec-Fetch-User: ?1
+
+-----------------------------13939045011664916734814684704
+Content-Disposition: form-data; name="file"; filename="aaa.txt"
+Content-Type: text/plain
+
+ola estas bom?
+TESTE
+-----------------------------13939045011664916734814684704--
