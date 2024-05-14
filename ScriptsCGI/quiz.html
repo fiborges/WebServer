@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>School 42 Quiz</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            font-size: 20px;
+            margin: 0;
+            padding: 20px;
+            text-align: center; /* Centraliza todo o texto do corpo */
+        }
+        h1 {
+            color: #ADD8E6; /* Azul claro para o título */
+        }
+        form {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin: auto;
+            width: 70%; /* Aumenta a largura do formulário para dar mais espaço */
+            text-align: left;
+        }
+        .question {
+            color: #87CEEB; /* Azul um pouco mais claro para as perguntas */
+            margin-top: 40px; /* Aumenta a margem superior para as perguntas */
+        }
+        label {
+            color: white; /* Cor branca para as opções de resposta */
+            display: block; /* Faz cada label aparecer em uma nova linha */
+            margin-left: 20px; /* Adiciona espaço à esquerda para alinhar visualmente */
+            margin-top: 10px; /* Adiciona espaço entre as opções de resposta */
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            display: block; /* Faz o botão aparecer em bloco */
+            margin: 30px auto; /* Centraliza o botão horizontalmente e adiciona margem vertical */
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            font-size: 24px;
+            color: #FF4500;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>School 42 Quiz</h1>
+    <form action="/cgi-bin/quiz.py" method="post">
+        <div class="question">1. What is the main objective of School 42?</div>
+        <label><input type="radio" name="q1" value="A">To train professionals in humanities.</label>
+        <label><input type="radio" name="q1" value="B">To develop programming skills in its students.</label>
+        <label><input type="radio" name="q1" value="C">To offer short courses in various disciplines.</label>
+        <label><input type="radio" name="q1" value="D">To promote international student exchanges.</label>
+
+        <div class="question">2. How does School 42 evaluate its students' progress?</div>
+        <label><input type="radio" name="q2" value="A">Through periodic written exams.</label>
+        <label><input type="radio" name="q2" value="B">Using a point system earned on projects.</label>
+        <label><input type="radio" name="q2" value="C">By participating in programming competitions.</label>
+        <label><input type="radio" name="q2" value="D">Through peer-to-peer assessments and practical projects.</label>
+
+        <div class="question">3. What is a unique feature of School 42's teaching method?</div>
+        <label><input type="radio" name="q3" value="A">Traditional classes with teachers.</label>
+        <label><input type="radio" name="q3" value="B">Exclusive use of online resources.</label>
+        <label><input type="radio" name="q3" value="C">Self-taught and peer-to-peer learning without teachers.</label>
+        <label><input type="radio" name="q3" value="D">A focus solely on old programming languages.</label>
+
+        <button type="submit">Submit Answers</button>
+    </form>
+</body>
+</html>
+
+<!-- http://localhost:8080/quiz.html -->
+
+
