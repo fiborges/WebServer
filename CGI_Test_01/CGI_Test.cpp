@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/29 16:58:42 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/06 14:01:04 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/14 10:30:13 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,61 +21,64 @@ CGI::~CGI()
 // ==========PublicMethod==========
 
 void	CGI::PerformCGI(const int ClientSocket)
-{
-	this->ClientSocket_ = ClientSocket;
-	if (pipe(this->P_FD) == -1)
-	{
-		write(STDERR_FILENO, "Pipe error\n", 11);
-		exit(EXIT_FAILURE);
-	}
+{}
 
-	this->pid = fork();
+// void	CGI::PerformCGI(const int ClientSocket)
+// {
+// 	this->ClientSocket_ = ClientSocket;
+// 	if (pipe(this->P_FD) == -1)
+// 	{
+// 		write(STDERR_FILENO, "Pipe error\n", 11);
+// 		exit(EXIT_FAILURE);
+// 	}
 
-	if (pid < 0)
-	{
-		write(STDERR_FILENO, "Fork error\n", 11);
-		exit(EXIT_FAILURE);
-	}
+// 	this->pid = fork();
 
-	if (pid == 0)
-	{
-		close(this->P_FD[0]);
-		dup2(this->P_FD[1], STDOUT_FILENO);
+// 	if (pid < 0)
+// 	{
+// 		write(STDERR_FILENO, "Fork error\n", 11);
+// 		exit(EXIT_FAILURE);
+// 	}
 
-		const char*	args[2];
+// 	if (pid == 0)
+// 	{
+// 		close(this->P_FD[0]);
+// 		dup2(this->P_FD[1], STDOUT_FILENO);
 
-		args[0] = "./testExecutable/PmergeMe";
-		args[1] = "5";
-		args[2] = "2";
-		args[3] = "4";
-		args[4] = "1";
-		args[5] = "1";
-		args[6] = "0";
-		args[7] = NULL;
+// 		const char*	args[2];
 
-		execve(args[0], const_cast<char**>(args), NULL);
+// 		args[0] = "./testExecutable/PmergeMe";
+// 		args[1] = "5";
+// 		args[2] = "2";
+// 		args[3] = "4";
+// 		args[4] = "1";
+// 		args[5] = "1";
+// 		args[6] = "0";
+// 		args[7] = NULL;
 
-		write(STDERR_FILENO, "Execve fail\n", 12);
-		exit(EXIT_FAILURE);
-	}
+// 		execve(args[0], const_cast<char**>(args), NULL);
 
-	else
-	{
-		close(this->P_FD[1]);
+// 		write(STDERR_FILENO, "Execve fail\n", 12);
+// 		exit(EXIT_FAILURE);
+// 	}
 
-		char	buffer[1024];
-		int		bytes;
+// 	else
+// 	{
+// 		close(this->P_FD[1]);
 
-		std::string	header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-		write(this->ClientSocket_, header.c_str(), header.length());
+// 		char	buffer[1024];
+// 		int		bytes;
 
-		while ((bytes = read(this->P_FD[0], buffer, sizeof(buffer))) > 0)
-		{
-			write(this->ClientSocket_, buffer, strlen(buffer));
-		}
+// 		std::string	header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+// 		write(this->ClientSocket_, header.c_str(), header.length());
 
-		close(this->P_FD[0]);
-		wait(NULL);
-	}
-}
+// 		while ((bytes = read(this->P_FD[0], buffer, sizeof(buffer))) > 0)
+// 		{
+// 			write(this->ClientSocket_, buffer, strlen(buffer));
+// 		}
+
+// 		close(this->P_FD[0]);
+// 		wait(NULL);
+// 	}
+// }
 

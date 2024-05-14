@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/09 16:51:19 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/14 15:53:49 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,129 +19,210 @@ CGI::CGI()
 CGI::~CGI()
 {}
 
-void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
+void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
-	// Read the HTTP request headers
-	std::string	header(buffer_in);
+	this->ClientSocket_ = ClientSocket;
+	// std::cout << "\n[========== CGI CLASS RECIEVE ==========]\n";
 
-    // Open a file for writing
-    std::ofstream outputFile("output_file.txt", std::ios::out | std::ios::binary);
-    if (!outputFile.is_open())
-    {
-        std::cerr << "Error: Unable to open file for writing." << std::endl;
-        return;
-    }
+	// std::cout << buffer;
 
-    // Write the contents of buffer_in to the file
-    outputFile.write(buffer_in.c_str(), buffer_in.size());
-
-    // Close the file
-    outputFile.close();
-	//std::cout << "Buffer_in:\n\n";
-	//std::cout << buffer_in;
-
-// ===============================================================
-
-	// Extract the boundary string from the content-Type header
-	std::string	boundary;
-	size_t	boundary_pos = header.find("boundary=");
-	// if (boundary_pos != std::string::npos)
-	// 	boundary = header.substr(boundary_pos + 9); //Length of "boundary="
-	if (boundary_pos != std::string::npos)
-	{
-		while (header[boundary_pos + 9] != '\n' && header[boundary_pos + 9] != '\r')
-		{
-			boundary = boundary + header[boundary_pos + 9];
-			boundary_pos++;
-		}
-	}
-	//std::cout << "Here is the Boundary:\n\n";
-	//std::cout << boundary;
-
-	//std::cout << "\nFinish here!!!!\n";
-	// Read the request body and extract file data
-
-	std::string	file_data;
-	//size_t	body_start = header.find("\r\n\r\n");
-	size_t	bound_start = header.find(boundary);
-	size_t	body_start = header.find(boundary, bound_start + boundary.length());
-
-	if (body_start != std::string::npos)
-	{
-		//body_start += 4;
-		//body_start += boundary.length();
-		file_data = header.substr(body_start);
-	}
-
-	//std::cout << "Here is the File_Data:\n\n";
-	//std::cout << file_data;
-	//std::cout << "\nFinish here!!\n";
-	// Construct the command-line argument containing the request body
-    //std::string python_arg = "--request-body=" + file_data;
-	std::string python_arg = file_data;
-// ===============================================================
-
-	// Pipe creation
+	// std::cout << "\n[========== END ==========]\n";
+	(void)buffer;
+	// Creating Pipe
 	if (pipe(this->P_FD) == -1)
 	{
-		std::cout << "Error in pipe\n";
-		exit(EXIT_FAILURE);
+		std::cerr << "Error in pipe\n";
+		exit (EXIT_FAILURE);
 	}
 
-	// Fork
+	// Forking the program
 	this->pid = fork();
 	if (this->pid == -1)
 	{
-		std::cout << "Error in fork\n";
-		exit(EXIT_FAILURE);
+		std::cerr << "Error in Fork\n";
+		exit (EXIT_FAILURE);
 	}
 
 	if (this->pid == 0)
-	{
-		close(this->P_FD[0]);
-
-		//dup2(this->P_FD[1], STDOUT_FILENO);
-
-		const char*	python_args[4];
-
-		python_args[0] = "/usr/bin/python3";
-		python_args[1] = "./testExecutable/U_File_test2.py";
-		python_args[2] = python_arg.c_str(); // Pass request body as argument
-		python_args[3] = NULL;
-
-		//std::cout << "Request body argument sending to the script:\n";
-		//std::cout << python_args[2];
-		dup2(this->P_FD[1], STDOUT_FILENO);
-
-		execve(python_args[0], const_cast<char**>(python_args), NULL);
-
-		std::cout << "Error in execve\n";
-		exit(EXIT_FAILURE);
-	}
+		Child_process(buffer);
 	else
-	{
-		int	read_bytes;
-		char	buffer[1024];
-
-		close(this->P_FD[1]);
-
-		std::string	pyOutPut;
-
-		while ((read_bytes = read(this->P_FD[0], buffer, 1024)) > 0)
-		{
-			pyOutPut.append(buffer);
-		}
-		wait(NULL);
-		close(this->P_FD[0]);
-
-		// Send the Python script output back to the client
-
-		std::stringstream	s;
-
-		s << "HTTP/1.1 200 OK\r\nContent-Length: " << pyOutPut.length() << "\r\n\r\n" << pyOutPut;
-
-		std::string	response = s.str();
-
-		write(ClientSocket, response.c_str(), response.length());
-	}
+		Parent_process();
 }
+
+void	CGI::Child_process(std::string& buffer)
+{
+	// this->P_FD[0] -> ReadEnd
+	// this->P_FD[1] -> WriteEnd
+	close(this->P_FD[0]);
+	dup2(this->P_FD[1], STDOUT_FILENO);
+
+	const char*	python_args[4];
+
+	python_args[0] = "/usr/bin/python3";
+	python_args[1] = "./cgi-bin/upload.py";
+	python_args[2] = buffer.c_str();
+	python_args[3] = NULL;
+
+	execve(python_args[0], const_cast<char**>(python_args), NULL);
+
+	std::cerr << "Error in execve\n";
+	exit(EXIT_FAILURE);
+}
+
+void	CGI::Parent_process()
+{
+	close(this->P_FD[1]);
+	wait(NULL);
+
+	char		line[1024];
+	std::string	response;
+
+	response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+
+	while (1)
+	{
+		memset(line, 0, 1024);
+		ssize_t	bytesRead = read(this->P_FD[0], line, 1023);
+
+		if (bytesRead < 0)
+		{
+			std::cerr << "Error in read\n";
+			exit(-1);
+		}
+
+		response.append(line, bytesRead);
+
+		if (bytesRead < 1023)
+			break;
+	}
+	std::cout << "Response: " << response << std::endl;
+	//write(this->ClientSocket_, response.c_str(), response.length());
+	send(this->ClientSocket_, response.c_str(), response.size(), 0);
+}
+
+// void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
+// {
+// 	// Read the HTTP request headers
+// 	std::string	header(buffer_in);
+
+//     // Open a file for writing
+//     std::ofstream outputFile("output_file.txt", std::ios::out | std::ios::binary);
+//     if (!outputFile.is_open())
+//     {
+//         std::cerr << "Error: Unable to open file for writing." << std::endl;
+//         return;
+//     }
+
+//     // Write the contents of buffer_in to the file
+//     outputFile.write(buffer_in.c_str(), buffer_in.size());
+
+//     // Close the file
+//     outputFile.close();
+// 	//std::cout << "Buffer_in:\n\n";
+// 	//std::cout << buffer_in;
+
+// // ===============================================================
+
+// 	// Extract the boundary string from the content-Type header
+// 	std::string	boundary;
+// 	size_t	boundary_pos = header.find("boundary=");
+// 	// if (boundary_pos != std::string::npos)
+// 	// 	boundary = header.substr(boundary_pos + 9); //Length of "boundary="
+// 	if (boundary_pos != std::string::npos)
+// 	{
+// 		while (header[boundary_pos + 9] != '\n' && header[boundary_pos + 9] != '\r')
+// 		{
+// 			boundary = boundary + header[boundary_pos + 9];
+// 			boundary_pos++;
+// 		}
+// 	}
+// 	//std::cout << "Here is the Boundary:\n\n";
+// 	//std::cout << boundary;
+
+// 	//std::cout << "\nFinish here!!!!\n";
+// 	// Read the request body and extract file data
+
+// 	std::string	file_data;
+// 	//size_t	body_start = header.find("\r\n\r\n");
+// 	size_t	bound_start = header.find(boundary);
+// 	size_t	body_start = header.find(boundary, bound_start + boundary.length());
+
+// 	if (body_start != std::string::npos)
+// 	{
+// 		//body_start += 4;
+// 		//body_start += boundary.length();
+// 		file_data = header.substr(body_start);
+// 	}
+
+// 	//std::cout << "Here is the File_Data:\n\n";
+// 	//std::cout << file_data;
+// 	//std::cout << "\nFinish here!!\n";
+// 	// Construct the command-line argument containing the request body
+//     //std::string python_arg = "--request-body=" + file_data;
+// 	std::string python_arg = file_data;
+// // ===============================================================
+
+// 	// Pipe creation
+// 	if (pipe(this->P_FD) == -1)
+// 	{
+// 		std::cout << "Error in pipe\n";
+// 		exit(EXIT_FAILURE);
+// 	}
+
+// 	// Fork
+// 	this->pid = fork();
+// 	if (this->pid == -1)
+// 	{
+// 		std::cout << "Error in fork\n";
+// 		exit(EXIT_FAILURE);
+// 	}
+
+// 	if (this->pid == 0)
+// 	{
+// 		close(this->P_FD[0]);
+
+// 		//dup2(this->P_FD[1], STDOUT_FILENO);
+
+// 		const char*	python_args[4];
+
+// 		python_args[0] = "/usr/bin/python3";
+// 		python_args[1] = "./testExecutable/U_File_test2.py";
+// 		python_args[2] = python_arg.c_str(); // Pass request body as argument
+// 		python_args[3] = NULL;
+
+// 		//std::cout << "Request body argument sending to the script:\n";
+// 		//std::cout << python_args[2];
+// 		dup2(this->P_FD[1], STDOUT_FILENO);
+
+// 		execve(python_args[0], const_cast<char**>(python_args), NULL);
+
+// 		std::cout << "Error in execve\n";
+// 		exit(EXIT_FAILURE);
+// 	}
+// 	else
+// 	{
+// 		int	read_bytes;
+// 		char	buffer[1024];
+
+// 		close(this->P_FD[1]);
+
+// 		std::string	pyOutPut;
+
+// 		while ((read_bytes = read(this->P_FD[0], buffer, 1024)) > 0)
+// 		{
+// 			pyOutPut.append(buffer);
+// 		}
+// 		wait(NULL);
+// 		close(this->P_FD[0]);
+
+// 		// Send the Python script output back to the client
+
+// 		std::stringstream	s;
+
+// 		s << "HTTP/1.1 200 OK\r\nContent-Length: " << pyOutPut.length() << "\r\n\r\n" << pyOutPut;
+
+// 		std::string	response = s.str();
+
+// 		write(ClientSocket, response.c_str(), response.length());
+// 	}
+// }

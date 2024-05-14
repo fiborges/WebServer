@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/08 16:55:49 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/14 15:52:01 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,15 +19,19 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <string.h>
 
 class CGI
 {
 	private:
-		//int	ClientSocket_;
+		int	ClientSocket_;
 		int	P_FD[2];
 		int	pid;
+
+		void	Child_process(std::string &buffer);
+		void	Parent_process();
 	public:
 		// Orthodox
 		CGI();
@@ -36,7 +40,7 @@ class CGI
 		~CGI();
 
 		// Public Method
-		void	PerformCGI(const int ClientSocket, std::string buffer_in);
+		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
 };
 
 #endif

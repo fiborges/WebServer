@@ -16,7 +16,7 @@
 
 #include "CGI.hpp"
 
-#define PORT 8080
+#define PORT 8081
 
 void send_html_page(int client_socket)
 {
@@ -41,13 +41,13 @@ void send_html_page(int client_socket)
 
 void	print_the_request(std::string& total_request)
 {
-	std::cout << "\n\n===============END POINT OF THE TEST===============\n\n";
+	// std::cout << "\n\n===============END POINT OF THE TEST===============\n\n";
 
-	std::cout << "\n\n===============WRITING ALL THE REQUEST IN THE SCREEN===============\n\n";
+	// std::cout << "\n\n===============WRITING ALL THE REQUEST IN THE SCREEN===============\n\n";
 
-	std::cout << total_request;
+	// std::cout << total_request;
 
-	std::cout << "\n\n===============END POINT OF THE REQUEST===============\n\n";
+	// std::cout << "\n\n===============END POINT OF THE REQUEST===============\n\n";
 
 	std::ofstream	out("LOG.txt", std::ios::binary | std::ios::app);
 
@@ -73,6 +73,7 @@ int	verify_body_content(std::string request)
 	while (isdigit(request[pos + 16]))
 	{
 		tmp[i] = request[pos + 16];
+		//tmp + request[pos + 16]; // Changed here
 		i++;
 		pos++;
 	}
@@ -87,8 +88,7 @@ int	verify_body_content(std::string request)
 	{
 		tmp.append(request, (request.find("\r\n\r\n") + 4));
 
-		std::cout << "After boundary:]" << tmp << "[Finish";
-
+		//std::cout << "After boundary:]" << tmp << "[Finish";
 		if (tmp.length() < content_length)
 		 return (-1);
 	}
@@ -181,14 +181,10 @@ int	main(int argc, char **argv, char **envp)
 
 		buffer_in_string = read_all_body(new_socket);
 
-		//if (verify_body_content(buffer_in_string) < 0)
-		//	continue;
-
 		if (buffer_in_string.find("GET /index.html") != std::string::npos)
 			send_html_page(new_socket);
 		else if (buffer_in_string.find("POST /cgi-bin") != std::string::npos)
-			std::cout << "CUCU\n";
-			//cgi.PerformCGI(new_socket, buffer_in_string);
+			cgi.PerformCGI(new_socket, buffer_in_string);
 		else if (buffer_in_string.find("GET /close_server") != std::string::npos)
 		{
 			close(new_socket);
