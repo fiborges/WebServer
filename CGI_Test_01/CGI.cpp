@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/14 15:53:49 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/15 15:51:24 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,59 @@ CGI::~CGI()
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
-	// std::cout << "\n[========== CGI CLASS RECIEVE ==========]\n";
 
-	// std::cout << buffer;
+	ssize_t	boundPosition = buffer.find("boundary=");
+	std::string	FinalBoundary;
+	while (std::isalnum(buffer[boundPosition + 9]) || buffer[boundPosition + 9] == '-')
+	{
+		FinalBoundary += buffer[boundPosition + 9];
+		boundPosition++;
+	}
+	FinalBoundary.insert(0, "--");
+	FinalBoundary.append("--");
 
-	// std::cout << "\n[========== END ==========]\n";
-	(void)buffer;
+	std::cout << "FinalBoundary:[" << FinalBoundary << "]\n";
+
+	ssize_t	boundStart = buffer.find("\r\n\r\n");
+	std::string	body;
+
+	body.append(buffer, boundStart + 4);
+
+	std::cout << "\n\n===BodyPrinting===\n\n";
+	std::cout << "[===START===]";
+	std::cout << body;
+	std::cout << "[===END===]";
+
+	ssize_t	fileName_Pos = body.find("filename=");
+	std::string	fileName;
+
+	while (body[fileName_Pos + 10] != '"')
+	{
+		fileName += body[fileName_Pos + 10];
+		fileName_Pos++;
+	}
+
+	std::cout << "\n\n===FileNamePrinting===\n\n";
+	std::cout << "[===START===]";
+	std::cout << fileName;
+	std::cout << "[===END===]";
+
+	ssize_t	contentStart = body.find("\r\n\r\n");
+	contentStart += 4;
+	ssize_t contentEnd = body.find(FinalBoundary) - 1;
+	std::string	FileContent;
+
+	while (contentStart < contentEnd)
+	{
+		FileContent += body[contentStart];
+		contentStart++;
+	}
+
+	std::cout << "\n\n===ContentPrinting===\n\n";
+	std::cout << "[===START===]";
+	std::cout << FileContent;
+	std::cout << "[===END===]";
+
 	// Creating Pipe
 	if (pipe(this->P_FD) == -1)
 	{
@@ -44,24 +91,26 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	}
 
 	if (this->pid == 0)
-		Child_process(buffer);
+		Child_process(fileName, FileContent);
 	else
 		Parent_process();
 }
 
-void	CGI::Child_process(std::string& buffer)
+void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 {
 	// this->P_FD[0] -> ReadEnd
 	// this->P_FD[1] -> WriteEnd
 	close(this->P_FD[0]);
 	dup2(this->P_FD[1], STDOUT_FILENO);
 
-	const char*	python_args[4];
+	const char*	python_args[6];
 
 	python_args[0] = "/usr/bin/python3";
-	python_args[1] = "./cgi-bin/upload.py";
-	python_args[2] = buffer.c_str();
-	python_args[3] = NULL;
+	python_args[1] = "./cgi-bin/U_File_test4.py";
+	python_args[2] = "./DATA";
+	python_args[3] = fileName.c_str();
+	python_args[4] = fileContent.c_str();
+	python_args[5] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), NULL);
 

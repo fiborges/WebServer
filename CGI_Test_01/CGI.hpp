@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/14 15:52:01 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/15 15:47:46 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ class CGI
 		int	P_FD[2];
 		int	pid;
 
-		void	Child_process(std::string &buffer);
+		void	Child_process(std::string& fileName, std::string& fileContent);
 		void	Parent_process();
 	public:
 		// Orthodox
