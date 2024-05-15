@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/15 15:51:24 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/15 18:04:03 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,17 +33,47 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	FinalBoundary.insert(0, "--");
 	FinalBoundary.append("--");
 
-	std::cout << "FinalBoundary:[" << FinalBoundary << "]\n";
+	// ==
+
+	std::ofstream	out1("FinalBoundary.txt", std::ios::binary | std::ios::app);
+
+	if (!out1.is_open())
+	{
+		return ;
+	}
+
+	out1.write(FinalBoundary.c_str(), FinalBoundary.size());
+
+	out1.close();
+
+	// ==
+
+	//std::cout << "FinalBoundary:[" << FinalBoundary << "]\n";
 
 	ssize_t	boundStart = buffer.find("\r\n\r\n");
 	std::string	body;
 
 	body.append(buffer, boundStart + 4);
 
-	std::cout << "\n\n===BodyPrinting===\n\n";
-	std::cout << "[===START===]";
-	std::cout << body;
-	std::cout << "[===END===]";
+	// ==
+
+	std::ofstream	out2("body.txt", std::ios::binary | std::ios::app);
+
+	if (!out2.is_open())
+	{
+		return ;
+	}
+
+	out2.write(body.c_str(), body.size());
+
+	out2.close();
+
+	// ==
+
+	// std::cout << "\n\n===BodyPrinting===\n\n";
+	// std::cout << "[===START===]";
+	// std::cout << body;
+	// std::cout << "[===END===]";
 
 	ssize_t	fileName_Pos = body.find("filename=");
 	std::string	fileName;
@@ -54,10 +84,25 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		fileName_Pos++;
 	}
 
-	std::cout << "\n\n===FileNamePrinting===\n\n";
-	std::cout << "[===START===]";
-	std::cout << fileName;
-	std::cout << "[===END===]";
+	// std::cout << "\n\n===FileNamePrinting===\n\n";
+	// std::cout << "[===START===]";
+	// std::cout << fileName;
+	// std::cout << "[===END===]";
+
+		// ==
+
+	std::ofstream	out3("fileName.txt", std::ios::binary | std::ios::app);
+
+	if (!out3.is_open())
+	{
+		return ;
+	}
+
+	out3.write(fileName.c_str(), fileName.size());
+
+	out3.close();
+
+	// ==
 
 	ssize_t	contentStart = body.find("\r\n\r\n");
 	contentStart += 4;
@@ -70,10 +115,25 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		contentStart++;
 	}
 
-	std::cout << "\n\n===ContentPrinting===\n\n";
-	std::cout << "[===START===]";
-	std::cout << FileContent;
-	std::cout << "[===END===]";
+	// ==
+
+	std::ofstream	out4("FileContent.txt", std::ios::binary | std::ios::app);
+
+	if (!out4.is_open())
+	{
+		return ;
+	}
+
+	out4.write(FileContent.c_str(), FileContent.size());
+
+	out4.close();
+
+	// ==
+
+	// std::cout << "\n\n===ContentPrinting===\n\n";
+	// std::cout << "[===START===]";
+	// std::cout << FileContent;
+	// std::cout << "[===END===]";
 
 	// Creating Pipe
 	if (pipe(this->P_FD) == -1)
@@ -90,10 +150,13 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		exit (EXIT_FAILURE);
 	}
 
+	//std::cout << "[";
+	//std::cout.write(FileContent.data(), FileContent.size()) << "]\n";
+
 	if (this->pid == 0)
 		Child_process(fileName, FileContent);
 	else
-		Parent_process();
+		Parent_process(FileContent);
 }
 
 void	CGI::Child_process(std::string& fileName, std::string& fileContent)
@@ -103,13 +166,16 @@ void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 	close(this->P_FD[0]);
 	dup2(this->P_FD[1], STDOUT_FILENO);
 
+	write(STDOUT_FILENO, fileContent.data(), fileContent.size()); // Alteração
+
 	const char*	python_args[6];
 
 	python_args[0] = "/usr/bin/python3";
 	python_args[1] = "./cgi-bin/U_File_test4.py";
 	python_args[2] = "./DATA";
 	python_args[3] = fileName.c_str();
-	python_args[4] = fileContent.c_str();
+	//python_args[4] = fileContent.data();
+	python_args[4] = NULL; // Alteração
 	python_args[5] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), NULL);
@@ -118,8 +184,9 @@ void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 	exit(EXIT_FAILURE);
 }
 
-void	CGI::Parent_process()
+void	CGI::Parent_process(std::string& fileContent)
 {
+	(void)fileContent;
 	close(this->P_FD[1]);
 	wait(NULL);
 
@@ -147,6 +214,7 @@ void	CGI::Parent_process()
 	std::cout << "Response: " << response << std::endl;
 	//write(this->ClientSocket_, response.c_str(), response.length());
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
+	close(this->P_FD[0]);
 }
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
