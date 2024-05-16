@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/15 17:48:51 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/16 14:31:26 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -23,12 +24,15 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <fcntl.h>
+#include <limits.h>
 
 class CGI
 {
 	private:
 		int	ClientSocket_;
 		int	P_FD[2];
+		//int	P_FD_P[2];
 		int	pid;
 
 		void	Child_process(std::string& fileName, std::string& fileContent);

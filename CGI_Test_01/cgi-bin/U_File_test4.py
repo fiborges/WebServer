@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/15 17:58:42 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/16 14:11:46 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,6 +16,9 @@ import os
 def save_file(folder_name, file_name):
 		if not os.path.exists(folder_name):
 			os.makedirs(folder_name)
+
+		#file_size_bytes = sys.stdin.buffer.read(4);
+		#file_size = int.from_bytes(file_size_bytes, byteorder='little')
 
 		file_content = sys.stdin.buffer.read()
 

@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/15 18:04:03 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/16 16:01:37 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,6 +142,26 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		exit (EXIT_FAILURE);
 	}
 
+
+	size_t	contentLength = FileContent.size();
+	size_t	bytesWritten = 0;
+
+	fcntl(this->P_FD[1], F_SETPIPE_SZ, contentLength);
+
+	while (bytesWritten < contentLength)
+	{
+		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
+		ssize_t	bytes = write(this->P_FD[1], FileContent.data() + bytesWritten, chunkSize);
+		//write(this->P_FD[1], FileContent.data(), FileContent.size());
+		if (bytes < 0)
+		{
+			std::cerr << "Error writting to pipe\n";
+			break;
+		}
+		bytesWritten += bytes;
+	}
+	close(this->P_FD[1]);
+
 	// Forking the program
 	this->pid = fork();
 	if (this->pid == -1)
@@ -149,9 +169,6 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		std::cerr << "Error in Fork\n";
 		exit (EXIT_FAILURE);
 	}
-
-	//std::cout << "[";
-	//std::cout.write(FileContent.data(), FileContent.size()) << "]\n";
 
 	if (this->pid == 0)
 		Child_process(fileName, FileContent);
@@ -163,10 +180,10 @@ void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 {
 	// this->P_FD[0] -> ReadEnd
 	// this->P_FD[1] -> WriteEnd
+	dup2(this->P_FD[0], STDIN_FILENO);
 	close(this->P_FD[0]);
-	dup2(this->P_FD[1], STDOUT_FILENO);
 
-	write(STDOUT_FILENO, fileContent.data(), fileContent.size()); // Alteração
+	(void)fileContent;
 
 	const char*	python_args[6];
 
@@ -186,9 +203,11 @@ void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 
 void	CGI::Parent_process(std::string& fileContent)
 {
-	(void)fileContent;
-	close(this->P_FD[1]);
+	// write(this->P_FD[1], fileContent.data(), fileContent.size());
+	// close(this->P_FD[1]);
 	wait(NULL);
+
+	(void)fileContent;
 
 	char		line[1024];
 	std::string	response;
@@ -215,6 +234,7 @@ void	CGI::Parent_process(std::string& fileContent)
 	//write(this->ClientSocket_, response.c_str(), response.length());
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 	close(this->P_FD[0]);
+	close(this->P_FD[1]);
 }
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
