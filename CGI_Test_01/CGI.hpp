@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/16 14:31:26 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/17 12:46:04 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,16 +27,28 @@
 #include <fcntl.h>
 #include <limits.h>
 
+#include "LOG_CLASS.hpp"
+
 class CGI
 {
 	private:
 		int	ClientSocket_;
 		int	P_FD[2];
-		//int	P_FD_P[2];
 		int	pid;
+
+		std::string	FinalBoundary_;
+		std::string	Body_;
+		std::string	FileName_;
+		std::string	FileContent_;
 
 		void	Child_process(std::string& fileName, std::string& fileContent);
 		void	Parent_process(std::string& fileContent);
+
+		void	FindFinalBoundary(std::string& buffer);
+		void	ExtractBody(std::string& buffer);
+		void	ExtractFileName();
+		void	ExtractFileContent();
+
 	public:
 		// Orthodox
 		CGI();

@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/16 16:01:37 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/17 12:54:05 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,123 +17,92 @@ CGI::CGI()
 {}
 
 CGI::~CGI()
-{}
+{
+	std::cout << "CGI Destructor\n";
+}
+
+void	CGI::FindFinalBoundary(std::string& buffer)
+{
+	ssize_t	boundPosition = buffer.find("boundary=");
+
+	while (std::isalnum(buffer[boundPosition + 9]) || buffer[boundPosition + 9] == '-')
+	{
+		this->FinalBoundary_ += buffer[boundPosition + 9];
+		boundPosition++;
+	}
+	this->FinalBoundary_.insert(0, "--");
+	this->FinalBoundary_.append("--");
+}
+
+void	CGI::ExtractBody(std::string& buffer)
+{
+	ssize_t	boundStart = buffer.find("\r\n\r\n");
+
+	this->Body_.append(buffer, boundStart + 4);
+}
+
+void	CGI::ExtractFileName()
+{
+	ssize_t	fileNamePos = this->Body_.find("filename=");
+
+	while (this->Body_[fileNamePos + 10] != '"')
+	{
+		this->FileName_ += this->Body_[fileNamePos + 10];
+		fileNamePos++;
+	}
+}
+
+void	CGI::ExtractFileContent()
+{
+	ssize_t	ContentStart = this->Body_.find("\r\n\r\n") + 4;
+	ssize_t	ContentEnd = this->Body_.find(this->FinalBoundary_) - 1;
+
+	while (ContentStart < ContentEnd)
+	{
+		this->FileContent_ += this->Body_[ContentStart];
+		ContentStart++;
+	}
+}
 
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
 
-	ssize_t	boundPosition = buffer.find("boundary=");
-	std::string	FinalBoundary;
-	while (std::isalnum(buffer[boundPosition + 9]) || buffer[boundPosition + 9] == '-')
-	{
-		FinalBoundary += buffer[boundPosition + 9];
-		boundPosition++;
-	}
-	FinalBoundary.insert(0, "--");
-	FinalBoundary.append("--");
+	/*
+		FindFinalBoundary will find the boundary Header and had two '-' characters
+	in the beginning and two of them in the end. That will give us the Final boundary
+	since this is the rule of that boundary.
 
-	// ==
+	*/
 
-	std::ofstream	out1("FinalBoundary.txt", std::ios::binary | std::ios::app);
+	FindFinalBoundary(buffer);
 
-	if (!out1.is_open())
-	{
-		return ;
-	}
+	/*
+		ExtractBody, making use of the rule, after the headers, the sequence "\r\n\r\n"
+	is allways there, it extract all the body of the request, from the starting boundary
+	until the end boundary.
 
-	out1.write(FinalBoundary.c_str(), FinalBoundary.size());
+	*/
 
-	out1.close();
+	ExtractBody(buffer);
 
-	// ==
+	/*
+		ExtractFileName just gets the filename header in the body of the request to be
+	given to the script.
 
-	//std::cout << "FinalBoundary:[" << FinalBoundary << "]\n";
+	*/
 
-	ssize_t	boundStart = buffer.find("\r\n\r\n");
-	std::string	body;
+	ExtractFileName();
 
-	body.append(buffer, boundStart + 4);
+	ExtractFileContent();
 
-	// ==
+	LOG_CLASS::CreateLog("FinalBoundary", this->FinalBoundary_);
 
-	std::ofstream	out2("body.txt", std::ios::binary | std::ios::app);
+	LOG_CLASS::CreateLog("Body", this->Body_);
 
-	if (!out2.is_open())
-	{
-		return ;
-	}
+	LOG_CLASS::CreateLog("FileName", this->FileName_);
 
-	out2.write(body.c_str(), body.size());
-
-	out2.close();
-
-	// ==
-
-	// std::cout << "\n\n===BodyPrinting===\n\n";
-	// std::cout << "[===START===]";
-	// std::cout << body;
-	// std::cout << "[===END===]";
-
-	ssize_t	fileName_Pos = body.find("filename=");
-	std::string	fileName;
-
-	while (body[fileName_Pos + 10] != '"')
-	{
-		fileName += body[fileName_Pos + 10];
-		fileName_Pos++;
-	}
-
-	// std::cout << "\n\n===FileNamePrinting===\n\n";
-	// std::cout << "[===START===]";
-	// std::cout << fileName;
-	// std::cout << "[===END===]";
-
-		// ==
-
-	std::ofstream	out3("fileName.txt", std::ios::binary | std::ios::app);
-
-	if (!out3.is_open())
-	{
-		return ;
-	}
-
-	out3.write(fileName.c_str(), fileName.size());
-
-	out3.close();
-
-	// ==
-
-	ssize_t	contentStart = body.find("\r\n\r\n");
-	contentStart += 4;
-	ssize_t contentEnd = body.find(FinalBoundary) - 1;
-	std::string	FileContent;
-
-	while (contentStart < contentEnd)
-	{
-		FileContent += body[contentStart];
-		contentStart++;
-	}
-
-	// ==
-
-	std::ofstream	out4("FileContent.txt", std::ios::binary | std::ios::app);
-
-	if (!out4.is_open())
-	{
-		return ;
-	}
-
-	out4.write(FileContent.c_str(), FileContent.size());
-
-	out4.close();
-
-	// ==
-
-	// std::cout << "\n\n===ContentPrinting===\n\n";
-	// std::cout << "[===START===]";
-	// std::cout << FileContent;
-	// std::cout << "[===END===]";
+	LOG_CLASS::CreateLog("FileContent", this->FileContent_);
 
 	// Creating Pipe
 	if (pipe(this->P_FD) == -1)
@@ -141,26 +110,6 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		std::cerr << "Error in pipe\n";
 		exit (EXIT_FAILURE);
 	}
-
-
-	size_t	contentLength = FileContent.size();
-	size_t	bytesWritten = 0;
-
-	fcntl(this->P_FD[1], F_SETPIPE_SZ, contentLength);
-
-	while (bytesWritten < contentLength)
-	{
-		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
-		ssize_t	bytes = write(this->P_FD[1], FileContent.data() + bytesWritten, chunkSize);
-		//write(this->P_FD[1], FileContent.data(), FileContent.size());
-		if (bytes < 0)
-		{
-			std::cerr << "Error writting to pipe\n";
-			break;
-		}
-		bytesWritten += bytes;
-	}
-	close(this->P_FD[1]);
 
 	// Forking the program
 	this->pid = fork();
@@ -171,15 +120,16 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	}
 
 	if (this->pid == 0)
-		Child_process(fileName, FileContent);
+		Child_process(this->FileName_, this->FileContent_);
 	else
-		Parent_process(FileContent);
+		Parent_process(this->FileContent_);
 }
 
 void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 {
 	// this->P_FD[0] -> ReadEnd
 	// this->P_FD[1] -> WriteEnd
+	close(this->P_FD[1]);
 	dup2(this->P_FD[0], STDIN_FILENO);
 	close(this->P_FD[0]);
 
@@ -205,6 +155,25 @@ void	CGI::Parent_process(std::string& fileContent)
 {
 	// write(this->P_FD[1], fileContent.data(), fileContent.size());
 	// close(this->P_FD[1]);
+	size_t	contentLength = fileContent.size();
+	size_t	bytesWritten = 0;
+
+	//fcntl(this->P_FD[1], F_SETPIPE_SZ, contentLength);
+
+	while (bytesWritten < contentLength)
+	{
+		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
+		ssize_t	bytes = write(this->P_FD[1], fileContent.data() + bytesWritten, chunkSize);
+		if (bytes < 0)
+		{
+			std::cerr << "Error writting to pipe\n";
+			break;
+		}
+		bytesWritten += bytes;
+	}
+
+	close(this->P_FD[1]);
+
 	wait(NULL);
 
 	(void)fileContent;

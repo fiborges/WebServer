@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/04/26 13:56:00 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/06 14:30:07 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/17 11:40:52 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,7 @@ CCFLAGS = -Wall -Wextra -Werror -g -std=c++98
 
 SERVER_TEST = SERVER_TEST
 
-SRCS_SERVER_TEST = main.cpp CGI.cpp
+SRCS_SERVER_TEST = main.cpp CGI.cpp LOG_CLASS.cpp
 
 OBJS_SERVER_TEST = $(SRCS_SERVER_TEST:%.cpp=%.o)
 
