@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/12 21:39:47 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/17 16:37:51 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@
 
 # include <ftw.h>
 # include <signal.h>
+# include <ctime>
 
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
@@ -96,7 +97,8 @@ class ServerInfo
 
 		void	setAddress(const sockaddr_in& address);
 		
-		void	handleGetRequest(const std::string& path, ServerInfo& server);
+		void	handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request);
+		//void	handleGetRequest(const std::string& path, ServerInfo& server);
 		void	handleUnknownRequest();
 		void	handlePostRequest(const std::string& path, HTTrequestMSG& request);
 		void	parseMultipartFormData(const std::string& body, std::string& text, std::string& file); //
@@ -122,6 +124,7 @@ class ServerInfo
 	
 };
 
+void		printLog(const std::string& method, const std::string& path, int statusCode, int contentLength);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
 void		setupDirectory(ServerInfo& server, conf_File_Info& config);

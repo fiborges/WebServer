@@ -49,6 +49,7 @@ void ParserClass::debug() const {
 
 
 
+
 // Variável global para armazenar o caminho do diretório
 const char *global_path = NULL;
 

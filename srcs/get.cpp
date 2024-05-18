@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/12 21:38:06 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/18 18:23:02 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,19 @@ std::string ServerInfo::decodeUrl(const std::string& url)
 // ======================== HELPER FUNCTIONS ========================= //
 // =================================================================== //
 
+void printLog(const std::string& method, const std::string& path, int statusCode, int contentLength)
+{
+	std::time_t now = std::time(NULL);
+	char timestamp[100];
+	std::strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", std::localtime(&now));
+
+	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
+	std::string statusColor = (statusCode == 200) ? GREEN : RED;
+
+	std::cout << BLUE << timestamp << RESET << " \"" << methodColor << method << " " << path << " HTTP/1.1" << RESET << "\" " << statusColor << " " << statusCode << RESET << " " << contentLength << std::endl;
+}
+
+
 // Function to handle errors without exiting the program
 void handleError(const std::string& errorMessage) //, int errorCode)
 {
@@ -158,7 +171,6 @@ void setupDirectory(ServerInfo& server, conf_File_Info& config)
 {
 	//std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
 	//std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
-
 	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
 	std::string rootDir = config.RootDirectory;
@@ -317,6 +329,7 @@ std::string readRequest(int sockfd)
 	return request;
 }
 
+/*
 // Process the request and send the response and gives the server info
 void processRequest(const std::string& request, ServerInfo& server)
 {
@@ -342,28 +355,96 @@ void processRequest(const std::string& request, ServerInfo& server)
 		requestMsg.method = HTTrequestMSG::UNKNOWN;
 
 	handleRequest(requestMsg, path, server);
+}*/
+
+void processRequest(const std::string& request, ServerInfo& server)
+{
+	std::string method;
+	std::string path;
+	std::string body;
+
+	size_t firstSpace = request.find(" ");
+	size_t secondSpace = request.find(" ", firstSpace + 1);
+	if (firstSpace != std::string::npos && secondSpace != std::string::npos)
+	{
+		method = request.substr(0, firstSpace);
+		path = request.substr(firstSpace + 1, secondSpace - firstSpace - 1);
+	}
+
+	HTTrequestMSG requestMsg;
+	if (method == "GET")
+		requestMsg.method = HTTrequestMSG::GET;
+	else if (method == "POST") {
+		requestMsg.method = HTTrequestMSG::POST;
+		size_t bodyPos = request.find("\r\n\r\n");
+		if (bodyPos != std::string::npos) {
+			body = request.substr(bodyPos + 4);
+			requestMsg.body = body;
+		}
+	}
+	else if (method == "DELETE")
+		requestMsg.method = HTTrequestMSG::DELETE;
+	else
+		requestMsg.method = HTTrequestMSG::UNKNOWN;
+
+	handleRequest(requestMsg, path, server);
 }
+
+
+// bool isValidHeader(const HTTrequestMSG& request) {
+//     // Aqui você implementa a lógica para verificar se os cabeçalhos são válidos
+//     // Por exemplo, você pode verificar se os cabeçalhos necessários estão presentes
+//     // ou se estão em um formato correto.
+//     // Este é apenas um exemplo básico, você precisa adaptá-lo às suas necessidades específicas.
+//     // Aqui, estou apenas verificando se o método é GET ou POST.
+//     return (request.method == HTTrequestMSG::GET || request.method == HTTrequestMSG::POST);
+// }
 
 // Function to handle the request from the HTTP method
 void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& server)
 {
-	if (request.method == HTTrequestMSG::GET)
+	// if (!isValidHeader(request)) {
+	//     // Enviar uma resposta de erro 400 Bad Request
+	//     std::string response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
+	//     server.setResponse(response);
+	//     return;
+	// }
+
+	if (path == "/favicon.ico")
 	{
-		server.handleGetRequest(path, server);
+		// Se a solicitação for para favicon.ico, leia e envie o conteúdo do arquivo
+		std::string faviconPath = "resources/website/favicon.ico";
+		std::string fileContent = readFileContent(faviconPath);
+		if (!fileContent.empty())
+		{
+			std::string contentType = "image/x-icon"; // Define o tipo de conteúdo como ícone
+			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+		}
+		else
+		{
+			// Se o arquivo não puder ser lido, envie uma resposta de erro
+			server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		}
 	}
-	else if (request.method == HTTrequestMSG::POST)
+	else
 	{
-		server.handlePostRequest(path, request);
+		if (request.method == HTTrequestMSG::GET) {
+			server.handleGetRequest(path, server, request);
+		} else if (request.method == HTTrequestMSG::POST) {
+			server.handlePostRequest(path, request);
+		} else if (request.method == HTTrequestMSG::DELETE) {
+			// Processar solicitação DELETE, se necessário
+		} else if (request.method == HTTrequestMSG::UNKNOWN) {
+			server.handleUnknownRequest();
+		}
+
 	}
-	else if (request.method == HTTrequestMSG::DELETE)
-	{
-		// The request is a DELETE
-	}
-	else if (request.method == HTTrequestMSG::UNKNOWN)
-	{
-		server.handleUnknownRequest();
-	}
+
+
+
 }
+
+
 
 void ServerInfo::handleUnknownRequest()
 {
@@ -393,10 +474,43 @@ void* handleConnection(void* arg)
 	return NULL;
 }
 
-void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
+void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request)
 {
+
+
+
+	
 	std::string fullPath = "resources/website" + path;
 	//std::cout << "Full path: " << fullPath << std::endl; // Print the full path
+
+	int statusCode = 200; // Código de status OK
+	int contentLength = request.content_length;
+	printLog("GET", path, statusCode, contentLength);
+
+
+	// *DEBUG*
+	// std::cout << "Method: " << request.method << std::endl;
+	// std::cout << "State: " << request.state << std::endl;
+	// std::cout << "Path: " << request.path << std::endl;
+	// std::cout << "Version: " << request.version << std::endl;
+	// std::cout << "Query: " << request.query << std::endl;
+	// std::cout << "Headers:" << std::endl;
+	// std::map<std::string, std::string>::const_iterator it;
+	// for (it = request.headers.begin(); it != request.headers.end(); ++it)
+	// 	std::cout << it->first << ": " << it->second << std::endl;
+	// std::cout << "Body: " << request.body << std::endl;
+	// std::cout << "Content-Length: " << request.content_length << std::endl;
+	// std::cout << "Process Bytes: " << request.process_bytes << std::endl;
+	// std::cout << "Error: " << request.error << std::endl;
+	// std::cout << "Boundary: " << request.boundary << std::endl;
+	// std::cout << "Is CGI: " << (request.is_cgi ? "true" : "false") << std::endl;
+	// std::cout << "CGI Environment:" << std::endl;
+	// std::map<std::string, std::string>::const_iterator cgi_it;
+	// for (cgi_it = request.cgi_env.begin(); cgi_it != request.cgi_env.end(); ++cgi_it) {
+	// 	std::cout << "Temp File Path: " << request.temp_file_path << std::endl;
+	// }
+	// std::cout << "Temp File Path: " << request.temp_file_path << std::endl;
+
 
 	struct stat buffer;
 	if (stat(fullPath.c_str(), &buffer) == 0)
@@ -430,59 +544,116 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 }
 
-void ServerInfo::handlePostRequest(const std::string& /*path*/, HTTrequestMSG& request)
+
+void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request)
 {
-    // Parse the request body
-    std::string body = request.body; // This depends on how your HTTrequestMSG is structured
+	// Parse the request body
+	std::string body = request.body;
 
-    // Process the data (this will depend on your application)
-    // For example, let's say you're expecting two parts: text and file
-    std::string text, file;
-    parseMultipartFormData(body, text, file);
+	int statusCode = 200; // Código de status OK
+	int contentLength = request.content_length;
 
-    // Do something with the parts
-    // ...
+	// Imprimir a mensagem de log
+	printLog("POST", path, statusCode, contentLength);
 
-    // Send a response
-    std::string response = "HTTP/1.1 200 OK\r\n\r\n";
-    response += "Received text: " + text + ", file: " + file;
 
-    // Send the response
-    // This will depend on how your server is set up
-    // ...
+	// *DEBUG*
+	// std::cout << "Method: " << request.method << std::endl;
+	// std::cout << "State: " << request.state << std::endl;
+	// std::cout << "Path: " << request.path << std::endl;
+	// std::cout << "Version: " << request.version << std::endl;
+	// std::cout << "Query: " << request.query << std::endl;
+	// std::cout << "Headers:" << std::endl;
+	// std::map<std::string, std::string>::const_iterator it;
+	// for (it = request.headers.begin(); it != request.headers.end(); ++it)
+	// 	std::cout << it->first << ": " << it->second << std::endl;
+	// std::cout << "Body: " << request.body << std::endl;
+	// std::cout << "Content-Length: " << request.content_length << std::endl;
+	// std::cout << "Process Bytes: " << request.process_bytes << std::endl;
+	// std::cout << "Error: " << request.error << std::endl;
+	// std::cout << "Boundary: " << request.boundary << std::endl;
+	// std::cout << "Is CGI: " << (request.is_cgi ? "true" : "false") << std::endl;
+	// std::cout << "CGI Environment:" << std::endl;
+	// std::map<std::string, std::string>::const_iterator cgi_it;
+	// for (cgi_it = request.cgi_env.begin(); cgi_it != request.cgi_env.end(); ++cgi_it)
+	// 	std::cout << cgi_it->first << ": " << cgi_it->second << std::endl;
+	// std::cout << "Temp File Path: " << request.temp_file_path << std::endl;
+	
+
+	
+
+	// Process the data (this will depend on your application)
+	// For example, let's say you're expecting form data in the format of key=value&key2=value2
+	std::string response;
+	size_t pos = 0;
+	while ((pos = body.find("&")) != std::string::npos) {
+		std::string token = body.substr(0, pos);
+		response += token + "\n";
+		body.erase(0, pos + 1);
+	}
+	response += body;
+
+	// Send a response
+	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+	httpResponse += "Received POST data:\n" + response;
+
+	this->setResponse(httpResponse);
 }
+
+
+// void ServerInfo::handlePostRequest(const std::string& /*path*/, HTTrequestMSG& request)
+// {
+//     // Parse the request body
+//     std::string body = request.body; // This depends on how your HTTrequestMSG is structured
+
+//     // Process the data (this will depend on your application)
+//     // For example, let's say you're expecting two parts: text and file
+//     std::string text, file;
+//     parseMultipartFormData(body, text, file);
+
+//     // Do something with the parts
+//     // ...
+
+//     // Send a response
+//     std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+//     response += "Received text: " + text + ", file: " + file;
+
+//     // Send the response
+//     // This will depend on how your server is set up
+//     // ...
+// }
 
 void ServerInfo::parseMultipartFormData(const std::string& body, std::string& text, std::string& file)
 {
-    std::string boundary = "-----------------------------1234567890";
-    size_t pos = body.find(boundary);
-    while (pos != std::string::npos) {
-        size_t endPos = body.find(boundary, pos + boundary.length());
-        if (endPos != std::string::npos) {
-            std::string part = body.substr(pos + boundary.length(), endPos - pos - boundary.length());
+	std::string boundary = "-----------------------------1234567890";
+	size_t pos = body.find(boundary);
+	while (pos != std::string::npos) {
+		size_t endPos = body.find(boundary, pos + boundary.length());
+		if (endPos != std::string::npos) {
+			std::string part = body.substr(pos + boundary.length(), endPos - pos - boundary.length());
 
-            size_t namePos = part.find("name=\"");
-            if (namePos != std::string::npos) {
-                size_t nameEndPos = part.find("\"", namePos + 6);
-                if (nameEndPos != std::string::npos) {
-                    std::string name = part.substr(namePos + 6, nameEndPos - namePos - 6);
+			size_t namePos = part.find("name=\"");
+			if (namePos != std::string::npos) {
+				size_t nameEndPos = part.find("\"", namePos + 6);
+				if (nameEndPos != std::string::npos) {
+					std::string name = part.substr(namePos + 6, nameEndPos - namePos - 6);
 
-                    size_t valuePos = part.find("\r\n\r\n", nameEndPos);
-                    if (valuePos != std::string::npos) {
-                        std::string value = part.substr(valuePos + 4);
+					size_t valuePos = part.find("\r\n\r\n", nameEndPos);
+					if (valuePos != std::string::npos) {
+						std::string value = part.substr(valuePos + 4);
 
-                        if (name == "text") {
-                            text = value;
-                        } else if (name == "file") {
-                            file = value;
-                        }
-                    }
-                }
-            }
-        }
+						if (name == "text") {
+							text = value;
+						} else if (name == "file") {
+							file = value;
+						}
+					}
+				}
+			}
+		}
 
-        pos = body.find(boundary, endPos + boundary.length());
-    }
+		pos = body.find(boundary, endPos + boundary.length());
+	}
 }
 
 void runServer(std::vector<ServerInfo>& servers)
@@ -499,7 +670,8 @@ void runServer(std::vector<ServerInfo>& servers)
 			max_fd = sockfd;
 	}
 	
-	std::cout << GREEN << "\n\n<========== Waiting for client ==========>\n" << RESET << std::endl;
+	std::cout << "\n\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
 
 	while (1)
 	{
