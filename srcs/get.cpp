@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/18 18:23:02 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/19 11:40:57 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,21 +122,49 @@ std::string ServerInfo::decodeUrl(const std::string& url)
 	return (outSS.str()); // return the decoded url
 }
 
-// =================================================================== //
-// ======================== HELPER FUNCTIONS ========================= //
-// =================================================================== //
+// ================================================================================================= //
+// ======================================= HELPER FUNCTIONS ======================================== //
+// ================================================================================================= //
 
-void printLog(const std::string& method, const std::string& path, int statusCode, int contentLength)
+// void printLog(const std::string& method, const std::string& path, int statusCode, ServerInfo& server)
+// {
+// 	std::time_t now = std::time(NULL);
+// 	char timestamp[100];
+// 	std::strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", std::localtime(&now));
+
+// 	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
+// 	std::string statusColor = (statusCode == 200) ? GREEN : RED;
+
+// 	std::cout << BLUE << timestamp << RESET << " \"" << methodColor << method << " " << path;
+// 	std::cout << " HTTP/1.1" << RESET << "\" " << statusColor << " " << statusCode << RESET << " ";
+// 	std::cout << server.getResponse().length() << std::endl;
+// }
+
+
+void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server)
 {
-	std::time_t now = std::time(NULL);
-	char timestamp[100];
-	std::strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", std::localtime(&now));
+    time_t now = time(NULL);
+    char timestamp[100];
+    strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
 
-	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
-	std::string statusColor = (statusCode == 200) ? GREEN : RED;
+    std::string methodColor = (method == "GET") ? YELLOW : CYAN;
 
-	std::cout << BLUE << timestamp << RESET << " \"" << methodColor << method << " " << path << " HTTP/1.1" << RESET << "\" " << statusColor << " " << statusCode << RESET << " " << contentLength << std::endl;
+    // Extract status code from HTTP response
+    std::string statusCodeStr;
+    size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
+    if (statusCodePos != std::string::npos && httpResponse.length() >= statusCodePos + 3)
+    {
+        statusCodeStr = httpResponse.substr(statusCodePos, 3);
+    }
+    int statusCode = (statusCodeStr.empty()) ? 0 : atoi(statusCodeStr.c_str());
+
+    std::string statusColor = (statusCode == 200) ? GREEN : RED;
+
+    std::cout << BG_CYAN_BLACK << timestamp << RESET << " \"" << methodColor << method << " " << path << " ";
+    std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
 }
+
+
 
 
 // Function to handle errors without exiting the program
@@ -428,10 +456,12 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	}
 	else
 	{
+		//std::cout << RED << "\nResposta: " << server.getResponse() << RESET; // *DEBUG*
+		//std::cout << RED << "Tamanho: " << server.getResponse().length() << RESET << std::endl; // *DEBUG*
 		if (request.method == HTTrequestMSG::GET) {
-			server.handleGetRequest(path, server, request);
+			server.handleGetRequest(path, server);
 		} else if (request.method == HTTrequestMSG::POST) {
-			server.handlePostRequest(path, request);
+			server.handlePostRequest(path, request, server);
 		} else if (request.method == HTTrequestMSG::DELETE) {
 			// Processar solicitação DELETE, se necessário
 		} else if (request.method == HTTrequestMSG::UNKNOWN) {
@@ -474,7 +504,7 @@ void* handleConnection(void* arg)
 	return NULL;
 }
 
-void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request)
+void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 {
 
 
@@ -483,9 +513,7 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server, H
 	std::string fullPath = "resources/website" + path;
 	//std::cout << "Full path: " << fullPath << std::endl; // Print the full path
 
-	int statusCode = 200; // Código de status OK
-	int contentLength = request.content_length;
-	printLog("GET", path, statusCode, contentLength);
+
 
 
 	// *DEBUG*
@@ -542,19 +570,27 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server, H
 	}
 	else // Handle non-existent file or directory
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+
+
+
+	//int statusCode = 200;
+				// std::string response = it->getResponse(); // *DEBUG*
+				// size_t response_length = response.length(); // *DEBUG*
+				// std::cout << "Sending response to client (Length: " << response_length << "): " << response << std::endl; // *DEBUG*
+				// write(newsockfd, response.c_str(), response_length); //	// *DEBUG*; // Código de status OK
+	//int contentLength = server.getResponse().length();
+	printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+
+
 }
 
 
-void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request)
+void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server)
 {
 	// Parse the request body
 	std::string body = request.body;
 
-	int statusCode = 200; // Código de status OK
-	int contentLength = request.content_length;
 
-	// Imprimir a mensagem de log
-	printLog("POST", path, statusCode, contentLength);
 
 
 	// *DEBUG*
@@ -598,6 +634,17 @@ void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& reque
 	httpResponse += "Received POST data:\n" + response;
 
 	this->setResponse(httpResponse);
+
+
+	std::string fullPath = "resources/website" + path;
+
+	//int statusCode = 200; // Código de status OK
+	//int contentLength = server.getResponse().length();
+
+	// Imprimir a mensagem de log
+	printLog("POST", fullPath, "HTTP/1.1", server.getResponse(), server);
+
+
 }
 
 
@@ -698,6 +745,17 @@ void runServer(std::vector<ServerInfo>& servers)
 
 				std::string request = readRequest(newsockfd);
 				processRequest(request, *it);
+				//std::string response = it->getResponse(); // *DEBUG*
+				//std::cout << MAGENTA << "Sending response to client: " << response << RESET << std::endl; // *DEBUG*
+				//write(newsockfd, response.c_str(), response.length()); // *DEBUG*
+
+				// std::string response = it->getResponse(); // *DEBUG*
+				// size_t response_length = response.length(); // *DEBUG*
+				// std::cout << "Sending response to client (Length: " << response_length << "): " << response << std::endl; // *DEBUG*
+				// write(newsockfd, response.c_str(), response_length); //	// *DEBUG*
+
+
+
 				write(newsockfd, it->getResponse().c_str(), it->getResponse().length());
 				close(newsockfd);
 			}

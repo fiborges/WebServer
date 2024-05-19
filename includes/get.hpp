@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/17 16:37:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/19 11:40:44 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,9 @@
 # define BG_RED_BLACK "\033[41;30m"
 # define BG_DARK_GRAY "\033[100m"
 # define BG_CYAN "\033[46m"
+# define BG_CYAN_BLACK "\033[46;30m"
 # define BG_BLUE "\033[44m"
+# define BG_BLUE_BLACK "\033[44;30m"
 # define RESET_BG "\033[49m"
 
 # include <sys/socket.h> // OK
@@ -97,10 +99,10 @@ class ServerInfo
 
 		void	setAddress(const sockaddr_in& address);
 		
-		void	handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request);
-		//void	handleGetRequest(const std::string& path, ServerInfo& server);
+		//void	handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request);
+		void	handleGetRequest(const std::string& path, ServerInfo& server);
 		void	handleUnknownRequest();
-		void	handlePostRequest(const std::string& path, HTTrequestMSG& request);
+		void	handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server);
 		void	parseMultipartFormData(const std::string& body, std::string& text, std::string& file); //
 
 		void	decodeAndStoreUrl(const std::string& url);
@@ -124,7 +126,8 @@ class ServerInfo
 	
 };
 
-void		printLog(const std::string& method, const std::string& path, int statusCode, int contentLength);
+void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
+//void		printLog(const std::string& method, const std::string& path, int statusCode, ServerInfo& server);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
 void		setupDirectory(ServerInfo& server, conf_File_Info& config);
