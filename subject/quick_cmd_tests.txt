@@ -49,6 +49,8 @@ Performance Tests:
 
 -> Siege
 siege -b http://testing:8080/empty.html -t 1m
+siege -b http://localhost:8080/empty.html -t10s
+
 
 -> Leaks
 pgrep webserv
@@ -56,3 +58,5 @@ top -p <process ID>
 
 -> Hanging Out durinh siege
 watch -n 1 netstat -tuln
+
+curl -T upload.txt localhost:8080/resources/upload/

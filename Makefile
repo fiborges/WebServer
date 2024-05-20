@@ -33,11 +33,22 @@ $(DIR_BUILD)/%.o	:	$(DIR_SRCS)/%.cpp
 
 all: $(NAME)
 
+download:
+	@wget https://cdn.intra.42.fr/document/document/24735/tester > /dev/null 2>&1
+	@wget https://cdn.intra.42.fr/document/document/24736/ubuntu_cgi_tester > /dev/null 2>&1
+	@wget https://cdn.intra.42.fr/document/document/24737/cgi_tester > /dev/null 2>&1
+	@wget https://cdn.intra.42.fr/document/document/24738/ubuntu_tester > /dev/null 2>&1
+	@echo "\n[${WHITE}${BLUE}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
+
 clean:
 	@$(RM) $(BUILD)
 	@$(RM) -r $(DIR_BUILD)
 	@echo "${RED}Cleaned!!${NC}"
-
+	@test -f tester && rm tester > /dev/null 2>&1 || true
+	@test -f ubuntu_cgi_tester && rm ubuntu_cgi_tester > /dev/null 2>&1 || true
+	@test -f cgi_tester && rm cgi_tester > /dev/null 2>&1 || true
+	@test -f ubuntu_tester && rm ubuntu_tester > /dev/null 2>&1 || true
+	
 fclean:	clean
 	@$(RM) $(NAME)
 	@$(RM) $(BUILD)
