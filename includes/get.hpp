@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/19 11:40:44 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/20 11:54:45 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,7 @@ bool		is_directory(const std::string &path);
 void		setupDirectory(ServerInfo& server, conf_File_Info& config);
 int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 //int print_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf); // *DEBUG*
-int remove_directory(const char *path);
+int remove_directory(const char *path); //to use in main() to remove the temp directory
 
 void		handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
 int			acceptConnection(ServerInfo& server, sockaddr_in& cli_addr);
