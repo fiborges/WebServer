@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/20 15:01:40 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/20 19:04:59 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -434,60 +434,107 @@ void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 }
 
 
+// void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server)
+// {
+// 	// Parse the request body
+// 	std::string body = request.body;
+
+// 	// *DEBUG*
+// 	// std::cout << "Method: " << request.method << std::endl;
+// 	// std::cout << "State: " << request.state << std::endl;
+// 	// std::cout << "Path: " << request.path << std::endl;
+// 	// std::cout << "Version: " << request.version << std::endl;
+// 	// std::cout << "Query: " << request.query << std::endl;
+// 	// std::cout << "Headers:" << std::endl;
+// 	// std::map<std::string, std::string>::const_iterator it;
+// 	// for (it = request.headers.begin(); it != request.headers.end(); ++it)
+// 	// 	std::cout << it->first << ": " << it->second << std::endl;
+// 	// std::cout << "Body: " << request.body << std::endl;
+// 	// std::cout << "Content-Length: " << request.content_length << std::endl;
+// 	// std::cout << "Process Bytes: " << request.process_bytes << std::endl;
+// 	// std::cout << "Error: " << request.error << std::endl;
+// 	// std::cout << "Boundary: " << request.boundary << std::endl;
+// 	// std::cout << "Is CGI: " << (request.is_cgi ? "true" : "false") << std::endl;
+// 	// std::cout << "CGI Environment:" << std::endl;
+// 	// std::map<std::string, std::string>::const_iterator cgi_it;
+// 	// for (cgi_it = request.cgi_env.begin(); cgi_it != request.cgi_env.end(); ++cgi_it)
+// 	// 	std::cout << cgi_it->first << ": " << cgi_it->second << std::endl;
+// 	// std::cout << "Temp File Path: " << request.temp_file_path << std::endl;
+	
+// 	// Process the data (this will depend on your application)
+// 	// For example, let's say you're expecting form data in the format of key=value&key2=value2
+// 	std::string response;
+// 	size_t pos = 0;
+// 	while ((pos = body.find("&")) != std::string::npos) {
+// 		std::string token = body.substr(0, pos);
+// 		response += token + "\n";
+// 		body.erase(0, pos + 1);
+// 	}
+// 	response += body;
+
+// 	// Send a response
+// 	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+// 	httpResponse += "Received POST data:\n" + response;
+
+// 	this->setResponse(httpResponse);
+
+// 	std::string fullPath = "resources/website" + path;
+
+// 	//int statusCode = 200; // Código de status OK
+// 	//int contentLength = server.getResponse().length();
+
+// 	printLog("POST", fullPath, "HTTP/1.1", server.getResponse(), server);
+// }
+
+
 void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server)
 {
-	// Parse the request body
-	std::string body = request.body;
+	std::string body = request.body; // Parse the request body
 
-	// *DEBUG*
-	// std::cout << "Method: " << request.method << std::endl;
-	// std::cout << "State: " << request.state << std::endl;
-	// std::cout << "Path: " << request.path << std::endl;
-	// std::cout << "Version: " << request.version << std::endl;
-	// std::cout << "Query: " << request.query << std::endl;
-	// std::cout << "Headers:" << std::endl;
-	// std::map<std::string, std::string>::const_iterator it;
-	// for (it = request.headers.begin(); it != request.headers.end(); ++it)
-	// 	std::cout << it->first << ": " << it->second << std::endl;
-	// std::cout << "Body: " << request.body << std::endl;
-	// std::cout << "Content-Length: " << request.content_length << std::endl;
-	// std::cout << "Process Bytes: " << request.process_bytes << std::endl;
-	// std::cout << "Error: " << request.error << std::endl;
-	// std::cout << "Boundary: " << request.boundary << std::endl;
-	// std::cout << "Is CGI: " << (request.is_cgi ? "true" : "false") << std::endl;
-	// std::cout << "CGI Environment:" << std::endl;
-	// std::map<std::string, std::string>::const_iterator cgi_it;
-	// for (cgi_it = request.cgi_env.begin(); cgi_it != request.cgi_env.end(); ++cgi_it)
-	// 	std::cout << cgi_it->first << ": " << cgi_it->second << std::endl;
-	// std::cout << "Temp File Path: " << request.temp_file_path << std::endl;
-	
-	// Process the data (this will depend on your application)
-	// For example, let's say you're expecting form data in the format of key=value&key2=value2
-	std::string response;
+	if (body.empty()) // Check if the body is empty
+	{
+		this->setResponse("Your expected response here");
+		return;
+	}
+
+	if (body.find("=") == std::string::npos || body.find("&") == std::string::npos) // Check if the body is in the correct format
+	{
+		this->setResponse("Your expected response here");
+		return;
+	}
+
+	std::string fullPath = "resources/website" + path; // Check if the path exists
+	struct stat buffer;
+	int statResult = stat(fullPath.c_str(), &buffer);
+
+	if (statResult != 0)
+	{
+		std::string httpResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
+		httpResponse += "The requested resource could not be found.";
+		this->setResponse(httpResponse);
+		return;
+	}
+
+	std::string response; // Process the data
+	std::string delimiter = "&";
 	size_t pos = 0;
-	while ((pos = body.find("&")) != std::string::npos) {
-		std::string token = body.substr(0, pos);
+	std::string token;
+	while ((pos = body.find(delimiter)) != std::string::npos) {
+		token = body.substr(0, pos);
 		response += token + "\n";
-		body.erase(0, pos + 1);
+		body.erase(0, pos + delimiter.length());
 	}
 	response += body;
 
-	// Send a response
-	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"; // Send a response
 	httpResponse += "Received POST data:\n" + response;
 
 	this->setResponse(httpResponse);
 
-	std::string fullPath = "resources/website" + path;
-
-	//int statusCode = 200; // Código de status OK
-	//int contentLength = server.getResponse().length();
-
 	printLog("POST", fullPath, "HTTP/1.1", server.getResponse(), server);
 }
 
-
-void runServer(std::vector<ServerInfo>& servers)
+void	runServer(std::vector<ServerInfo>& servers)
 {
 	fd_set read_fds;
 	FD_ZERO(&read_fds);
