@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/20 11:54:45 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/20 15:01:06 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,69 +89,40 @@ class ServerInfo
 
 		std::vector<int>& getSockets();
 
-		void	setSocketFD(int socket);
-		int	getSocketFD() const;
-
-		const sockaddr_in& getAddress() const;
-
-		void	setResponse(const std::string& response);
+		void		setSocketFD(int socket);
+		int			getSocketFD() const;
+		void		setAddress(const sockaddr_in& address);
+		//const sockaddr_in& getAddress() const;
+		void		setResponse(const std::string& response);
 		std::string	getResponse() const;
-
-		void	setAddress(const sockaddr_in& address);
-		
-		//void	handleGetRequest(const std::string& path, ServerInfo &server, HTTrequestMSG& request);
-		void	handleGetRequest(const std::string& path, ServerInfo& server);
-		void	handleUnknownRequest();
-		void	handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server);
-		void	parseMultipartFormData(const std::string& body, std::string& text, std::string& file); //
-
-		void	decodeAndStoreUrl(const std::string& url);
+		//void	decodeAndStoreUrl(const std::string& url);
 		std::string	getRootUrl() const;
+		//std::vector<int>& getSockets()
+		//std::vector<int>& getClientSockets()
+		void		addSocketToList(int sockfd);
 
-		std::string	decodeUrl(const std::string& url);
-
-		std::vector<int>&	getClientSockets();
-
-		void	addSocketToList(int sockfd);
-
-		void	addClient(int clientSocket, sockaddr_in clientAddress);
-
-		void	removeSocketFromList(int sockfd);
-
-		void setRootUrl(const std::string& url) {
-			rootUrl = url;
-		}
-
-
-	
+		void		handleUnknownRequest();
+		void		handleGetRequest(const std::string& path, ServerInfo& server);
+		void		handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server);
 };
 
-void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
-//void		printLog(const std::string& method, const std::string& path, int statusCode, ServerInfo& server);
+void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
 void		setupDirectory(ServerInfo& server, conf_File_Info& config);
-int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-//int print_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf); // *DEBUG*
-int remove_directory(const char *path); //to use in main() to remove the temp directory
-
-void		handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
-int			acceptConnection(ServerInfo& server, sockaddr_in& cli_addr);
-std::string	readRequest(int sockfd);
-void		processRequest(const std::string& request, ServerInfo& server);
+int			remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+int			remove_directory(const char *path); //to use in main() to remove the temp directory
 
 void		setupServer(ServerInfo& server, conf_File_Info& config);
-
-int			acceptConnection(std::vector<int>& sockets, ServerInfo& server, sockaddr_in& cli_addr);
 std::string	readRequest(int sockfd);
 void		processRequest(const std::string& request, ServerInfo& server);
+void		handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
+std::string readFileContent(const std::string& filePath);
 
 void		runServer(std::vector<ServerInfo>& servers);
 
-
+std::string readDirectoryContent(const std::string& directoryPath);
 bool ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
-std::string readDirectoryContent(const std::string& directoryPath);
-std::string readFileContent(const std::string& filePath);
 
 #endif

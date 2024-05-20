@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/20 14:46:41 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/20 15:01:40 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,8 @@ std::string ServerInfo::getRootUrl() const
 // 	return clientSockets;
 // }
 
-// std::vector<int>& ServerInfo::getClientSockets() {
+// std::vector<int>& ServerInfo::getClientSockets()
+// {
 // 	return clientSockets;
 // }
 
@@ -88,39 +89,6 @@ void ServerInfo::addSocketToList(int sockfd)
 	clientSockets.push_back(sockfd);
 }
 
-// void ServerInfo::addClient(int clientSocket, sockaddr_in clientAddress)
-// {
-// 	clientSockets.push_back(clientSocket);
-// 	cli_addrs.push_back(clientAddress);
-// }
-
-// void ServerInfo::removeSocketFromList(int sockfd)
-// {
-// 	clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), sockfd), clientSockets.end());
-// }
-
-// Function to decode the URL
-// std::string ServerInfo::decodeUrl(const std::string& url)
-// {
-// 	std::ostringstream outSS; // output string stream for decoding the url
-// 	for (std::string::const_iterator i = url.begin(); i != url.end(); ++i) // iterate over the url
-// 	{
-// 		if (*i == '%') // if the character is a '%' it means it's a special character
-// 		{
-// 			std::istringstream inSS("0x" + std::string(1, *(i + 1)) + std::string(1, *(i + 2))); // create a string stream with the hex value of the special character
-// 			int temp;
-// 			inSS >> std::hex >> temp; // convert the hex value to an integer
-// 			outSS << static_cast<char>(temp); // convert the integer to a character and add it to the output string stream
-// 			i += 2; // skip the next two characters
-// 		}
-// 		else if (*i == '+')// if the character is a '+' it means it's a space
-// 			outSS << ' '; // add a space to the output string stream
-// 		else
-// 			outSS << *i; // add the character to the output string stream
-// 	}
-// 	return (outSS.str()); // return the decoded url
-// }
-
 // ================================================================================================= //
 // ======================================= HELPER FUNCTIONS ======================================== //
 // ================================================================================================= //
@@ -128,23 +96,23 @@ void ServerInfo::addSocketToList(int sockfd)
 // Function to get the content type based on the file extension
 void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server)
 {
-    time_t now = time(NULL);
-    char timestamp[100];
-    strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+	time_t now = time(NULL);
+	char timestamp[100];
+	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
 
-    std::string methodColor = (method == "GET") ? YELLOW : CYAN;
+	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
 
-    // Extract status code from HTTP response
-    std::string statusCodeStr;
-    size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
-    if (statusCodePos != std::string::npos && httpResponse.length() >= statusCodePos + 3)
-        statusCodeStr = httpResponse.substr(statusCodePos, 3);
-    int statusCode = (statusCodeStr.empty()) ? 0 : atoi(statusCodeStr.c_str());
+	// Extract status code from HTTP response
+	std::string statusCodeStr;
+	size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
+	if (statusCodePos != std::string::npos && httpResponse.length() >= statusCodePos + 3)
+		statusCodeStr = httpResponse.substr(statusCodePos, 3);
+	int statusCode = (statusCodeStr.empty()) ? 0 : atoi(statusCodeStr.c_str());
 
-    std::string statusColor = (statusCode == 200) ? GREEN : RED;
+	std::string statusColor = (statusCode == 200) ? GREEN : RED;
 
-    std::cout << BG_CYAN_BLACK << timestamp << RESET << " \"" << methodColor << method << " " << path << " ";
-    std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
+	std::cout << BG_CYAN_BLACK << timestamp << RESET << " \"" << methodColor << method << " " << path << " ";
+	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
 }
 
 // Function to handle errors without exiting the program
@@ -223,15 +191,6 @@ int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct F
 	}
 	return 0;
 }
-
-// int print_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) // *DEBUG*
-// {
-// 	(void)sb;
-// 	(void)ftwbuf;
-// 	(void)typeflag;
-// 	std::cout << RED << "Found file or directory: " << fpath << RESET << std::endl;
-// 	return 0;
-// }
 
 // To use in main() to remove the temp directory
 int remove_directory(const char *path)
@@ -429,18 +388,6 @@ std::string readFileContent(const std::string& filePath)
 }
 
 
-// void* handleConnection(void* arg)
-// {
-// 	int newsockfd = *(int*)arg;
-// 	ServerInfo& server = *(ServerInfo*)arg;
-// 	std::string request = readRequest(newsockfd);
-// 	processRequest(request, server);
-// 	write(newsockfd, server.getResponse().c_str(), server.getResponse().length());
-// 	close(newsockfd);
-// 	return NULL;
-// }
-
-
 void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 {
 	std::string fullPath = "resources/website" + path;
@@ -539,39 +486,6 @@ void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& reque
 	printLog("POST", fullPath, "HTTP/1.1", server.getResponse(), server);
 }
 
-
-// void ServerInfo::parseMultipartFormData(const std::string& body, std::string& text, std::string& file)
-// {
-// 	std::string boundary = "-----------------------------1234567890";
-// 	size_t pos = body.find(boundary);
-// 	while (pos != std::string::npos) {
-// 		size_t endPos = body.find(boundary, pos + boundary.length());
-// 		if (endPos != std::string::npos) {
-// 			std::string part = body.substr(pos + boundary.length(), endPos - pos - boundary.length());
-
-// 			size_t namePos = part.find("name=\"");
-// 			if (namePos != std::string::npos) {
-// 				size_t nameEndPos = part.find("\"", namePos + 6);
-// 				if (nameEndPos != std::string::npos) {
-// 					std::string name = part.substr(namePos + 6, nameEndPos - namePos - 6);
-
-// 					size_t valuePos = part.find("\r\n\r\n", nameEndPos);
-// 					if (valuePos != std::string::npos) {
-// 						std::string value = part.substr(valuePos + 4);
-
-// 						if (name == "text") {
-// 							text = value;
-// 						} else if (name == "file") {
-// 							file = value;
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		pos = body.find(boundary, endPos + boundary.length());
-// 	}
-// }
 
 void runServer(std::vector<ServerInfo>& servers)
 {
