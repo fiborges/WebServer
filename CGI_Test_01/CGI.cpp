@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/17 12:54:05 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/20 15:59:56 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,26 @@ void	CGI::ExtractFileContent()
 	}
 }
 
+void	CGI::SendContentToScript()
+{
+	size_t	contentLength = this->FileContent_.size();
+	size_t	bytesWritten = 0;
+
+	while (bytesWritten < contentLength)
+	{
+		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
+		ssize_t	bytes = write(this->P_FD[1], this->FileContent_.data() + bytesWritten, chunkSize);
+
+		if (bytes < 0)
+		{
+			std::cerr << "Error writtting to pipe\n";
+			break;
+		}
+		bytesWritten += bytes;
+	}
+	close(this->P_FD[1]);
+}
+
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
@@ -96,16 +116,16 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 	ExtractFileContent();
 
-	LOG_CLASS::CreateLog("FinalBoundary", this->FinalBoundary_);
+	// LOG_CLASS::CreateLog("FinalBoundary", this->FinalBoundary_);
 
-	LOG_CLASS::CreateLog("Body", this->Body_);
+	// LOG_CLASS::CreateLog("Body", this->Body_);
 
-	LOG_CLASS::CreateLog("FileName", this->FileName_);
+	// LOG_CLASS::CreateLog("FileName", this->FileName_);
 
-	LOG_CLASS::CreateLog("FileContent", this->FileContent_);
+	// LOG_CLASS::CreateLog("FileContent", this->FileContent_);
 
 	// Creating Pipe
-	if (pipe(this->P_FD) == -1)
+	if (pipe(this->P_FD) == -1 || pipe(this->C_FD) == -1)
 	{
 		std::cerr << "Error in pipe\n";
 		exit (EXIT_FAILURE);
@@ -120,30 +140,30 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	}
 
 	if (this->pid == 0)
-		Child_process(this->FileName_, this->FileContent_);
+		Child_process();
 	else
-		Parent_process(this->FileContent_);
+		Parent_process();
 }
 
-void	CGI::Child_process(std::string& fileName, std::string& fileContent)
+void	CGI::Child_process()
 {
 	// this->P_FD[0] -> ReadEnd
 	// this->P_FD[1] -> WriteEnd
+	close(this->C_FD[0]);
 	close(this->P_FD[1]);
 	dup2(this->P_FD[0], STDIN_FILENO);
+	dup2(this->C_FD[1], STDOUT_FILENO);
 	close(this->P_FD[0]);
+	close(this->C_FD[1]);
 
-	(void)fileContent;
-
-	const char*	python_args[6];
+	const char*	python_args[5];
 
 	python_args[0] = "/usr/bin/python3";
 	python_args[1] = "./cgi-bin/U_File_test4.py";
 	python_args[2] = "./DATA";
-	python_args[3] = fileName.c_str();
+	python_args[3] = this->FileName_.c_str();
 	//python_args[4] = fileContent.data();
 	python_args[4] = NULL; // Alteração
-	python_args[5] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), NULL);
 
@@ -151,32 +171,15 @@ void	CGI::Child_process(std::string& fileName, std::string& fileContent)
 	exit(EXIT_FAILURE);
 }
 
-void	CGI::Parent_process(std::string& fileContent)
+void	CGI::Parent_process()
 {
-	// write(this->P_FD[1], fileContent.data(), fileContent.size());
-	// close(this->P_FD[1]);
-	size_t	contentLength = fileContent.size();
-	size_t	bytesWritten = 0;
-
-	//fcntl(this->P_FD[1], F_SETPIPE_SZ, contentLength);
-
-	while (bytesWritten < contentLength)
-	{
-		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
-		ssize_t	bytes = write(this->P_FD[1], fileContent.data() + bytesWritten, chunkSize);
-		if (bytes < 0)
-		{
-			std::cerr << "Error writting to pipe\n";
-			break;
-		}
-		bytesWritten += bytes;
-	}
-
-	close(this->P_FD[1]);
+	close(this->C_FD[1]);
+	close(this->P_FD[0]);
+	dup2(this->C_FD[0], STDIN_FILENO);
+	//close(this->C_FD[0]);
+	SendContentToScript();
 
 	wait(NULL);
-
-	(void)fileContent;
 
 	char		line[1024];
 	std::string	response;
@@ -186,7 +189,7 @@ void	CGI::Parent_process(std::string& fileContent)
 	while (1)
 	{
 		memset(line, 0, 1024);
-		ssize_t	bytesRead = read(this->P_FD[0], line, 1023);
+		ssize_t	bytesRead = read(this->C_FD[0], line, 1023);
 
 		if (bytesRead < 0)
 		{
@@ -199,11 +202,9 @@ void	CGI::Parent_process(std::string& fileContent)
 		if (bytesRead < 1023)
 			break;
 	}
+	close(this->C_FD[0]);
 	std::cout << "Response: " << response << std::endl;
-	//write(this->ClientSocket_, response.c_str(), response.length());
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
-	close(this->P_FD[0]);
-	close(this->P_FD[1]);
 }
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
