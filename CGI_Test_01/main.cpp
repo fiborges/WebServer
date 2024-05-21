@@ -16,7 +16,7 @@
 
 #include "CGI.hpp"
 
-#define PORT 8080
+#define PORT 8081
 
 void send_html_page(int client_socket)
 {
