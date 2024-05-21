@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/20 19:04:59 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/21 12:25:42 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,11 +224,11 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 
 	//std::cout << "Setting up server on port: " << config.portListen << std::endl; // *DEBUG*
 
-	if (config.portListen <= 0 || config.portListen > 65535) // acho que a Filipa ja trata -> Perguntar?
-	{
-		std::cerr << "Invalid port number: " << config.portListen << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	// if (config.portListen <= 0 || config.portListen > 65535) // acho que a Filipa ja trata -> Perguntar?
+	// {
+	// 	std::cerr << "Invalid port number: " << config.portListen << std::endl;
+	// 	exit(EXIT_FAILURE);
+	// }
 
 	server.setAddress(serv_addr);
 
@@ -296,31 +296,43 @@ void processRequest(const std::string& request, ServerInfo& server)
 	std::string path;
 	std::string body;
 
-	size_t firstSpace = request.find(" ");
-	size_t secondSpace = request.find(" ", firstSpace + 1);
-	if (firstSpace != std::string::npos && secondSpace != std::string::npos)
-	{
-		method = request.substr(0, firstSpace);
-		path = request.substr(firstSpace + 1, secondSpace - firstSpace - 1);
-	}
+	std::string requestCopy = request;
+	// size_t firstSpace = request.find(" ");
+	// size_t secondSpace = request.find(" ", firstSpace + 1);
+	// if (firstSpace != std::string::npos && secondSpace != std::string::npos)
+	// {
+	// 	method = request.substr(0, firstSpace);
+	// 	path = request.substr(firstSpace + 1, secondSpace - firstSpace - 1);
+	// }
 
 	HTTrequestMSG requestMsg;
-	if (method == "GET")
-		requestMsg.method = HTTrequestMSG::GET;
-	else if (method == "POST") {
-		requestMsg.method = HTTrequestMSG::POST;
-		size_t bodyPos = request.find("\r\n\r\n");
-		if (bodyPos != std::string::npos) {
-			body = request.substr(bodyPos + 4);
-			requestMsg.body = body;
-		}
-	}
-	else if (method == "DELETE")
-		requestMsg.method = HTTrequestMSG::DELETE;
+	HTTPParser parser;
+	if (parser.parseRequest(requestCopy, requestMsg, 10000))
+	{
+		std::cout << GREEN << "certo\n" << RESET; 
+		handleRequest(requestMsg, path, server);
+    }
 	else
-		requestMsg.method = HTTrequestMSG::UNKNOWN;
+	{
+        std::cout << RED << "Erro parser da requisição GET.\n" << RESET;
+    }
 
-	handleRequest(requestMsg, path, server);
+		// if (method == "GET")
+		// 	requestMsg.method = HTTrequestMSG::GET;
+		// else if (method == "POST") {
+		// 	requestMsg.method = HTTrequestMSG::POST;
+		// 	size_t bodyPos = request.find("\r\n\r\n");
+		// 	if (bodyPos != std::string::npos) {
+		// 		body = request.substr(bodyPos + 4);
+		// 		requestMsg.body = body;
+		// 	}
+		// }
+		// else if (method == "DELETE")
+		// 	requestMsg.method = HTTrequestMSG::DELETE;
+		// else
+		// 	requestMsg.method = HTTrequestMSG::UNKNOWN;
+
+	
 }
 
 // Function to handle the request from the HTTP method
