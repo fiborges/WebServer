@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/22 11:10:18 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/22 17:30:47 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,7 +353,10 @@ void processRequest(const std::string& request, ServerInfo& server)
 		if (requestMsg.is_cgi == false)
 			handleRequest(requestMsg, requestMsg.path, server);
 		else
+		{
 			std::cout << MAGENTA << "BRUNO implementa" << RESET << std::endl;
+			printLog("POST", requestMsg.path, "HTTP/1.1", server.getResponse(), server);
+		}
     }
 	else
 	{

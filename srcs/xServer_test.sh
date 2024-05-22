@@ -10,13 +10,13 @@ echo
 echo '
 #include <gtest/gtest.h>
 #include "../includes/get.hpp"
+#include "../includes/RequestParser.hpp"
 
 TEST(ServerInfoTestSingle, SetupServerTest) {
     ServerInfo server;
     conf_File_Info config;
     config.portListen = 8080;
     config.RootDirectory = "resources/TESTE_1";
-    server.setRootUrl("resources");
     setupServer(server, config);
     EXPECT_GE(server.getSocketFD(), 0);
     EXPECT_EQ(server.getRootUrl(), "resources");
@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 ' > single_server_test.cpp
 
 # Compile and run single_server_test.cpp
-g++ single_server_test.cpp get.cpp -lgtest -lgtest_main -pthread -lstdc++ -o single_test
+g++ single_server_test.cpp get.cpp RequestParser.cpp -lgtest -lgtest_main -pthread -lstdc++ -o single_test
 ./single_test
 
 /bin/echo -e "\033[1;33m\n\n ==> MULTISERVER TEST\n\033[0m"
@@ -38,6 +38,7 @@ g++ single_server_test.cpp get.cpp -lgtest -lgtest_main -pthread -lstdc++ -o sin
 echo '
 #include <gtest/gtest.h>
 #include "../includes/get.hpp"
+#include "../includes/RequestParser.hpp"
 
 class ServerInfoTestMulti : public ::testing::TestWithParam<int> {
 };
@@ -46,14 +47,13 @@ TEST_P(ServerInfoTestMulti, SetupServerTest) {
     ServerInfo server;
     conf_File_Info config;
     config.portListen = GetParam();
-    config.RootDirectory = "resources/TESTE_2";
-    server.setRootUrl("resources");
+    config.RootDirectory = "resources/TESTE_2";;
     setupServer(server, config);
     EXPECT_GE(server.getSocketFD(), 0);
     EXPECT_EQ(server.getRootUrl(), "resources");
 }
 
-INSTANTIATE_TEST_SUITE_P(PortTests, ServerInfoTestMulti, ::testing::Values(8080, 8081, 8082, 8083));
+INSTANTIATE_TEST_SUITE_P(PortTests, ServerInfoTestMulti, ::testing::Values(8080, 8081, 8082, 8083, 8085, 8090));
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 ' > multi_server_test.cpp
 
 # Compile and run multi_server_test.cpp
-g++ multi_server_test.cpp get.cpp -lgtest -lgtest_main -pthread -lstdc++ -o multi_test
+g++ multi_server_test.cpp get.cpp RequestParser.cpp -lgtest -lgtest_main -pthread -lstdc++ -o multi_test
 ./multi_test
 
 # Remove test files

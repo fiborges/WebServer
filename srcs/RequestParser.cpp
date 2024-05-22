@@ -7,7 +7,7 @@ const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 
 
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
-    //std::cout << "Starting parseRequest...\n";
+    std::cout << GREEN << "Starting parseRequest...\n" << RESET;
     if (!parseHeader(raw, msg)) {
         std::cout << "Header parsing failed\n";
         msg.error = "Header parsing failed";
@@ -58,7 +58,7 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         msg.temp_file_path = tempFilePath;
         printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
     }
-    //std::cout << "Finished parseRequest\n";
+    std::cout << GREEN << "Finished parseRequest\n" << RESET;
     return true;
 }
 

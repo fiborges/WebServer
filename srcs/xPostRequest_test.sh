@@ -12,6 +12,7 @@ mkdir -p resources/website/path
 cat <<- 'EOF' > xHandlePostRequest_test.cpp
 #include <gtest/gtest.h>
 #include "../includes/get.hpp"
+#include "../includes/RequestParser.hpp"
 
 TEST(ServerInfoTest, HandlePostRequestTest) {
      // Create a ServerInfo object
@@ -88,7 +89,7 @@ TEST(ServerInfoTest, HandlePostRequestTest_NonexistentPath) {
 EOF
 
 # Compilar e executar o teste
-g++ -o a.out xHandlePostRequest_test.cpp get.cpp -lgtest -lgtest_main -pthread
+g++ -o a.out xHandlePostRequest_test.cpp get.cpp RequestParser.cpp -lgtest -lgtest_main -pthread
 ./a.out
 
 # Remover o arquivo copiado

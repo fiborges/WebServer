@@ -8,6 +8,7 @@ echo
 cat <<- 'EOF' > xHandleGetRequest_test.cpp
 #include <gtest/gtest.h>
 #include "includes/get.hpp"
+#include "includes/RequestParser.hpp"
 
 TEST(ServerInfoTest, HandleGetRequestTest_RootDirectory) {
     ServerInfo server;
@@ -42,7 +43,7 @@ cp xHandleGetRequest_test.cpp ../
 cd ..
 
 # Compilar e executar o teste
-g++ xHandleGetRequest_test.cpp srcs/get.cpp -lgtest -lgtest_main -pthread
+g++ xHandleGetRequest_test.cpp srcs/get.cpp srcs/RequestParser.cpp -lgtest -lgtest_main -pthread
 ./a.out
 
 # Remover o arquivo copiado
