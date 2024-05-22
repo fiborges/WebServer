@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/21 12:25:42 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/22 11:10:18 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -266,32 +266,51 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 // Read the request from the client and return it as a string
 std::string readRequest(int sockfd)
 {
-	char buffer[1024];
-	std::string request;
+    char buffer[1024];
+    std::string request;
 
-	while (1)
-	{
-		memset(buffer, 0, 1024);
-		ssize_t bytesRead = read(sockfd, buffer, 1023);
+    while (1)
+    {
+        memset(buffer, 0, 1024);
+        ssize_t bytesRead = read(sockfd, buffer, 1023);
 
-		if (bytesRead < 0)
-		{
-			handleError("Error reading from socket.");
-			exit(-1);
-		}
+        if (bytesRead < 0)
+        {
+            handleError("Error reading from socket.");
+            exit(-1);
+        }
 
-		request += buffer;
+        if (bytesRead == 0)
+        {
+            //std::cout << "Received empty request, ignoring." << std::endl;
+            break;
+        }
 
-		if (bytesRead < 1023)
-			break;
-	}
+        request += buffer;
 
-	return request;
+        //std::cout << "Bytes read: " << bytesRead << ", Buffer content: " << buffer << std::endl; // Debug statement
+
+        if (bytesRead < 1023)
+            break;
+    }
+
+    //std::cout << "Final request: " << request << std::endl; // Debug statement
+
+    return request;
 }
 
 // Process the request and send the response
 void processRequest(const std::string& request, ServerInfo& server)
 {
+
+	if (request.empty())
+    {
+        //std::cout << "Received empty request, ignoring." << std::endl;
+        return;
+    }
+
+	//std::cout << "Processing request: " << request << std::endl; // Debug statement
+	
 	std::string method;
 	std::string path;
 	std::string body;
@@ -309,13 +328,39 @@ void processRequest(const std::string& request, ServerInfo& server)
 	HTTPParser parser;
 	if (parser.parseRequest(requestCopy, requestMsg, 10000))
 	{
-		std::cout << GREEN << "certo\n" << RESET; 
-		handleRequest(requestMsg, path, server);
+		// 	// *DEBUG*
+		// std::cout << GREEN << "certo\n" << RESET;
+		// std::cout << "Method: " << requestMsg.method << std::endl;
+		// std::cout << "State: " << requestMsg.state << std::endl;
+		// std::cout << "Path: " << requestMsg.path << std::endl;
+		// std::cout << "Version: " << requestMsg.version << std::endl;
+		// std::cout << "Query: " << requestMsg.query << std::endl;
+		// std::cout << "Headers:" << std::endl;
+		// std::map<std::string, std::string>::const_iterator it;
+		// for (it = requestMsg.headers.begin(); it != requestMsg.headers.end(); ++it)
+		// 	std::cout << it->first << ": " << it->second << std::endl;
+		// std::cout << "Body: " << requestMsg.body << std::endl;
+		// std::cout << "Content-Length: " << requestMsg.content_length << std::endl;
+		// std::cout << "Process Bytes: " << requestMsg.process_bytes << std::endl;
+		// std::cout << "Error: " << requestMsg.error << std::endl;
+		// std::cout << "Boundary: " << requestMsg.boundary << std::endl;
+		// std::cout << "Is CGI: " << (requestMsg.is_cgi ? "true" : "false") << std::endl;
+		// std::cout << "CGI Environment:" << std::endl;
+		// std::map<std::string, std::string>::const_iterator cgi_it;
+		// for (cgi_it = requestMsg.cgi_env.begin(); cgi_it != requestMsg.cgi_env.end(); ++cgi_it)
+		// 	std::cout << cgi_it->first << ": " << cgi_it->second << std::endl;
+		// std::cout << "Temp File Path: " << requestMsg.temp_file_path << std::endl;
+		if (requestMsg.is_cgi == false)
+			handleRequest(requestMsg, requestMsg.path, server);
+		else
+			std::cout << MAGENTA << "BRUNO implementa" << RESET << std::endl;
     }
 	else
 	{
-        std::cout << RED << "Erro parser da requisição GET.\n" << RESET;
+        std::cout << RED << "Erro parser da requisição GET --> get.cpp.\n" << RESET;
+		std::cout << "Error message: " << requestMsg.error << std::endl;
     }
+}
 
 		// if (method == "GET")
 		// 	requestMsg.method = HTTrequestMSG::GET;
@@ -332,7 +377,11 @@ void processRequest(const std::string& request, ServerInfo& server)
 		// else
 		// 	requestMsg.method = HTTrequestMSG::UNKNOWN;
 
-	
+
+bool fileExists(const std::string& filePath)
+{
+    struct stat buffer;
+    return (stat(filePath.c_str(), &buffer) == 0);
 }
 
 // Function to handle the request from the HTTP method
@@ -359,6 +408,16 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	}
 	else
 	{
+
+        std::string filePath = "resources/website" + path; // adjust this to your actual file path
+
+        // if (!fileExists(filePath))
+        // {
+        //     // The file does not exist, return an error or handle this case as needed
+        //     std::cout << "File does not exist: FRED: " << filePath << std::endl;
+        //     server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+        //     return;
+        // }
 		//std::cout << RED << "\nResposta: " << server.getResponse() << RESET; // *DEBUG*
 		//std::cout << RED << "Tamanho: " << server.getResponse().length() << RESET << std::endl; // *DEBUG*
 		if (request.method == HTTrequestMSG::GET)
@@ -399,51 +458,156 @@ std::string readFileContent(const std::string& filePath)
 	return fileContent;
 }
 
+bool isValidFilePath(const std::string& path) {
+    struct stat buffer;
+    return (stat(path.c_str(), &buffer) == 0);
+}
+
+bool isDirectory(const std::string& path) {
+    struct stat buffer;
+    if (stat(path.c_str(), &buffer) == 0) {
+        return S_ISDIR(buffer.st_mode);
+    }
+    return false;
+}
+
+
 
 void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
 {
-	std::string fullPath = "resources/website" + path;
-	//std::cout << "Full path: " << fullPath << std::endl; *DEBUG*
+    std::string fullPath = "resources/website" + path;
 
-	struct stat buffer;
-	if (stat(fullPath.c_str(), &buffer) == 0)
-	{
-		if (S_ISDIR(buffer.st_mode))
-		{
-			if (path == "/") // Special case for root directory
+    if (!fileExists(fullPath))
+    {
+        //std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+        server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+        return;
+    }
+    
+    // std::cout << "[DEBUG] Request path: " << path << std::endl;
+    // std::cout << "[DEBUG] Full path: " << fullPath << std::endl;
+
+    // std::cout << "[DEBUG] Trying to read file: " << fullPath << std::endl;
+
+    // std::cout << "[DEBUG] Redirecting to directory: " << path << "/" << std::endl;
+
+    struct stat buffer;
+    if (stat(fullPath.c_str(), &buffer) == 0)
+    {
+        if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
+        {
+            //std::cout << "[DEBUG] File is a regular file." << std::endl;
+            std::string fileContent = readFileContent(fullPath);
+            std::string contentType = getContentType(fullPath);
+            server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+        }
+        else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
+        {
+           // std::cout << "[DEBUG] File is a directory." << std::endl;
+            // Redirecionar para o diretório adicionando uma barra no final, se necessário
+            if (!path.empty() && path[path.length() - 1] != '/') {
+                server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + path + "/\r\n\r\n");
+				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+                return;
+            }
+
+            // Tentar encontrar e servir index.html dentro do diretório
+            std::string indexPath = fullPath;
+            if (indexPath[indexPath.length() - 1] != '/') {
+                indexPath += '/';
+            }
+            indexPath += "index.html";
+
+            if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
+            {
+               // std::cout << "[DEBUG] Found index.html in directory." << std::endl;
+                std::string fileContent = readFileContent(indexPath);
+                std::string contentType = getContentType(indexPath);
+                server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+            }
+			else if (errno == ENOENT) // Se o arquivo/diretório não existir
 			{
-				fullPath += "index.html";
-				std::string fileContent = readFileContent(fullPath);
-				std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
-				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+				//std::cout << "[DEBUG] File or directory does not exist: " << fullPath << std::endl;
+				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 			}
-			else // Handle other directories
-			{
-				std::string directoryContent = readDirectoryContent(fullPath);
-				if (!directoryContent.empty())
-					server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + directoryContent);
-				else
-					server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nDirectory not found\nERROR 404\n");
+            else // Se não houver index.html, retornar erro 403
+            {
+               // std::cout << "[DEBUG] No index.html found in directory." << std::endl;
+                server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
+				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
 			}
-		}
-		else if (S_ISREG(buffer.st_mode)) // Handle file
-		{
-			std::string fileContent = readFileContent(fullPath);
-			std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
-			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-		}
+        }
+    }
+    else // Se o arquivo não existir, retornar erro 404
+    {
+        //std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+        server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
 	}
-	else // Handle non-existent file or directory
-		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 
-	//int statusCode = 200; // *DEBUG*
-	// std::string response = it->getResponse(); // *DEBUG*
-	// size_t response_length = response.length(); // *DEBUG*
-	// std::cout << "Sending response to client (Length: " << response_length << "): " << response << std::endl; // *DEBUG*
-	// write(newsockfd, response.c_str(), response_length); //	// *DEBUG*; // Código de status OK
-	//int contentLength = server.getResponse().length(); // *DEBUG*
-	printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+    printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
+// {
+// 	std::string fullPath = "resources/website" + path;
+// 	//std::cout << "Full path: " << fullPath << std::endl; *DEBUG*
+
+// 	struct stat buffer;
+// 	if (stat(fullPath.c_str(), &buffer) == 0)
+// 	{
+// 		if (S_ISDIR(buffer.st_mode))
+// 		{
+// 			if (path == "/") // Special case for root directory
+// 			{
+// 				fullPath += "index.html";
+// 				std::string fileContent = readFileContent(fullPath);
+// 				std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
+// 				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 			}
+// 			else // Handle other directories
+// 			{
+// 				std::string directoryContent = readDirectoryContent(fullPath);
+// 				if (!directoryContent.empty())
+// 					server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + directoryContent);
+// 				else
+// 					server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nDirectory not found\nERROR 404\n");
+// 			}
+// 		}
+// 		else if (S_ISREG(buffer.st_mode)) // Handle file
+// 		{
+// 			std::string fileContent = readFileContent(fullPath);
+// 			std::string contentType = getContentType(fullPath); // Determine the content type based on the file extension
+// 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 		}
+// 	}
+// 	else // Handle non-existent file or directory
+// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+
+// 	//int statusCode = 200; // *DEBUG*
+// 	// std::string response = it->getResponse(); // *DEBUG*
+// 	// size_t response_length = response.length(); // *DEBUG*
+// 	// std::cout << "Sending response to client (Length: " << response_length << "): " << response << std::endl; // *DEBUG*
+// 	// write(newsockfd, response.c_str(), response_length); //	// *DEBUG*; // Código de status OK
+// 	//int contentLength = server.getResponse().length(); // *DEBUG*
+// 	printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+// }
 
 
 // void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server)
@@ -625,7 +789,6 @@ std::string readDirectoryContent(const std::string& directoryPath)
 	else
 	{
 		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
-		std::cout << "Failed to open directory: " << directoryPath << std::endl; // Print the directory path
 		return "";
 	}
 
@@ -638,7 +801,7 @@ std::string readDirectoryContent(const std::string& directoryPath)
 		directoryContent += "\n";
 	}
 
-	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
+	//std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
 	return directoryContent;
 }
 

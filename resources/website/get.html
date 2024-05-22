@@ -159,11 +159,19 @@
 			font-weight: bold
 		}
 
-        .submit-button {
-            /* Add your custom styles here. For example: */
-            background-color: #8d0000;
-            color: #ffffff;
-            font-weight: bold
+		.large-bold {
+            font-size: 2em; /* Adjust size as needed */
+            font-weight: bold;
+        }
+
+		.large-bold2 {
+            font-size: 1.2em; /* Adjust size as needed */
+            font-weight: bold;
+        }
+
+		.large-bold3 {
+            font-weight: bold;
+			display: inline;
         }
 
 	</style>
@@ -171,14 +179,17 @@
 </head>
 <body>
 	<div class="container">
-		<h1>Formulário POST</h1>
+		<h1>Get Page</h1>
 		<a href="/index.html"><button class="buttons glow-on-hover"><b>Home</b></button></a>
 		<form action="http://localhost:8080" method="post"><br>
-			<label for="key1">Chave 1:</label>
-			<input type="text" id="key1" name="key1"><br><br><br>
-			<label for="key2">Chave 2:</label>
-			<input type="text" id="key2" name="key2"><br><br><br>
-			<input type="submit" value="Enviar" class="buttons glow-on-hover submit-button">
+			<div class="large-bold">Webserv<br></div><br>
+			<div class="large-bold2">This is when you finally understand why a URL startswith HTTP<br></div><br>
+			<div class="large-bold3">Summary:</div>
+			This project is about writing your ow HTTP server.
+			You will be able to test it with an actual browser.
+			HTTP is one of the most used protocols on the internet.
+			Knowing its arcane will be useful, even if you won’t be working on a website.
+			Version: 21.2
 		</form>
 	</div>
 </body>

@@ -54,6 +54,8 @@ public:
 private:
     static void readRequestLine(std::istringstream& stream, HTTrequestMSG& msg);
     static void readHeaders(std::istringstream& stream, HTTrequestMSG& msg);
+    static bool readRequestLine2(std::istringstream& stream, HTTrequestMSG& msg);
+    static bool readHeaders2(std::istringstream& stream, HTTrequestMSG& msg);
     static bool parseHeader(std::string& raw, HTTrequestMSG& msg);
     static void setMethod(const std::string& method, HTTrequestMSG& msg);
     static void removeCarriageReturn(std::string& s);
