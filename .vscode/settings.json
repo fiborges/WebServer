@@ -58,7 +58,12 @@
     "variant": "cpp",
     "chrono": "cpp",
     "codecvt": "cpp",
-    "ratio": "cpp"
+    "ratio": "cpp",
+    "condition_variable": "cpp",
+    "mutex": "cpp",
+    "semaphore": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",

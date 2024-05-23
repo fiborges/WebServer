@@ -50,6 +50,7 @@ Performance Tests:
 -> Siege
 siege -b http://testing:8080/empty.html -t 1m
 siege -b http://localhost:8080/empty.html -t10s
+siege -b http://localhost:8080/index.html -t1m
 
 
 -> Leaks

@@ -1,0 +1,30 @@
+
+Claro, aqui está uma lista dos principais códigos de erro HTTP que você pode encontrar ao trabalhar com servidores web, junto com uma breve descrição de cada um:
+Códigos de Sucesso (2xx)
+
+    200 OK: A solicitação foi bem-sucedida e o servidor retornou os dados solicitados.
+    201 Created: A solicitação foi bem-sucedida e um novo recurso foi criado como resultado.
+
+Códigos de Redirecionamento (3xx)
+
+    301 Moved Permanently: O recurso solicitado foi movido permanentemente para uma nova URL.
+    302 Found: O recurso solicitado foi encontrado, mas está temporariamente em uma URL diferente.
+    304 Not Modified: O recurso não foi modificado desde a última solicitação. O cliente pode usar a versão em cache.
+
+Códigos de Erro do Cliente (4xx)
+
+    400 Bad Request: A solicitação é inválida ou malformada.
+    401 Unauthorized: A solicitação requer autenticação do usuário.
+    403 Forbidden: O servidor entendeu a solicitação, mas se recusa a autorizá-la.
+    404 Not Found: O recurso solicitado não foi encontrado no servidor.
+    408 Request Timeout: O servidor esgotou o tempo limite ao aguardar a solicitação do cliente.
+
+Códigos de Erro do Servidor (5xx)
+
+    500 Internal Server Error: O servidor encontrou uma condição inesperada que impediu a conclusão da solicitação.
+    501 Not Implemented: O servidor não reconhece o método de solicitação ou não possui a capacidade de cumprir a solicitação.
+    502 Bad Gateway: O servidor, ao atuar como um gateway ou proxy, recebeu uma resposta inválida do servidor upstream.
+    503 Service Unavailable: O servidor não está disponível no momento (porque está sobrecarregado ou em manutenção).
+    504 Gateway Timeout: O servidor, ao atuar como um gateway ou proxy, não recebeu uma resposta a tempo do servidor upstream.
+
+Esses são os principais códigos de status HTTP que você pode encontrar. Se precisar de mais detalhes sobre algum código específico ou tiver outras dúvidas, sinta-se à vontade para perguntar!

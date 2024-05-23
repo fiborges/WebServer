@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/22 17:30:47 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/23 16:29:26 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,9 +93,48 @@ void ServerInfo::addSocketToList(int sockfd)
 // ======================================= HELPER FUNCTIONS ======================================== //
 // ================================================================================================= //
 
+std::string methodToString(HTTrequestMSG::Method method)
+{
+	switch (method) {
+		case HTTrequestMSG::GET:
+			return "GET";
+		case HTTrequestMSG::POST:
+			return "POST";
+		case HTTrequestMSG::DELETE:
+			return "DELETE";
+		default:
+			return "UNKNOWN";
+	}
+}
+
+
 // Function to get the content type based on the file extension
+// void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server)
+// {
+// 	time_t now = time(NULL);
+// 	char timestamp[100];
+// 	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+
+// 	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
+
+// 	// Extract status code from HTTP response
+// 	std::string statusCodeStr;
+// 	size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
+// 	if (statusCodePos != std::string::npos && httpResponse.length() >= statusCodePos + 3)
+// 		statusCodeStr = httpResponse.substr(statusCodePos, 3);
+// 	int statusCode = (statusCodeStr.empty()) ? 0 : atoi(statusCodeStr.c_str());
+
+// 	std::string statusColor = (statusCode == 200) ? GREEN : RED;
+
+// 	std::cout << BG_CYAN_BLACK << timestamp << RESET << " \"" << methodColor << method << " " << path << " ";
+// 	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
+// }
+
 void printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server)
 {
+	static int requestCount = -1; // Contador de solicitações
+	requestCount++; // Incrementa o contador a cada chamada da função
+
 	time_t now = time(NULL);
 	char timestamp[100];
 	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
@@ -111,7 +150,8 @@ void printLog(const std::string& method, const std::string& path, const std::str
 
 	std::string statusColor = (statusCode == 200) ? GREEN : RED;
 
-	std::cout << BG_CYAN_BLACK << timestamp << RESET << " \"" << methodColor << method << " " << path << " ";
+
+	std::cout << BG_CYAN_BLACK << timestamp << RESET << " [" << requestCount << "] \"" << methodColor << method << " " << path << " ";
 	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
 }
 
@@ -259,44 +299,45 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 		exit(EXIT_FAILURE);
 	}
 	
-	std::cout << std::endl;
-	std::cout << CYAN << "Server with port: " << RESET << config.portListen << CYAN << " is ready!" << RESET;
+	//std::cout << std::endl;
+	server.addPortToList(config.portListen);
+	//std::cout << CYAN << "Server with port: " << RESET << config.portListen << CYAN << " is ready!" << RESET;
 }
 
 // Read the request from the client and return it as a string
 std::string readRequest(int sockfd)
 {
-    char buffer[1024];
-    std::string request;
+	char buffer[1024];
+	std::string request;
 
-    while (1)
-    {
-        memset(buffer, 0, 1024);
-        ssize_t bytesRead = read(sockfd, buffer, 1023);
+	while (1)
+	{
+		memset(buffer, 0, 1024);
+		ssize_t bytesRead = read(sockfd, buffer, 1023);
 
-        if (bytesRead < 0)
-        {
-            handleError("Error reading from socket.");
-            exit(-1);
-        }
+		if (bytesRead < 0)
+		{
+			handleError("Error reading from socket.");
+			exit(-1);
+		}
 
-        if (bytesRead == 0)
-        {
-            //std::cout << "Received empty request, ignoring." << std::endl;
-            break;
-        }
+		if (bytesRead == 0)
+		{
+			//std::cout << "Received empty request, ignoring." << std::endl;
+			break;
+		}
 
-        request += buffer;
+		request += buffer;
 
-        //std::cout << "Bytes read: " << bytesRead << ", Buffer content: " << buffer << std::endl; // Debug statement
+		//std::cout << "Bytes read: " << bytesRead << ", Buffer content: " << buffer << std::endl; // Debug statement
 
-        if (bytesRead < 1023)
-            break;
-    }
+		if (bytesRead < 1023)
+			break;
+	}
 
-    //std::cout << "Final request: " << request << std::endl; // Debug statement
+	//std::cout << "Final request: " << request << std::endl; // Debug statement
 
-    return request;
+	return request;
 }
 
 // Process the request and send the response
@@ -304,10 +345,10 @@ void processRequest(const std::string& request, ServerInfo& server)
 {
 
 	if (request.empty())
-    {
-        //std::cout << "Received empty request, ignoring." << std::endl;
-        return;
-    }
+	{
+		//std::cout << "Received empty request, ignoring." << std::endl;
+		return;
+	}
 
 	//std::cout << "Processing request: " << request << std::endl; // Debug statement
 	
@@ -355,14 +396,14 @@ void processRequest(const std::string& request, ServerInfo& server)
 		else
 		{
 			std::cout << MAGENTA << "BRUNO implementa" << RESET << std::endl;
-			printLog("POST", requestMsg.path, "HTTP/1.1", server.getResponse(), server);
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
-    }
+	}
 	else
 	{
-        std::cout << RED << "Erro parser da requisição GET --> get.cpp.\n" << RESET;
+		std::cout << RED << "Erro parser da requisição GET --> get.cpp.\n" << RESET;
 		std::cout << "Error message: " << requestMsg.error << std::endl;
-    }
+	}
 }
 
 		// if (method == "GET")
@@ -383,13 +424,14 @@ void processRequest(const std::string& request, ServerInfo& server)
 
 bool fileExists(const std::string& filePath)
 {
-    struct stat buffer;
-    return (stat(filePath.c_str(), &buffer) == 0);
+	struct stat buffer;
+	return (stat(filePath.c_str(), &buffer) == 0);
 }
 
 // Function to handle the request from the HTTP method
 void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& server)
 {
+	(void)path;
 	// if (!isValidHeader(request)) {
 	//     // Enviar uma resposta de erro 400 Bad Request
 	//     std::string response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
@@ -397,7 +439,7 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	//     return;
 	// }
 
-	if (path == "/favicon.ico")
+	if (request.path == "/favicon.ico")
 	{
 		std::string faviconPath = "resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
 		std::string fileContent = readFileContent(faviconPath);
@@ -412,20 +454,20 @@ void handleRequest(HTTrequestMSG& request, const std::string& path, ServerInfo& 
 	else
 	{
 
-        std::string filePath = "resources/website" + path; // adjust this to your actual file path
+		std::string filePath = "resources/website" + request.path; // adjust this to your actual file path
 
-        // if (!fileExists(filePath))
-        // {
-        //     // The file does not exist, return an error or handle this case as needed
-        //     std::cout << "File does not exist: FRED: " << filePath << std::endl;
-        //     server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-        //     return;
-        // }
+		// if (!fileExists(filePath))
+		// {
+		//     // The file does not exist, return an error or handle this case as needed
+		//     std::cout << "File does not exist: FRED: " << filePath << std::endl;
+		//     server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		//     return;
+		// }
 		//std::cout << RED << "\nResposta: " << server.getResponse() << RESET; // *DEBUG*
 		//std::cout << RED << "Tamanho: " << server.getResponse().length() << RESET << std::endl; // *DEBUG*
 		if (request.method == HTTrequestMSG::GET)
 		{
-			server.handleGetRequest(path, server);
+			server.handleGetRequest(request, server);
 		}
 		else if (request.method == HTTrequestMSG::POST)
 		{
@@ -462,95 +504,95 @@ std::string readFileContent(const std::string& filePath)
 }
 
 bool isValidFilePath(const std::string& path) {
-    struct stat buffer;
-    return (stat(path.c_str(), &buffer) == 0);
+	struct stat buffer;
+	return (stat(path.c_str(), &buffer) == 0);
 }
 
 bool isDirectory(const std::string& path) {
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) == 0) {
-        return S_ISDIR(buffer.st_mode);
-    }
-    return false;
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) == 0) {
+		return S_ISDIR(buffer.st_mode);
+	}
+	return false;
 }
 
 
 
-void ServerInfo::handleGetRequest(const std::string& path, ServerInfo &server)
+void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
-    std::string fullPath = "resources/website" + path;
+	std::string fullPath = "resources/website" + requestMsg.path;
 
-    if (!fileExists(fullPath))
-    {
-        //std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
-        server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-		printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
-        return;
-    }
-    
-    // std::cout << "[DEBUG] Request path: " << path << std::endl;
-    // std::cout << "[DEBUG] Full path: " << fullPath << std::endl;
+	if (!fileExists(fullPath))
+	{
+		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+		return;
+	}
+	
+	// std::cout << "[DEBUG] Request path: " << path << std::endl;
+	// std::cout << "[DEBUG] Full path: " << fullPath << std::endl;
 
-    // std::cout << "[DEBUG] Trying to read file: " << fullPath << std::endl;
+	// std::cout << "[DEBUG] Trying to read file: " << fullPath << std::endl;
 
-    // std::cout << "[DEBUG] Redirecting to directory: " << path << "/" << std::endl;
+	// std::cout << "[DEBUG] Redirecting to directory: " << path << "/" << std::endl;
 
-    struct stat buffer;
-    if (stat(fullPath.c_str(), &buffer) == 0)
-    {
-        if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
-        {
-            //std::cout << "[DEBUG] File is a regular file." << std::endl;
-            std::string fileContent = readFileContent(fullPath);
-            std::string contentType = getContentType(fullPath);
-            server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-        }
-        else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
-        {
-           // std::cout << "[DEBUG] File is a directory." << std::endl;
-            // Redirecionar para o diretório adicionando uma barra no final, se necessário
-            if (!path.empty() && path[path.length() - 1] != '/') {
-                server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + path + "/\r\n\r\n");
-				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
-                return;
-            }
+	struct stat buffer;
+	if (stat(fullPath.c_str(), &buffer) == 0)
+	{
+		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
+		{
+			//std::cout << "[DEBUG] File is a regular file." << std::endl;
+			std::string fileContent = readFileContent(fullPath);
+			std::string contentType = getContentType(fullPath);
+			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+		}
+		else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
+		{
+		   // std::cout << "[DEBUG] File is a directory." << std::endl;
+			// Redirecionar para o diretório adicionando uma barra no final, se necessário
+			if (!requestMsg.path.empty() && requestMsg.path[requestMsg.path.length() - 1] != '/') {
+				server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + requestMsg.path + "/\r\n\r\n");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return;
+			}
 
-            // Tentar encontrar e servir index.html dentro do diretório
-            std::string indexPath = fullPath;
-            if (indexPath[indexPath.length() - 1] != '/') {
-                indexPath += '/';
-            }
-            indexPath += "index.html";
+			// Tentar encontrar e servir index.html dentro do diretório
+			std::string indexPath = fullPath;
+			if (indexPath[indexPath.length() - 1] != '/') {
+				indexPath += '/';
+			}
+			indexPath += "index.html";
 
-            if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
-            {
-               // std::cout << "[DEBUG] Found index.html in directory." << std::endl;
-                std::string fileContent = readFileContent(indexPath);
-                std::string contentType = getContentType(indexPath);
-                server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
-            }
+			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
+			{
+			   // std::cout << "[DEBUG] Found index.html in directory." << std::endl;
+				std::string fileContent = readFileContent(indexPath);
+				std::string contentType = getContentType(indexPath);
+				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+				//printLog("GET3", fullPath, "HTTP/1.1", server.getResponse(), server);
+			}
 			else if (errno == ENOENT) // Se o arquivo/diretório não existir
 			{
 				//std::cout << "[DEBUG] File or directory does not exist: " << fullPath << std::endl;
 				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 			}
-            else // Se não houver index.html, retornar erro 403
-            {
-               // std::cout << "[DEBUG] No index.html found in directory." << std::endl;
-                server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
-				printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+			else // Se não houver index.html, retornar erro 403
+			{
+			   // std::cout << "[DEBUG] No index.html found in directory." << std::endl;
+				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 			}
-        }
-    }
-    else // Se o arquivo não existir, retornar erro 404
-    {
-        //std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
-        server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-		printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+		}
+	}
+	else // Se o arquivo não existir, retornar erro 404
+	{
+		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 	}
 
-    printLog("GET", fullPath, "HTTP/1.1", server.getResponse(), server);
+	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 }
 
 
@@ -710,7 +752,7 @@ void ServerInfo::handlePostRequest(const std::string& path, HTTrequestMSG& reque
 
 	this->setResponse(httpResponse);
 
-	printLog("POST", fullPath, "HTTP/1.1", server.getResponse(), server);
+	printLog(methodToString(request.method), fullPath, "HTTP/1.1", server.getResponse(), server);
 }
 
 void	runServer(std::vector<ServerInfo>& servers)
@@ -727,11 +769,25 @@ void	runServer(std::vector<ServerInfo>& servers)
 			max_fd = sockfd;
 	}
 	
-	std::cout << "\n\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " \
+	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " \
 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
+	time_t now = time(NULL);
+	char timestamp[100];
+	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+
+	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+	{
+		std::vector<int> ports = it->getPortList();
+		for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+			std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
+		std::cout << std::endl;
+	}
 
 	while (1)
 	{
+
+		
 		fd_set temp_fds = read_fds;
 		if (select(max_fd + 1, &temp_fds, NULL, NULL, NULL) < 0)
 		{

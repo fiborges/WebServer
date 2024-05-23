@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/20 15:01:06 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/23 13:54:45 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,7 @@ class ServerInfo
 		std::string response;
 		std::string rootUrl;
 		std::vector<int> clientSockets;
+		std::vector<int> portListen;
 
 	public:
 		ServerInfo();
@@ -102,10 +103,19 @@ class ServerInfo
 		void		addSocketToList(int sockfd);
 
 		void		handleUnknownRequest();
-		void		handleGetRequest(const std::string& path, ServerInfo& server);
+		//void		handleGetRequest(const std::string& path, ServerInfo& server);
+		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server);
+
+		void addPortToList(int port) {
+			portListen.push_back(port);
+		}
+		    std::vector<int> getPortList() const {
+			return portListen;
+		}
 };
 
+std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
