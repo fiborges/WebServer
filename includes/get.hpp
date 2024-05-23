@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/23 13:54:45 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/23 17:00:01 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,14 +105,10 @@ class ServerInfo
 		void		handleUnknownRequest();
 		//void		handleGetRequest(const std::string& path, ServerInfo& server);
 		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
-		void		handlePostRequest(const std::string& path, HTTrequestMSG& request, ServerInfo &server);
+		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server);
 
-		void addPortToList(int port) {
-			portListen.push_back(port);
-		}
-		    std::vector<int> getPortList() const {
-			return portListen;
-		}
+		void		addPortToList(int port);
+		std::vector<int> getPortList() const;
 };
 
 std::string	methodToString(HTTrequestMSG::Method method);
@@ -126,7 +122,7 @@ int			remove_directory(const char *path); //to use in main() to remove the temp 
 void		setupServer(ServerInfo& server, conf_File_Info& config);
 std::string	readRequest(int sockfd);
 void		processRequest(const std::string& request, ServerInfo& server);
-void		handleRequest(HTTrequestMSG& requestt, const std::string& path, ServerInfo& server);
+void		handleRequest(HTTrequestMSG& requestt, ServerInfo& server);
 std::string readFileContent(const std::string& filePath);
 
 void		runServer(std::vector<ServerInfo>& servers);

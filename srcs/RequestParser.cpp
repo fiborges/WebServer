@@ -16,13 +16,13 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
     //std::cout << "Header parsed successfully\n";
     setContentLength(msg);
     if (msg.path.find("cgi") != std::string::npos) {
-        std::cout << "CGI request detected\n";
+        //std::cout << "CGI request detected\n";
         msg.is_cgi = true;
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
         setupCGIEnvironment(msg);
     }
     if (msg.is_cgi && msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
-        std::cout << "Processing multipart/form-data...\n";
+        //std::cout << "Processing multipart/form-data...\n";
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
         if (boundary.empty()) {
             std::cout << "No boundary in multipart/form-data\n";
@@ -46,17 +46,17 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         }
     }
     if (!msg.body.empty()) {
-        std::cout << "Saving request body to file...\n";
+        //std::cout << "Saving request body to file...\n";
         std::string tempFilePath = generateTempFileName();
         if (!saveRequestBodyToFile(msg.body, tempFilePath)) {
             std::cout << "Failed to save request body to file\n";
             msg.error = "Failed to save request body to file";
             return false;
         } else {
-            std::cout << "Request body saved to " << tempFilePath << std::endl;
+           // std::cout << "Request body saved to " << tempFilePath << std::endl;
         }
         msg.temp_file_path = tempFilePath;
-        printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
+        //printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
     }
     //std::cout << GREEN << "Finished parseRequest\n" << RESET;
     return true;
@@ -423,7 +423,7 @@ bool HTTPParser::processMultipartData(const std::string& raw, const std::string&
         msg.error = "Failed to save request body to file";
         return false;
     }
-    std::cout << BLUE << "Request body saved to " << RESET << tempFilePath << std::endl;
+    //std::cout << BLUE << "Request body saved to " << RESET << tempFilePath << std::endl;
     msg.temp_file_path = tempFilePath;
 
     return true;
