@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/23 17:00:01 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/24 11:51:23 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,7 @@ class ServerInfo
 		//std::vector<int>& getClientSockets()
 		void		addSocketToList(int sockfd);
 
-		void		handleUnknownRequest();
+		void		handleUnknownRequest(HTTrequestMSG& request, ServerInfo &server);
 		//void		handleGetRequest(const std::string& path, ServerInfo& server);
 		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server);

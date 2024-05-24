@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/23 21:41:48 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/24 12:17:40 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -368,15 +368,17 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 		}
 		else if (request.method == HTTrequestMSG::UNKNOWN)
 		{
-			server.handleUnknownRequest();
+			server.handleUnknownRequest(request, server);
 		}
 	}
 }
 
 // Handles unknown requests
-void ServerInfo::handleUnknownRequest()
+void ServerInfo::handleUnknownRequest(HTTrequestMSG& requestMsg, ServerInfo &server)
 {
-		std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
+	std::string response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
+	this->setResponse(response);
+	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 }
 
 
@@ -479,12 +481,12 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 		return;
 	}
 
-	if (body.find("=") == std::string::npos || body.find("&") == std::string::npos) // Check if the body is in the correct format
-	{
-		//std::cerr << "Error: Body is not in the correct format" << std::endl;
-		this->setResponse("HTTP/1.1 422 Unprocessable Entity\r\nContent-Type: text/plain\r\n\r\nError: Request body is not in the correct format");
-		return;
-	}
+	// if (body.find("=") == std::string::npos || body.find("&") == std::string::npos) // Check if the body is in the correct format -> WALTER
+	// {
+	// 	//std::cerr << "Error: Body is not in the correct format.\n" << std::endl;
+	// 	this->setResponse("HTTP/1.1 422 Unprocessable Entity\r\nContent-Type: text/plain\r\n\r\nError: Request body is not in the correct format");
+	// 	return;
+	// }
 
 	std::string response; // Process the data
 	std::string delimiter = "&";
@@ -509,9 +511,9 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 	httpResponse += "<html><head><style>body { background: #ADD8E6;; }</style></head><body>";
 	httpResponse += "<p>Received POST data:</p><pre>" + response + "</pre>";
 	httpResponse += "<button onclick=\"location.href='index.html'\" type=\"button\">Go Home</button>";
-	httpResponse += "</body></html>";
+	httpResponse += "</body></html>\n";
 
-this->setResponse(httpResponse);
+	this->setResponse(httpResponse);
 
 	this->setResponse(httpResponse);
 

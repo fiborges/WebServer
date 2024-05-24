@@ -19,14 +19,14 @@ Request Tests:
 -> Simple Request
 curl --resolve localhost:8080:127.0.0.1 localhost:8080
 
--> Client Max Request Size
+-> Client Max Request Size ==> RESOLVIDO 2server.conf
 Change client_max_body_size to 10 in .conf
-curl -X POST -H "Content-Type: plain/text" --data "1234567890" localhost:8080/curl_post.py
+curl -X POST -H "Content-Type: plain/text" --data "1234567890" localhost:8081/curl_post.py
 
--> Get Request
+-> Get Request ==> RESOLVIDO
 curl localhost:8080/index.html
 
--> Post Request
+-> Post Request ==> RESOLVIDO
 curl -X POST -H "Content-Type: plain/text" --data "1234567890" localhost:8080/curl_post.py
 
 -> Download File
@@ -35,7 +35,7 @@ curl -O localhost:8080/upload/upload.txt
 -> Delete Request
 curl -X DELETE localhost:8080/upload/upload.txt
 
--> Unknown Request
+-> Unknown Request ==> RESOLVIDO
 curl -X UNKNOWN localhost:8080
 
 -> Same host port
@@ -47,7 +47,7 @@ curl --resolve gold:8080:127.0.0.1 gold:8080 -o response.html && xdg-open respon
 
 Performance Tests:
 
--> Siege
+-> Siege ==> RESOLVIDO
 siege -b http://testing:8080/empty.html -t 1m
 siege -b http://localhost:8080/empty.html -t10s
 siege -b http://localhost:8080/index.html -t1m
