@@ -57,7 +57,18 @@ siege -b http://localhost:8080/index.html -t1m
 pgrep webserv
 top -p <process ID>
 
--> Hanging Out durinh siege
+-> Hanging Out durinh siege ==> RESOLVIDO ?? (penso que faz o que 'e suposto)
 watch -n 1 netstat -tuln
 
+-> para fazer upload de um ficheiro para o servidor
 curl -T upload.txt localhost:8080/resources/upload/
+
+--------------------------------------------------------------------------------
+FRED
+
+-> To see a POST with a very big body request ==> RESOLVIDO
+yes "Our group FFB is the Best!!!" | head -n 1000000 > largefile.txt  ou make large
+curl -X POST -H "Content-Type: text/plain" --data-binary @largefile.txt http://localhost:8080/your_endpoint
+(para ver os bytes)  wc -c largefile.txt
+(para ver os megabytes)  du -h largefile.txt
+curl -X POST -H "Content-Type: text/plain" -T largefile.txt http://localhost:8080/your_endpoint     -> serve para enviar arquivo como fluxo de dados

@@ -38,7 +38,12 @@ download:
 	@wget https://cdn.intra.42.fr/document/document/24736/ubuntu_cgi_tester > /dev/null 2>&1
 	@wget https://cdn.intra.42.fr/document/document/24737/cgi_tester > /dev/null 2>&1
 	@wget https://cdn.intra.42.fr/document/document/24738/ubuntu_tester > /dev/null 2>&1
-	@echo "\n[${WHITE}${BLUE}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
+	@echo "\n[${WHITE}${GREEN}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
+
+large:
+	@yes "Our group FFB is the Best!!!" | head -n 10000000 > largefile.txt
+	@echo " ==> LAST LINE 😁😁😁 <==" >> largefile.txt
+	@echo "\n ${GREEN}largefile.txt${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
 
 clean:
 	@$(RM) $(BUILD)
@@ -48,6 +53,7 @@ clean:
 	@test -f ubuntu_cgi_tester && rm ubuntu_cgi_tester > /dev/null 2>&1 || true
 	@test -f cgi_tester && rm cgi_tester > /dev/null 2>&1 || true
 	@test -f ubuntu_tester && rm ubuntu_tester > /dev/null 2>&1 || true
+	@test -f largefile.txt && rm largefile.txt > /dev/null 2>&1 || true
 	
 fclean:	clean
 	@$(RM) $(NAME)
