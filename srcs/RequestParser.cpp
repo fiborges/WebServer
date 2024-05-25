@@ -13,8 +13,18 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         msg.error = "Header parsing failed";
         return false;
     }
+    //std::cout << "Raw size before operation: " << raw.size() << std::endl;
     //std::cout << "Header parsed successfully\n";
+    //std::cout << "Content length before setting: " << msg.content_length << std::endl;
+
     setContentLength(msg);
+
+    //std::cout << "Content length after setting: " << msg.content_length << std::endl;
+
+    if (static_cast<size_t>(msg.content_length) > raw.size()) {
+        std::cerr << "Content-Length header is larger than actual data size" << std::endl;
+        msg.content_length = raw.size();
+    }
     if (msg.path.find("cgi") != std::string::npos) {
         //std::cout << "CGI request detected\n";
         msg.is_cgi = true;
@@ -36,14 +46,22 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         return processChunkedBody(raw, msg, maxSize);
     } else {
         if (msg.content_length > 0) {
-            if (raw.length() < static_cast<size_t>(msg.content_length)) {
+            size_t content_length = static_cast<size_t>(msg.content_length);
+            //std::cout << "Raw length FILIPA : " << raw.length() << std::endl;
+            if (raw.length() < content_length) {
                 std::cout << "Incomplete Data\n";
                 msg.error = "Incomplete Data";
                 return false;
             }
-            msg.body = raw.substr(0, msg.content_length);
-            raw.erase(0, msg.content_length);
+            size_t processedSize = 0;
+            while (processedSize < content_length) {
+                size_t chunkSize = std::min(content_length - processedSize, maxSize);
+                msg.body.append(raw, processedSize, chunkSize);
+                processedSize += chunkSize;
+            }
+            raw.erase(0, content_length);
         }
+        //std::cout << "Raw size after operation: " << raw.size() << std::endl;
     }
     if (!msg.body.empty()) {
         //std::cout << "Saving request body to file...\n";
@@ -331,6 +349,7 @@ void HTTPParser::setContentLength(HTTrequestMSG& msg){
 }
 
 
+
 std::string HTTPParser::methodToString(HTTrequestMSG::Method method) {
     switch (method) {
         case HTTrequestMSG::GET: return "GET";
@@ -427,5 +446,28 @@ bool HTTPParser::processMultipartData(const std::string& raw, const std::string&
     msg.temp_file_path = tempFilePath;
 
     return true;
+}
+
+size_t HTTPParser::getContentLength(const std::string& request)
+{
+    const std::string contentLengthHeader = "Content-Length: ";
+    size_t start = request.find(contentLengthHeader);
+    if (start == std::string::npos)
+    {
+        return 0;
+    }
+
+    start += contentLengthHeader.size();
+    size_t end = request.find("\r\n", start);
+    if (end == std::string::npos)
+    {
+        return 0;
+    }
+
+    std::string contentLengthStr = request.substr(start, end - start);
+    std::istringstream iss(contentLengthStr);
+    size_t contentLength;
+    iss >> contentLength;
+    return contentLength;
 }
 

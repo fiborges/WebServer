@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/24 12:17:40 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/25 01:40:31 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -250,29 +250,73 @@ void setupServer(ServerInfo& server, conf_File_Info& config)
 // Read the request from the client and return it as a string
 std::string readRequest(int sockfd)
 {
-	char buffer[1024];
-	std::string request;
+    char buffer[4096];
+    std::string request;
 
-	while (1)
+    // Read the header
+    while (1)
+    {
+        memset(buffer, 0, 4096);
+        ssize_t bytesRead = recv(sockfd, buffer, 4095, 0);
+        if (bytesRead < 0)
+        {
+            handleError("Error reading from socket.");
+            exit(-1);
+        }
+        else if (bytesRead == 0)
+        {
+            break;
+        }
+        else
+        {
+            buffer[bytesRead] = '\0';
+            //std::cout << "Received " << bytesRead << " bytes: " << buffer << std::endl;
+        }
+
+        request.append(buffer, bytesRead);
+
+        // If we've reached the end of the header, break
+        if (request.find("\r\n\r\n") != std::string::npos)
+            break;
+    }
+
+    // Send 100 Continue response here
+	if (request.find("Expect: 100-continue") != std::string::npos)
 	{
-		memset(buffer, 0, 1024);
-		ssize_t bytesRead = read(sockfd, buffer, 1023);
-		if (bytesRead < 0)
+		// Send 100 Continue response here
+		std::string response = "HTTP/1.1 100 Continue\r\n\r\n";
+		send(sockfd, response.c_str(), response.size(), 0);
+	
+
+		// Read the body
+		HTTPParser parser;
+		size_t contentLength = parser.getContentLength(request);
+		size_t bytesReadTotal = 0;
+		while (bytesReadTotal < contentLength)
 		{
-			handleError("Error reading from socket.");
-			exit(-1);
+			memset(buffer, 0, 4096);
+			ssize_t bytesRead = recv(sockfd, buffer, 4095, 0);
+			if (bytesRead < 0)
+			{
+				handleError("Error reading from socket.");
+				exit(-1);
+			}
+			else if (bytesRead == 0)
+			{
+				break;
+			}
+			else
+			{
+				buffer[bytesRead] = '\0';
+				//std::cout << "Received " << bytesRead << " bytes: " << buffer << std::endl;
+			}
+
+			request.append(buffer, bytesRead);
+			bytesReadTotal += bytesRead;
 		}
-		if (bytesRead == 0)
-		{
-			//std::cout << "Received empty request, ignoring." << std::endl;
-			break;
-		}
-		request += buffer;
-		//std::cout << "Bytes read: " << bytesRead << ", Buffer content: " << buffer << std::endl; // *DEBUG*
-		if (bytesRead < 1023)
-			break;
 	}
-	return request;
+
+    return request;
 }
 
 // Process the request and send the response
@@ -285,13 +329,17 @@ void processRequest(const std::string& request, ServerInfo& server)
 		return;
 	}
 	
-	std::string method;
-	std::string path;
-	std::string body;
+	//std::string method;
+	//std::string path;
+	//std::string body;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
 	HTTPParser parser;
-	if (parser.parseRequest(requestCopy, requestMsg, 10000))
+	size_t maxSize = 100000; // Aumentar o tamanho máximo para 10MB
+	if(maxSize > requestCopy.size())
+		maxSize = requestCopy.size();
+	//std::cout << "Max size: " << maxSize << std::endl;	
+	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		// 	// *DEBUG*
 		// std::cout << GREEN << "certo\n" << RESET;

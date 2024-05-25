@@ -51,6 +51,8 @@ public:
     static std::string generateTempFileName();
     static bool saveRequestBodyToFile(const std::string& body, std::string& filePath);
 
+    size_t getContentLength(const std::string& request);
+
 private:
     static void readRequestLine(std::istringstream& stream, HTTrequestMSG& msg);
     static void readHeaders(std::istringstream& stream, HTTrequestMSG& msg);
