@@ -93,3 +93,17 @@ std::string& ParserUtils::trim_Rigth(std::string& s) {
     s.erase(rit.base(), s.end());
     return s;
 }
+
+
+std::string ParserUtils::normalizePath(const std::string& path) {
+    std::string normalized = path;
+        // Remover barras finais
+     while (!normalized.empty() && normalized[normalized.size() - 1] == '/') {
+        normalized.erase(normalized.size() - 1);
+    }
+        // Garantir que começa com uma barra
+    if (!normalized.empty() && normalized[0] != '/') {
+        normalized = "/" + normalized;
+    }
+    return normalized;
+    }
