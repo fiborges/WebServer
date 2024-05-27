@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/21 11:25:43 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/27 15:14:14 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,25 @@ void	CGI::SendContentToScript()
 	close(this->P_FD[1]);
 }
 
+void	CGI::CreateEnv()
+{
+	std::string	key;
+	std::string	value;
+
+	key = "CONTENT_LENGTH=";
+	value = this->FileContent_.size();
+
+	this->EnvStrings_.push_back(key + value);
+
+	key = "PATH_INFO=";
+
+	this->EnvStrings_.push_back(key + this->FileName_);
+
+	for (size_t	i = 0; i < this->EnvStrings_.size(); i++)
+		this->Env_.push_back(const_cast<char*>(this->EnvStrings_[i].c_str()));
+	this->Env_.push_back(NULL);
+}
+
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
@@ -156,16 +175,18 @@ void	CGI::Child_process()
 	close(this->P_FD[0]);
 	close(this->C_FD[1]);
 
-	const char*	python_args[5];
+	CreateEnv();
+
+	const char*	python_args[4];
 
 	python_args[0] = "/usr/bin/python3";
 	python_args[1] = "./cgi-bin/U_File_test4.py";
-	python_args[2] = "./DATA";
-	python_args[3] = this->FileName_.c_str();
+	python_args[2] = "DATA";
+	//python_args[2] = this->FileName_.c_str();
 	//python_args[4] = fileContent.data();
-	python_args[4] = NULL; // Alteração
+	python_args[3] = NULL; // Alteração
 
-	execve(python_args[0], const_cast<char**>(python_args), NULL);
+	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
 	std::cerr << "Error in execve\n";
 	exit(EXIT_FAILURE);
@@ -176,7 +197,7 @@ void	CGI::Parent_process()
 	close(this->C_FD[1]);
 	close(this->P_FD[0]);
 	dup2(this->C_FD[0], STDIN_FILENO);
-	//close(this->C_FD[0]);
+
 	SendContentToScript();
 
 	wait(NULL);

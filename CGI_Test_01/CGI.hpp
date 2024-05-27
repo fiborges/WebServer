@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/20 15:36:42 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/27 14:30:54 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <vector>
+#include <string>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -42,6 +44,9 @@ class CGI
 		std::string	FileName_;
 		std::string	FileContent_;
 
+		std::vector<std::string>	EnvStrings_;
+		std::vector<char*>			Env_;
+
 		void	Child_process();
 		void	Parent_process();
 
@@ -51,6 +56,8 @@ class CGI
 		void	ExtractFileContent();
 
 		void	SendContentToScript();
+
+		void	CreateEnv();
 
 	public:
 		// Orthodox

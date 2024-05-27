@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/16 14:11:46 by brolivei         ###   ########.fr        #
+#    Updated: 2024/05/27 14:34:45 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -26,12 +26,12 @@ def save_file(folder_name, file_name):
 			f.write(file_content)
 
 if __name__ == '__main__':
-		if len(sys.argv) != 3:
-			print("Usage: python script.py folder_name file_name file_content")
+		if len(sys.argv) != 2:
+			print("Usage: python script.py folder_name")
 			sys.exit(1)
 
 		folder_name = sys.argv[1]
-		file_name = sys.argv[2]
+		file_name = os.environ.get("PATH_INFO", "uploaded_file")
 		#file_content = sys.argv[3].encode('utf-8')
 
 		#save_file(folder_name, file_name, file_content)
