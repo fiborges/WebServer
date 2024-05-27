@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/25 01:40:31 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/27 20:00:12 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,7 +142,8 @@ bool is_directory(const std::string &path)
 		return (false);
 }
 
-void setupDirectory(ServerInfo& server, conf_File_Info& config)
+//void setupDirectory(ServerInfo& server, conf_File_Info& config)
+void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 {
 	//std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
 	//std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
@@ -209,7 +210,8 @@ int remove_directory(const char *path)
 }
 
 // Setup the server
-void setupServer(ServerInfo& server, conf_File_Info& config)
+//void setupServer(ServerInfo& server, conf_File_Info& config)
+void setupServer(ServerInfo& server, const conf_File_Info& config)
 {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {

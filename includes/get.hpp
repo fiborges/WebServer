@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/24 11:51:23 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/27 19:59:52 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,11 +115,13 @@ std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
-void		setupDirectory(ServerInfo& server, conf_File_Info& config);
+void setupDirectory(ServerInfo& server, const conf_File_Info& config);
+//void		setupDirectory(ServerInfo& server, conf_File_Info& config);
 int			remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 int			remove_directory(const char *path); //to use in main() to remove the temp directory
 
-void		setupServer(ServerInfo& server, conf_File_Info& config);
+void setupServer(ServerInfo& server, const conf_File_Info& config);
+//void		setupServer(ServerInfo& server, conf_File_Info& config);
 std::string	readRequest(int sockfd);
 void		processRequest(const std::string& request, ServerInfo& server);
 void		handleRequest(HTTrequestMSG& requestt, ServerInfo& server);

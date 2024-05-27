@@ -25,6 +25,8 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN    "\x1b[36m"
 #define RESET   "\x1b[0m"
+#define BOLD        "\033[1m"
+#define UNDERLINE   "\033[4m"
 
 
 #endif

@@ -16,7 +16,7 @@ On .conf, in location block, keyword: autoindex
 
 Request Tests:
 
--> Simple Request
+-> Simple Request ==> RESOLVIDO
 curl --resolve localhost:8080:127.0.0.1 localhost:8080
 
 -> Client Max Request Size ==> RESOLVIDO 2server.conf
@@ -38,7 +38,7 @@ curl -X DELETE localhost:8080/upload/upload.txt
 -> Unknown Request ==> RESOLVIDO
 curl -X UNKNOWN localhost:8080
 
--> Same host port
+-> Same host port ==> RESOLVIDO (acho ?)
 curl --resolve localhost:8080:127.0.0.1 localhost:8080 # default server
 curl --resolve black:8080:127.0.0.1 black:8080 # other server
 curl --resolve gold:8080:127.0.0.1 gold:8080 -o response.html && xdg-open response.html
