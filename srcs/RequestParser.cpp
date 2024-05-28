@@ -7,47 +7,76 @@ const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 
 
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
+    //std::cout << GREEN << "Starting parseRequest...\n" << RESET;
     if (!parseHeader(raw, msg)) {
+        std::cout << "Header parsing failed\n";
         msg.error = "Header parsing failed";
         return false;
     }
+    //std::cout << "Raw size before operation: " << raw.size() << std::endl;
+    //std::cout << "Header parsed successfully\n";
+    //std::cout << "Content length before setting: " << msg.content_length << std::endl;
+
     setContentLength(msg);
+
+    //std::cout << "Content length after setting: " << msg.content_length << std::endl;
+
+    if (static_cast<size_t>(msg.content_length) > raw.size()) {
+        std::cerr << "Content-Length header is larger than actual data size" << std::endl;
+        msg.content_length = raw.size();
+    }
     if (msg.path.find("cgi") != std::string::npos) {
+        //std::cout << "CGI request detected\n";
         msg.is_cgi = true;
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
         setupCGIEnvironment(msg);
     }
     if (msg.is_cgi && msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
+        //std::cout << "Processing multipart/form-data...\n";
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
         if (boundary.empty()) {
+            std::cout << "No boundary in multipart/form-data\n";
             msg.error = "Bad Request: No boundary in multipart/form-data";
             return false;
         }
         return processMultipartData(raw, boundary, msg);
 
     } else if (msg.headers["transfer-encoding"].find("chunked") != std::string::npos) {
+        std::cout << "Processing chunked body...\n";
         return processChunkedBody(raw, msg, maxSize);
     } else {
         if (msg.content_length > 0) {
-            if (raw.length() < static_cast<size_t>(msg.content_length)) {
+            size_t content_length = static_cast<size_t>(msg.content_length);
+            //std::cout << "Raw length FILIPA : " << raw.length() << std::endl;
+            if (raw.length() < content_length) {
+                std::cout << "Incomplete Data\n";
                 msg.error = "Incomplete Data";
                 return false;
             }
-            msg.body = raw.substr(0, msg.content_length);
-            raw.erase(0, msg.content_length);
+            size_t processedSize = 0;
+            while (processedSize < content_length) {
+                size_t chunkSize = std::min(content_length - processedSize, maxSize);
+                msg.body.append(raw, processedSize, chunkSize);
+                processedSize += chunkSize;
+            }
+            raw.erase(0, content_length);
         }
+        //std::cout << "Raw size after operation: " << raw.size() << std::endl;
     }
     if (!msg.body.empty()) {
+        //std::cout << "Saving request body to file...\n";
         std::string tempFilePath = generateTempFileName();
         if (!saveRequestBodyToFile(msg.body, tempFilePath)) {
+            std::cout << "Failed to save request body to file\n";
             msg.error = "Failed to save request body to file";
             return false;
         } else {
-            std::cout << "Request body saved to " << tempFilePath << std::endl;
+           // std::cout << "Request body saved to " << tempFilePath << std::endl;
         }
         msg.temp_file_path = tempFilePath;
-        printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
+        //printf("-----------------------Temp file path: %s\n", msg.temp_file_path.c_str());
     }
+    //std::cout << GREEN << "Finished parseRequest\n" << RESET;
     return true;
 }
 
@@ -147,29 +176,95 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
     return true;
 }
 
+// bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
+//     size_t end = raw.find(DELIMITER);
+//     if (end == std::string::npos) {
+//         printf("Delimiter not found\n");
+//         return false;
+//     }
+
+//     std::istringstream stream(raw.substr(0, end));
+//     readRequestLine(stream, msg);
+//     readHeaders(stream, msg);
+
+//     // Extrair boundary se necessário
+//     if (msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
+//         msg.boundary = getBoundary(msg.headers["Content-Type"]);
+//     }
+
+//     raw.erase(0, end + DELIMITER.length());
+//     printf("Header parsing successful\n");
+//     // Atualizar o estado da mensagem
+//     msg.state = HTTrequestMSG::TRANSFER_CONTROL;
+//     return true;
+// }
+
 bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
-    size_t end = raw.find(DELIMITER);
-    if (end == std::string::npos) {
-        printf("Delimiter not found\n");
+    //std::cout << "Received HTTP request:\n" << raw << "\n";
+    //std::cout << "Starting parseHeader...\n";
+    size_t pos = raw.find("\r\n");
+    if (pos == std::string::npos) {
+        std::cout << "Delimiter '\\r\\n' not found in request line\n";
         return false;
     }
-
-    std::istringstream stream(raw.substr(0, end));
-    readRequestLine(stream, msg);
-    readHeaders(stream, msg);
-
-    // Extrair boundary se necessário
-    if (msg.headers["Content-Type"].find("multipart/form-data") != std::string::npos) {
-        msg.boundary = getBoundary(msg.headers["Content-Type"]);
+    std::string requestLine = raw.substr(0, pos);
+    raw.erase(0, pos + 2);
+    std::istringstream requestLineStream(requestLine);
+    if (!readRequestLine2(requestLineStream, msg)) {
+        std::cout << "Failed to parse request line\n";
+        return false;
     }
-
-    raw.erase(0, end + DELIMITER.length());
-    printf("Header parsing successful\n");
-    // Atualizar o estado da mensagem
-    msg.state = HTTrequestMSG::TRANSFER_CONTROL;
+    //std::cout << "Request line parsed successfully\n";
+    pos = raw.find("\r\n\r\n");
+    if (pos == std::string::npos) {
+        std::cout << "Delimiter '\\r\\n\\r\\n' not found in headers\n";
+        return false;
+    }
+    std::string headers = raw.substr(0, pos);
+    raw.erase(0, pos + 4);
+    std::istringstream headersStream(headers);
+    if (!readHeaders2(headersStream, msg)) {
+        std::cout << "Failed to parse headers\n";
+        return false;
+    }
+    //std::cout << "Headers parsed successfully\n";
     return true;
 }
 
+bool HTTPParser::readRequestLine2(std::istringstream& stream, HTTrequestMSG& msg) {
+    std::string method, path, version;
+    stream >> method >> path >> version;
+    if (stream.fail()) {
+        return false;  // return false if reading from the stream failed
+    }
+    setMethod(method, msg);
+    msg.version = version;
+
+    size_t delim = path.find("?");
+    if (delim != std::string::npos) {
+        msg.query = path.substr(delim + 1);
+        path.erase(delim);
+    }
+    msg.path = path;
+    return true;  // return true if everything was successful
+}
+
+bool HTTPParser::readHeaders2(std::istringstream& stream, HTTrequestMSG& msg) {
+    std::string line;
+    while (std::getline(stream, line) && !line.empty()) {
+        removeCarriageReturn(line);
+        size_t colonPos = line.find(": ");
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 2);
+            msg.headers[key] = value;
+        }
+    }
+    if (stream.fail() && !stream.eof()) {
+        return false;  // return false if reading from the stream failed and it's not because we reached the end of the stream
+    }
+    return true;  // return true if everything was successful or we simply reached the end of the stream
+}
 
 void HTTPParser::readRequestLine(std::istringstream& stream, HTTrequestMSG& msg) {
     std::string method, path, version;
@@ -252,6 +347,7 @@ void HTTPParser::setContentLength(HTTrequestMSG& msg){
         msg.content_length = 0;
     }
 }
+
 
 
 std::string HTTPParser::methodToString(HTTrequestMSG::Method method) {
@@ -346,9 +442,32 @@ bool HTTPParser::processMultipartData(const std::string& raw, const std::string&
         msg.error = "Failed to save request body to file";
         return false;
     }
-    std::cout << BLUE << "Request body saved to " << RESET << tempFilePath << std::endl;
+    //std::cout << BLUE << "Request body saved to " << RESET << tempFilePath << std::endl;
     msg.temp_file_path = tempFilePath;
 
     return true;
+}
+
+size_t HTTPParser::getContentLength(const std::string& request)
+{
+    const std::string contentLengthHeader = "Content-Length: ";
+    size_t start = request.find(contentLengthHeader);
+    if (start == std::string::npos)
+    {
+        return 0;
+    }
+
+    start += contentLengthHeader.size();
+    size_t end = request.find("\r\n", start);
+    if (end == std::string::npos)
+    {
+        return 0;
+    }
+
+    std::string contentLengthStr = request.substr(start, end - start);
+    std::istringstream iss(contentLengthStr);
+    size_t contentLength;
+    iss >> contentLength;
+    return contentLength;
 }
 

@@ -3,12 +3,13 @@
 
 #include "librarie.hpp"
 
-//allows to declare pointers or references to this struct before it's fully defined
+// Forward declaration of the conf_File_Info struct
 struct conf_File_Info;
-//Defines an alias Locations for a map where the keys are strings (representing paths) and the values are conf_File_Info structs. 
+
+// Defines an alias Locations for a map where the keys are strings (representing paths) and the values are conf_File_Info structs.
 typedef std::map<std::string, conf_File_Info> Locations;
 
-//struct Redirect that represents a redirect configuration
+// struct Redirect that represents a redirect configuration
 struct ForwardingURL
 {
     int httpStatusCode;
@@ -28,7 +29,8 @@ struct conf_File_Info
     std::set<std::string> allowedMethods;
     int maxRequestSize;
     std::string fileUploadDirectory;
-    Locations LocationsMap;// dentro daqui temos locatoon path e root e o cgi
+    Locations LocationsMap;
+    Locations ExactLocationsMap;
 };
 
 #endif

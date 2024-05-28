@@ -25,6 +25,8 @@ public:
     static void replace(std::string& text, const std::string& search, const std::string& replace);
     //Remove todas as instâncias de um caractere específico de uma string
     static std::string removeCharacter(const std::string& str, char c);
+
+    static std::string normalizePath(const std::string& path);
     
 private:
     //Remove os espaços em branco à esquerda de uma string

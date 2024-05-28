@@ -1,0 +1,76 @@
+Conf Tests:
+
+-> Error Page
+On .conf, in server block, keyword: error_page
+
+-> Try File
+On .conf, in location block, keyword: try_file
+
+-> Redirect
+On .conf, in location block, keyword: return
+
+-> Files on directory
+On .conf, in location block, keyword: autoindex
+
+--------------------------------------------------------------------------
+
+Request Tests:
+
+-> Simple Request ==> RESOLVIDO
+curl --resolve localhost:8080:127.0.0.1 localhost:8080
+
+-> Client Max Request Size ==> RESOLVIDO 2server.conf
+Change client_max_body_size to 10 in .conf
+curl -X POST -H "Content-Type: plain/text" --data "1234567890" localhost:8081/curl_post.py
+
+-> Get Request ==> RESOLVIDO
+curl localhost:8080/index.html
+
+-> Post Request ==> RESOLVIDO
+curl -X POST -H "Content-Type: plain/text" --data "1234567890" localhost:8080/curl_post.py
+
+-> Download File
+curl -O localhost:8080/upload/upload.txt
+
+-> Delete Request
+curl -X DELETE localhost:8080/upload/upload.txt
+
+-> Unknown Request ==> RESOLVIDO
+curl -X UNKNOWN localhost:8080
+
+-> Same host port ==> RESOLVIDO (acho ?)
+curl --resolve localhost:8080:127.0.0.1 localhost:8080 # default server
+curl --resolve black:8080:127.0.0.1 black:8080 # other server
+curl --resolve gold:8080:127.0.0.1 gold:8080 -o response.html && xdg-open response.html
+
+--------------------------------------------------------------------------
+
+Performance Tests:
+
+-> Siege ==> RESOLVIDO
+siege -b http://testing:8080/empty.html -t 1m
+siege -b http://localhost:8080/empty.html -t10s
+siege -b http://localhost:8080/index.html -t1m
+
+
+-> Leaks
+pgrep webserv
+top -p <process ID>
+
+-> Hanging Out durinh siege ==> RESOLVIDO ?? (penso que faz o que 'e suposto)
+watch -n 1 netstat -tuln
+
+-> para fazer upload de um ficheiro para o servidor
+curl -T upload.txt localhost:8080/resources/upload/
+
+--------------------------------------------------------------------------------
+FRED
+
+-> To see a POST with a very big body request ==> RESOLVIDO
+yes "Our group FFB is the Best!!!" | head -n 1000000 > largefile.txt  ou make large
+curl -X POST -H "Content-Type: text/plain" --data-binary @largefile.txt http://localhost:8080/your_endpoint
+(para ver os bytes)  wc -c largefile.txt
+(para ver os megabytes)  du -h largefile.txt
+curl -X POST -H "Content-Type: text/plain" -T largefile.txt http://localhost:8080/your_endpoint     -> serve para enviar arquivo como fluxo de dados
+
+curl -X POST -H "Content-Type: text/plain" -T subject/webserver.pdf http://localhost:8080/your_endpoint --output response.bin
