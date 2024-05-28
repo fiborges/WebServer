@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/28 12:24:14 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/28 23:19:17 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -249,7 +249,78 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	server.addPortToList(config.portListen);
 }
 
-// Read the request from the client and return it as a string
+
+
+int	verify_body_content(std::string request)
+{
+	long unsigned int	content_length;
+	size_t	pos = request.find("Content-Length: ");
+
+	std::string	tmp;
+	int	i = 0;
+
+	while (isdigit(request[pos + 16]))
+	{
+		tmp[i] = request[pos + 16];
+		//tmp + request[pos + 16]; // Changed here
+		i++;
+		pos++;
+	}
+
+	content_length = atoi(tmp.c_str());
+
+	std::cout << "The content length found was " << content_length << std::endl;
+
+	std::string	boundary;
+
+	if ((pos = request.find("boundary=")) != std::string::npos)
+	{
+		tmp.append(request, (request.find("\r\n\r\n") + 4));
+
+		//std::cout << "After boundary:]" << tmp << "[Finish";
+		if (tmp.length() < content_length)
+		 return (-1);
+	}
+
+	return (0);
+}
+
+std::string	read_all_body(int client_socket)
+{
+	char		line[1024];
+	std::string	total_request;
+
+	while (1)
+	{
+		while (1)
+		{
+			memset(line, 0, 1024);
+			ssize_t bytesRead = read(client_socket, line, 1023);
+
+			if (bytesRead < 0)
+			{
+				std::cerr << "Error in read\n";
+				exit(-1);
+			}
+
+			total_request.append(line, bytesRead);
+
+			if (bytesRead < 1023)
+				break;
+		}
+		if (verify_body_content(total_request) < 0)
+			continue;
+		else
+			break;
+	}
+
+	//print_the_request(total_request);
+
+	return (total_request);
+}	
+
+
+//Read the request from the client and return it as a string
 std::string readRequest(int sockfd)
 {
     char buffer[4096];
@@ -272,7 +343,7 @@ std::string readRequest(int sockfd)
         else
         {
             buffer[bytesRead] = '\0';
-            //std::cout << "Received " << bytesRead << " bytes: " << buffer << std::endl;
+            //std::cout << "Header received: " << buffer << std::endl; // Print the header
         }
 
         request.append(buffer, bytesRead);
@@ -283,42 +354,58 @@ std::string readRequest(int sockfd)
     }
 
     // Send 100 Continue response here
-	if (request.find("Expect: 100-continue") != std::string::npos)
+    // if (request.find("Expect: 100-continue") != std::string::npos)
+    // {
+    //     std::string response = "HTTP/1.1 100 Continue\r\n\r\n";
+    //     send(sockfd, response.c_str(), response.size(), 0);
+    
+    // Read the body
+	HTTPParser parser;
+	if (parser.headerHasField("Content-Length", request))
 	{
-		// Send 100 Continue response here
-		std::string response = "HTTP/1.1 100 Continue\r\n\r\n";
-		send(sockfd, response.c_str(), response.size(), 0);
-	
-
-		// Read the body
-		HTTPParser parser;
 		size_t contentLength = parser.getContentLength(request);
-		std::cout << "=== A :" << parser.getContentLength(request) << "\n";
-		size_t bytesReadTotal = 0;
-		while (bytesReadTotal < contentLength)
-		{
-			memset(buffer, 0, 4096);
-			ssize_t bytesRead = recv(sockfd, buffer, 4095, 0);
-			if (bytesRead < 0)
-			{
-				handleError("Error reading from socket.");
-				exit(-1);
-			}
-			else if (bytesRead == 0)
-			{
-				break;
-			}
-			else
-			{
-				buffer[bytesRead] = '\0';
-				//std::cout << "Received " << bytesRead << " bytes: " << buffer << std::endl;
-			}
+		std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
 
-			request.append(buffer, bytesRead);
-			bytesReadTotal += bytesRead;
+		size_t actualDataSize = request.size();
+		std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
+
+		if (contentLength > actualDataSize)
+		{
+			size_t bytesReadTotal = actualDataSize;
+			while (bytesReadTotal < contentLength)
+			{
+				memset(buffer, 0, 4096);
+				ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), 0);
+				std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
+
+				if (bytesRead < 0)
+				{
+					handleError("Error reading from socket.");
+					exit(-1);
+				}
+				else if (bytesRead == 0)
+				{
+					std::cerr << "Socket has been closed by the other end." << std::endl;
+					break;
+				}
+				else
+				{
+					buffer[bytesRead] = '\0';
+				}
+
+				request.append(buffer, bytesRead);
+				bytesReadTotal += bytesRead;
+				std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
+
+				// Check if the total bytes read is greater than the raw size
+				if (bytesReadTotal > request.size())
+				{
+					std::cerr << "Read beyond the end of available data." << std::endl;
+					break;
+				}
+			}
 		}
 	}
-	std::cout << request << "\n\n";
     return request;
 }
 

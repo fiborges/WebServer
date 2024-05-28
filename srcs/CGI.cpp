@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 11:29:14 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/28 21:17:43 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ CGI::CGI()
 
 CGI::~CGI()
 {
-	std::cout << "CGI Destructor\n";
+	//std::cout << "CGI Destructor\n";
 }
 
 void	CGI::FindFinalBoundary(std::string& buffer)
@@ -81,7 +81,7 @@ void	CGI::SendContentToScript()
 		}
 		bytesWritten += bytes;
 	}
-	std::cout << "====I Send the request to the script\n\n====";
+	//std::cout << "====I Send the request to the script\n\n====";
 	close(this->P_FD[1]);
 }
 
@@ -203,7 +203,7 @@ void	CGI::Parent_process()
 
 	wait(NULL);
 
-	std::cout << "CILD FINISH\n\n";
+	//std::cout << "CILD FINISH\n\n";
 
 	char		line[1024];
 	std::string	response;
@@ -228,11 +228,11 @@ void	CGI::Parent_process()
 	}
 	close(this->C_FD[0]);
 
-	std::cout << "SENDING THE RESPONSE\n\n";
-	std::cout << "Response: " << response << std::endl;
-	std::cout << "SOCKET DO CLIENTE(INCGI.): " << this->ClientSocket_ << std::endl;
+	//std::cout << "SENDING THE RESPONSE\n\n";
+	//std::cout << "Response: " << response << std::endl;
+	//std::cout << "SOCKET DO CLIENTE(INCGI.): " << this->ClientSocket_ << std::endl;
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
-	std::cout << "DONE\n\n";
+	//std::cout << "DONE\n\n";
 }
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)

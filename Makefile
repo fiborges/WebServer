@@ -42,7 +42,7 @@ download:
 	@echo "\n[${WHITE}${GREEN}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
 
 large:
-	@for i in $$(seq 10000000 -1 1); do \
+	@for i in $$(seq 100000 -1 1); do \
 		echo "[$$i] Our group FFB is the Best!!!"; \
 	done > largefile.txt
 	@echo "[0] ==> LAST LINE 😁😁😁 <==" >> largefile.txt

@@ -13,13 +13,14 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         msg.error = "Header parsing failed";
         return false;
     }
-    //std::cout << "Raw size before operation: " << raw.size() << std::endl;
+    std::cout << "Raw size before operation: " << raw.size() << std::endl;
     //std::cout << "Header parsed successfully\n";
-    //std::cout << "Content length before setting: " << msg.content_length << std::endl;
+    std::cout << "Content length before setting: " << msg.content_length << std::endl;
 
     setContentLength(msg);
 
-    //std::cout << "Content length after setting: " << msg.content_length << std::endl;
+    std::cout << "Content length after setting: " << msg.content_length << std::endl;
+    std::cout << "Raw size: " << raw.size() << std::endl;
 
     if (static_cast<size_t>(msg.content_length) > raw.size()) {
         std::cerr << "Content-Length header is larger than actual data size" << std::endl;
