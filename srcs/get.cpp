@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/27 20:00:12 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/28 12:24:14 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -293,6 +293,7 @@ std::string readRequest(int sockfd)
 		// Read the body
 		HTTPParser parser;
 		size_t contentLength = parser.getContentLength(request);
+		std::cout << "=== A :" << parser.getContentLength(request) << "\n";
 		size_t bytesReadTotal = 0;
 		while (bytesReadTotal < contentLength)
 		{
@@ -317,7 +318,7 @@ std::string readRequest(int sockfd)
 			bytesReadTotal += bytesRead;
 		}
 	}
-
+	std::cout << request << "\n\n";
     return request;
 }
 
@@ -334,6 +335,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	//std::string method;
 	//std::string path;
 	//std::string body;
+	std::string ParaCGI = request;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
 	HTTPParser parser;
@@ -369,7 +371,11 @@ void processRequest(const std::string& request, ServerInfo& server)
 			handleRequest(requestMsg, server);
 		else
 		{
-			std::cout << MAGENTA << "\t\t\t==> BRUNO Implementa 😁😁😁" << RESET << std::endl;
+			CGI cgi;
+			//std::cout << server.getSockets << "\n\n";
+			cgi.PerformCGI(server.clientSocket , ParaCGI);
+			
+			//std::cout << MAGENTA << "\t\t\t==> BRUNO Implementa 😁😁😁" << RESET << std::endl;
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
 	}
@@ -623,6 +629,11 @@ void	runServer(std::vector<ServerInfo>& servers)
 				}
 
 				std::string request = readRequest(newsockfd);
+				
+				//=================
+				it->clientSocket = newsockfd;
+				//=================
+
 				processRequest(request, *it);
 				write(newsockfd, it->getResponse().c_str(), it->getResponse().length());
 				close(newsockfd);

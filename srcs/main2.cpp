@@ -58,11 +58,15 @@ void testMatching(const ParserConfig& parserConfig, const std::string& path) {
 int main() {
     try {
         printHeader("Initializing Parser");
-        ParserClass* parser = new ParserClass("server2.conf");
+        ParserClass* parser = new ParserClass("4server2.conf");
         const ConfiguredServers& servers = parser->fetchSpecifications();
         
         for (size_t i = 0; i < servers.size(); ++i) {
-            printHeader("Server " + std::to_string(i + 1) + " Configuration");
+            std::stringstream ss;
+            ss << (i + 1);
+            std::string numberAsString = ss.str();
+
+            printHeader("Server " + numberAsString + " Configuration");
             printConfig(*servers[i].getServerConfigurations());
         }
         

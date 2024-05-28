@@ -11,7 +11,8 @@ DIR_SRCS	=	srcs
 DIR_BUILD	=	build
 SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp\
 				$(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp\
-				$(DIR_SRCS)/RequestParser.cpp $(DIR_SRCS)/erros.cpp $(DIR_SRCS)/get.cpp
+				$(DIR_SRCS)/RequestParser.cpp $(DIR_SRCS)/erros.cpp\
+				$(DIR_SRCS)/get.cpp $(DIR_SRCS)/CGI.cpp
 BUILD		=	$(subst $(DIR_SRCS), $(DIR_BUILD), $(SRCS:.cpp=.o))
 
 
@@ -41,8 +42,10 @@ download:
 	@echo "\n[${WHITE}${GREEN}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
 
 large:
-	@yes "Our group FFB is the Best!!!" | head -n 10000000 > largefile.txt
-	@echo " ==> LAST LINE 😁😁😁 <==" >> largefile.txt
+	@for i in $$(seq 10000000 -1 1); do \
+		echo "[$$i] Our group FFB is the Best!!!"; \
+	done > largefile.txt
+	@echo "[0] ==> LAST LINE 😁😁😁 <==" >> largefile.txt
 	@echo "\n ${GREEN}largefile.txt${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
 
 clean:

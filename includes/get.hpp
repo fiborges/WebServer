@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/27 19:59:52 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/28 11:34:00 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
 # include "parser.hpp"
+# include "CGI.hpp"
 
 class ServerInfo
 {
@@ -85,10 +86,17 @@ class ServerInfo
 		std::vector<int> portListen;
 
 	public:
+		int	clientSocket;
+	
 		ServerInfo();
 		~ServerInfo();
 
-		std::vector<int>& getSockets();
+		//std::vector<int>& getSockets();
+
+		std::vector<int>& getSockets()
+		{
+			return this->clientSockets;
+		};
 
 		void		setSocketFD(int socket);
 		int			getSocketFD() const;
