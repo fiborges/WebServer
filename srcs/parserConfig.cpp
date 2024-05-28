@@ -88,21 +88,6 @@ const ForwardingURL& ParserConfig::fetchRedirection() const
     return Server_configurations->redirectURL;
 }
 
-/*std::string ParserConfig::matchPath(const std::string& searchPath) const
-{
-    std::string matchedPath = "";
-    size_t maxMatchLength = 0;
-    
-    Locations::const_iterator locationIterator = Server_configurations->LocationsMap.begin();
-    for (; locationIterator != Server_configurations->LocationsMap.end(); ++locationIterator){
-        if (searchPath.find(locationIterator->first) == 0 && locationIterator->first.length() > maxMatchLength){
-            matchedPath = locationIterator->first;
-            maxMatchLength = locationIterator->first.length();
-        }
-    }
-    return matchedPath;
-}*/
-
 std::string ParserConfig::matchPath(const std::string& searchPath) const {
     // Verificar correspondência exata primeiro
     for (Locations::const_iterator it = Server_configurations->ExactLocationsMap.begin(); it != Server_configurations->ExactLocationsMap.end(); ++it) {
@@ -161,25 +146,6 @@ ParserConfig ParserConfig::extractContext(const std::string& requestedPath) cons
     return ParserConfig(environmentInfo, requestedPath);
 }
 
-
-
-/*ParserConfig ParserConfig::extractContext(const std::string& requestedPath) const
-{
-    std::string matchedPath = matchPath(requestedPath);
-    conf_File_Info* environmentInfo = &Server_configurations->LocationsMap.at(matchedPath);
-    
-    environmentInfo->portListen = Server_configurations->portListen;
-    environmentInfo->ServerName = Server_configurations->ServerName;
-    
-    if (environmentInfo->RootDirectory.empty()){
-        environmentInfo->RootDirectory = Server_configurations->RootDirectory;
-    }
-    if (environmentInfo->defaultFile.empty()){
-        environmentInfo->defaultFile = Server_configurations->defaultFile;
-    }
-    return ParserConfig(environmentInfo, matchedPath);
-}*/
-
 std::string ParserConfig::determineLocation() const
 {
     return locationPath;
@@ -201,7 +167,6 @@ bool ParserConfig::validateMethod(const std::string& httpMethod) const
            || Server_configurations->allowedMethods.count(ParserUtils::toLower(httpMethod));
 }
 
-// Getter for Server_configurations
 const conf_File_Info* ParserConfig::getServerConfigurations() const {
     return Server_configurations;
 }

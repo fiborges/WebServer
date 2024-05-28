@@ -155,14 +155,6 @@ inline void ParserClass::checkServer(const ParserUtils::Strings& pieces)
     }
 }
 
-/*inline void ParserClass::checkLocation(const ParserUtils::Strings& pieces)
-{
-    ensureCorrectArgNumber(pieces, pieces[1] == "{");
-    if (pieces.size() != 3){
-        throw ConfigError(createErrorMsg("Error: Each 'location' directive must be followed by a path and then an opening '{'. Please check your configuration file and ensure proper syntax."));
-    }
-}*/
-
 inline void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
     if (pieces.size() < 2 || pieces[pieces.size() - 1] != "{") {
         throw ConfigError(createErrorMsg(RED "Configuration Syntax Error: Each 'location' directive must be followed by a path and then an opening '{'. "
@@ -231,8 +223,6 @@ void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf
 void ParserClass::confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* keyword) {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
     keyword->Path_CGI = commandParts[1];
-    printf("CGI Configuration Validated: %s\n", keyword->Path_CGI.c_str());
-    printf("CGI Script Path: %s\n", commandParts[1].c_str());
 }
 
 void ParserClass::confirmRedirect(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
@@ -262,7 +252,6 @@ void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf
             throw ConfigError(createErrorMsg("Configuration Error: Invalid HTTP method '" + commandParts[cmd_Index] + "'. Valid methods are GET, POST, and DELETE."));
         }
         Keyword->allowedMethods.insert(currentMethod);
-        printf("HTTP Method Allowed: %s\n", currentMethod.c_str());
     }
 }
 
@@ -275,7 +264,6 @@ void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandPa
     long int bodySize;
     char unit = sizeStr[sizeStr.size() - 1];
     
-    // Check if last character is a unit or a digit
     if (std::isdigit(unit)) {
         try {
             bodySize = atol(sizeStr.c_str());
@@ -313,7 +301,6 @@ void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandPa
     }
 
     Keyword->maxRequestSize = bodySize;
-    std::cout << GREEN "Client Body Size Validated: " << bodySize << " bytes" << RESET << std::endl;
 }
 
 
@@ -323,7 +310,6 @@ void ParserClass::confirmUploadDir(const ParserUtils::Strings& commandParts, con
         throw ConfigError(createErrorMsg("Configuration Error: 'upload_dir' directive requires exactly one path as argument."));
     }
     Keyword->fileUploadDirectory = commandParts[1];
-    printf("Upload Directory Validated: %s\n", Keyword->fileUploadDirectory.c_str());
 }
 
 inline void ParserClass::ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition)
@@ -340,25 +326,6 @@ void ParserClass::startServerModule()
     contextHistory.push(&conf_info.back());
     conFileInProgress = &conf_info.back();
 }
-
-/*void ParserClass::startLocationModule(const std::string& location)
-{
-    conFileInProgress->LocationsMap[location] = conf_File_Info();
-    contextHistory.push(&conFileInProgress->LocationsMap[location]);
-    conFileInProgress = contextHistory.top();
-}*/
-
-/*inline void ParserClass::startLocationModule(const std::string& location) {
-    if (location[0] == '=') {
-        std::string exactLocation = location.substr(1);
-        conFileInProgress->ExactLocationsMap[exactLocation] = conf_File_Info();
-        contextHistory.push(&conFileInProgress->ExactLocationsMap[exactLocation]);
-    } else {
-        conFileInProgress->LocationsMap[location] = conf_File_Info();
-        contextHistory.push(&conFileInProgress->LocationsMap[location]);
-    }
-    conFileInProgress = contextHistory.top();
-}*/
 
 inline void ParserClass::startLocationModule(const std::string& location) {
     if (location[0] == '=') {
