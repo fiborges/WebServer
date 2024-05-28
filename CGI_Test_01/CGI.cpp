@@ -6,12 +6,11 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/27 15:14:14 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/28 15:08:46 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGI.hpp"
-#include <fstream>
 
 CGI::CGI()
 {}
@@ -89,12 +88,17 @@ void	CGI::CreateEnv()
 	std::string	key;
 	std::string	value;
 
+	key = "PATH_INFO=";
+	value = "DATA";
+
+	this->EnvStrings_.push_back(key + value);
+
 	key = "CONTENT_LENGTH=";
 	value = this->FileContent_.size();
 
 	this->EnvStrings_.push_back(key + value);
 
-	key = "PATH_INFO=";
+	key = "FILE_NAME=";
 
 	this->EnvStrings_.push_back(key + this->FileName_);
 
@@ -177,14 +181,11 @@ void	CGI::Child_process()
 
 	CreateEnv();
 
-	const char*	python_args[4];
+	const char*	python_args[3];
 
 	python_args[0] = "/usr/bin/python3";
 	python_args[1] = "./cgi-bin/U_File_test4.py";
-	python_args[2] = "DATA";
-	//python_args[2] = this->FileName_.c_str();
-	//python_args[4] = fileContent.data();
-	python_args[3] = NULL; // Alteração
+	python_args[2] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
