@@ -57,6 +57,7 @@ clean:
 	@test -f cgi_tester && rm cgi_tester > /dev/null 2>&1 || true
 	@test -f ubuntu_tester && rm ubuntu_tester > /dev/null 2>&1 || true
 	@test -f largefile.txt && rm largefile.txt > /dev/null 2>&1 || true
+	@test -d DATA && rm -rf DATA > /dev/null 2>&1 || true
 	
 fclean:	clean
 	@$(RM) $(NAME)

@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/28 23:19:17 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/30 20:51:11 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,163 +251,92 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 
 
 
-int	verify_body_content(std::string request)
-{
-	long unsigned int	content_length;
-	size_t	pos = request.find("Content-Length: ");
-
-	std::string	tmp;
-	int	i = 0;
-
-	while (isdigit(request[pos + 16]))
-	{
-		tmp[i] = request[pos + 16];
-		//tmp + request[pos + 16]; // Changed here
-		i++;
-		pos++;
-	}
-
-	content_length = atoi(tmp.c_str());
-
-	std::cout << "The content length found was " << content_length << std::endl;
-
-	std::string	boundary;
-
-	if ((pos = request.find("boundary=")) != std::string::npos)
-	{
-		tmp.append(request, (request.find("\r\n\r\n") + 4));
-
-		//std::cout << "After boundary:]" << tmp << "[Finish";
-		if (tmp.length() < content_length)
-		 return (-1);
-	}
-
-	return (0);
-}
-
-std::string	read_all_body(int client_socket)
-{
-	char		line[1024];
-	std::string	total_request;
-
-	while (1)
-	{
-		while (1)
-		{
-			memset(line, 0, 1024);
-			ssize_t bytesRead = read(client_socket, line, 1023);
-
-			if (bytesRead < 0)
-			{
-				std::cerr << "Error in read\n";
-				exit(-1);
-			}
-
-			total_request.append(line, bytesRead);
-
-			if (bytesRead < 1023)
-				break;
-		}
-		if (verify_body_content(total_request) < 0)
-			continue;
-		else
-			break;
-	}
-
-	//print_the_request(total_request);
-
-	return (total_request);
-}	
-
 
 //Read the request from the client and return it as a string
 std::string readRequest(int sockfd)
 {
-    char buffer[4096];
-    std::string request;
+	char buffer[4096];
+	std::string request;
 
-    // Read the header
-    while (1)
-    {
-        memset(buffer, 0, 4096);
-        ssize_t bytesRead = recv(sockfd, buffer, 4095, 0);
-        if (bytesRead < 0)
-        {
-            handleError("Error reading from socket.");
-            exit(-1);
-        }
-        else if (bytesRead == 0)
-        {
-            break;
-        }
-        else
-        {
-            buffer[bytesRead] = '\0';
-            //std::cout << "Header received: " << buffer << std::endl; // Print the header
-        }
-
-        request.append(buffer, bytesRead);
-
-        // If we've reached the end of the header, break
-        if (request.find("\r\n\r\n") != std::string::npos)
-            break;
-    }
-
-    // Send 100 Continue response here
-    // if (request.find("Expect: 100-continue") != std::string::npos)
-    // {
-    //     std::string response = "HTTP/1.1 100 Continue\r\n\r\n";
-    //     send(sockfd, response.c_str(), response.size(), 0);
-    
-    // Read the body
-	HTTPParser parser;
-	if (parser.headerHasField("Content-Length", request))
+	// Read the header
+	while (1)
 	{
-		size_t contentLength = parser.getContentLength(request);
-		std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
-
-		size_t actualDataSize = request.size();
-		std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
-
-		if (contentLength > actualDataSize)
+		memset(buffer, 0, 4096);
+		ssize_t bytesRead = recv(sockfd, buffer, 4095, 0);
+		if (bytesRead < 0)
 		{
-			size_t bytesReadTotal = actualDataSize;
-			while (bytesReadTotal < contentLength)
+			handleError("Error reading from socket.");
+			exit(-1);
+		}
+		else if (bytesRead == 0)
+		{
+			break;
+		}
+		else
+		{
+			buffer[bytesRead] = '\0';
+			//std::cout << "Header received: " << buffer << std::endl; // Print the header
+		}
+
+		request.append(buffer, bytesRead);
+
+		// If we've reached the end of the header, break
+		if (request.find("\r\n\r\n") != std::string::npos)
+			break;
+	}
+
+	HTTPParser parser;
+	
+	size_t contentLength = parser.getContentLength(request);
+	
+	std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
+
+	size_t actualDataSize = request.size();
+	std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
+	size_t headerSize = request.find("\r\n\r\n") + 4;
+
+	if (contentLength > actualDataSize - headerSize)
+	{
+		size_t bytesReadTotal = actualDataSize - headerSize;
+		while (bytesReadTotal < contentLength)
+		{
+			memset(buffer, 0, 4096);
+			ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), 0);
+			std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
+
+			if (bytesRead < 0)
 			{
-				memset(buffer, 0, 4096);
-				ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), 0);
-				std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
+				handleError("Error reading from socket.");
+				exit(-1);
+			}
+			else if (bytesRead == 0)
+			{
+				std::cerr << "Socket has been closed by the other end." << std::endl;
+				break;
+			}
+			else
+			{
+				buffer[bytesRead] = '\0';
+			}
 
-				if (bytesRead < 0)
-				{
-					handleError("Error reading from socket.");
-					exit(-1);
-				}
-				else if (bytesRead == 0)
-				{
-					std::cerr << "Socket has been closed by the other end." << std::endl;
-					break;
-				}
-				else
-				{
-					buffer[bytesRead] = '\0';
-				}
+			request.append(buffer, bytesRead);
+			bytesReadTotal += bytesRead;
+			std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
 
-				request.append(buffer, bytesRead);
-				bytesReadTotal += bytesRead;
-				std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
-
-				// Check if the total bytes read is greater than the raw size
-				if (bytesReadTotal > request.size())
-				{
-					std::cerr << "Read beyond the end of available data." << std::endl;
-					break;
-				}
+			// Check if the total bytes read is greater than the raw size
+			if (bytesReadTotal > request.size() - headerSize) {
+				std::cerr << "Read beyond the end of available data." << std::endl;
+				break;
 			}
 		}
 	}
-    return request;
+
+	std::cout << "Request received: \n" << request << std::endl; // Print the request
+	return request;
 }
+
+
+
 
 // Process the request and send the response
 void processRequest(const std::string& request, ServerInfo& server)
@@ -432,37 +361,12 @@ void processRequest(const std::string& request, ServerInfo& server)
 	//std::cout << "Max size: " << maxSize << std::endl;	
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
-		// 	// *DEBUG*
-		// std::cout << GREEN << "certo\n" << RESET;
-		// std::cout << "Method: " << requestMsg.method << std::endl;
-		// std::cout << "State: " << requestMsg.state << std::endl;
-		// std::cout << "Path: " << requestMsg.path << std::endl;
-		// std::cout << "Version: " << requestMsg.version << std::endl;
-		// std::cout << "Query: " << requestMsg.query << std::endl;
-		// std::cout << "Headers:" << std::endl;
-		// std::map<std::string, std::string>::const_iterator it;
-		// for (it = requestMsg.headers.begin(); it != requestMsg.headers.end(); ++it)
-		// 	std::cout << it->first << ": " << it->second << std::endl;
-		// std::cout << "Body: " << requestMsg.body << std::endl;
-		// std::cout << "Content-Length: " << requestMsg.content_length << std::endl;
-		// std::cout << "Process Bytes: " << requestMsg.process_bytes << std::endl;
-		// std::cout << "Error: " << requestMsg.error << std::endl;
-		// std::cout << "Boundary: " << requestMsg.boundary << std::endl;
-		// std::cout << "Is CGI: " << (requestMsg.is_cgi ? "true" : "false") << std::endl;
-		// std::cout << "CGI Environment:" << std::endl;
-		// std::map<std::string, std::string>::const_iterator cgi_it;
-		// for (cgi_it = requestMsg.cgi_env.begin(); cgi_it != requestMsg.cgi_env.end(); ++cgi_it)
-		// 	std::cout << cgi_it->first << ": " << cgi_it->second << std::endl;
-		// std::cout << "Temp File Path: " << requestMsg.temp_file_path << std::endl;
 		if (requestMsg.is_cgi == false)
 			handleRequest(requestMsg, server);
 		else
 		{
 			CGI cgi;
-			//std::cout << server.getSockets << "\n\n";
 			cgi.PerformCGI(server.clientSocket , ParaCGI);
-			
-			//std::cout << MAGENTA << "\t\t\t==> BRUNO Implementa 😁😁😁" << RESET << std::endl;
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
 	}
@@ -551,14 +455,13 @@ bool isDirectory(const std::string& path) {
 }
 
 
-
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
 	std::string fullPath = "resources/website" + requestMsg.path;
 
 	if (!fileExists(fullPath))
 	{
-		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+		std::cerr << "[DEBUG] File does not exist: " << fullPath << std::endl;
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		return;
@@ -570,6 +473,13 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
 		{
 			std::string fileContent = readFileContent(fullPath);
+			if (fileContent.empty())
+			{
+				std::cerr << "[DEBUG] File content is empty or could not be read: " << fullPath << std::endl;
+				server.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal server error\n");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return;
+			}
 			std::string contentType = getContentType(fullPath);
 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
 		}
@@ -591,82 +501,167 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
 			{
 				std::string fileContent = readFileContent(indexPath);
+				if (fileContent.empty())
+				{
+					std::cerr << "[DEBUG] Index file content is empty or could not be read: " << indexPath << std::endl;
+					server.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal server error\n");
+					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+					return;
+				}
 				std::string contentType = getContentType(indexPath);
 				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
 			}
-			else if (errno == ENOENT) // Se o arquivo/diretório não existir
+			else
 			{
+				std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
 				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-			}
-			else // Se não houver index.html, retornar erro 403
-			{
-				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return;
 			}
 		}
 	}
-	else // Se o arquivo não existir, retornar erro 404
+	else
 	{
-		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+		std::cerr << "[DEBUG] Error retrieving file stats: " << fullPath << std::endl;
+		server.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal server error\n");
 	}
+
 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 }
 
+
+
+// void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
+// {
+// 	std::string fullPath = "resources/website" + requestMsg.path;
+
+// 	if (!fileExists(fullPath))
+// 	{
+// 		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 		return;
+// 	}
+
+// 	struct stat buffer;
+// 	if (stat(fullPath.c_str(), &buffer) == 0)
+// 	{
+// 		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
+// 		{
+// 			std::string fileContent = readFileContent(fullPath);
+// 			std::string contentType = getContentType(fullPath);
+// 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 		}
+// 		else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
+// 		{
+// 			if (!requestMsg.path.empty() && requestMsg.path[requestMsg.path.length() - 1] != '/')
+// 			{
+// 				server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + requestMsg.path + "/\r\n\r\n");
+// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 				return;
+// 			}
+
+// 			// Tentar encontrar e servir index.html dentro do diretório
+// 			std::string indexPath = fullPath;
+// 			if (indexPath[indexPath.length() - 1] != '/')
+// 				indexPath += '/';
+// 			indexPath += "index.html";
+
+// 			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
+// 			{
+// 				std::string fileContent = readFileContent(indexPath);
+// 				std::string contentType = getContentType(indexPath);
+// 				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 			}
+// 			else if (errno == ENOENT) // Se o arquivo/diretório não existir
+// 			{
+// 				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 			}
+// 			else // Se não houver index.html, retornar erro 403
+// 			{
+// 				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
+// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 			}
+// 		}
+// 	}
+// 	else // Se o arquivo não existir, retornar erro 404
+// 	{
+// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 	}
+// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// }
+
 void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 {
+	std::string contentLengthStr = request.headers["Content-Length"]; // Assumindo que request.headers é um std::map<std::string, std::string>
+	if (contentLengthStr.empty())
+	{
+		this->setResponse("HTTP/1.1 411 Length Required\r\nContent-Type: text/plain\r\n\r\nError: Content-Length header is missing");
+		return;
+	}
+
+	size_t contentLength = atoi(contentLengthStr.c_str()); // Convertendo o valor do cabeçalho para um inteiro
+	std::cout << BLUE << "===clength: " << RESET << contentLength << std::endl;
+
+	if (request.body.size() != contentLength) // Verificando se o tamanho do corpo corresponde ao Content-Length
+	{
+		this->setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nError: Request body size does not match Content-Length");
+		return;
+	}
+
 	std::string body = request.body; // Parse the request body
 
 	if (body.empty()) // Check if the body is empty
 	{
-		//std::cerr << "Error: Body is empty" << std::endl;
 		this->setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nError: Request body is empty");
 		return;
 	}
-
-	// if (body.find("=") == std::string::npos || body.find("&") == std::string::npos) // Check if the body is in the correct format -> WALTER
-	// {
-	// 	//std::cerr << "Error: Body is not in the correct format.\n" << std::endl;
-	// 	this->setResponse("HTTP/1.1 422 Unprocessable Entity\r\nContent-Type: text/plain\r\n\r\nError: Request body is not in the correct format");
-	// 	return;
-	// }
 
 	std::string response; // Process the data
 	std::string delimiter = "&";
 	size_t pos = 0;
 	std::string token;
-	while ((pos = body.find(delimiter)) != std::string::npos) {
+
+	// Parse the body and construct the response
+	while ((pos = body.find(delimiter)) != std::string::npos)
+	{
 		token = body.substr(0, pos);
 		response += token + "\n";
 		body.erase(0, pos + delimiter.length());
 	}
-	response += body;
+	response += body; // Add the last token
 
 	if (response.empty()) // Check if the response is empty
 	{
 		std::cerr << "Error: Response is empty" << std::endl;
 	}
 
-	// std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"; // Send a response
-	// httpResponse += "Received POST data:\n" + response;
-
-	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"; // Send a response
-	httpResponse += "<html><head><style>body { background: #ADD8E6;; }</style></head><body>";
+	// Create HTTP response with HTML content
+	std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+	httpResponse += "<html><head><style>body { background: #ADD8E6; }</style></head><body>";
 	httpResponse += "<p>Received POST data:</p><pre>" + response + "</pre>";
 	httpResponse += "<button onclick=\"location.href='index.html'\" type=\"button\">Go Home</button>";
 	httpResponse += "</body></html>\n";
 
+	// Set the response
 	this->setResponse(httpResponse);
 
-	this->setResponse(httpResponse);
-
+	// Log the request details
 	printLog(methodToString(request.method), request.path, request.version, server.getResponse(), server);
 }
 
+
+
+
+
+
+
 void	runServer(std::vector<ServerInfo>& servers)
 {
-	fd_set read_fds;
+	fd_set read_fds, write_fds;
 	FD_ZERO(&read_fds);
+	FD_ZERO(&write_fds);
 
 	int max_fd = -1;
 	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
@@ -677,7 +672,7 @@ void	runServer(std::vector<ServerInfo>& servers)
 			max_fd = sockfd;
 	}
 	
-	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " \
+	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
 	time_t now = time(NULL);
@@ -692,10 +687,11 @@ void	runServer(std::vector<ServerInfo>& servers)
 		std::cout << std::endl;
 	}
 
-	while (1)
+	 while (1)
 	{
-		fd_set temp_fds = read_fds;
-		if (select(max_fd + 1, &temp_fds, NULL, NULL, NULL) < 0)
+		fd_set temp_read_fds = read_fds;
+		fd_set temp_write_fds = write_fds;
+		if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
 		{
 			perror("Error on select");
 			exit(EXIT_FAILURE);
@@ -704,7 +700,7 @@ void	runServer(std::vector<ServerInfo>& servers)
 		for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
 		{
 			int sockfd = it->getSocketFD();
-			if (FD_ISSET(sockfd, &temp_fds))
+			if (FD_ISSET(sockfd, &temp_read_fds))
 			{
 				sockaddr_in cli_addr;
 				socklen_t clilen = sizeof(cli_addr);
@@ -716,14 +712,26 @@ void	runServer(std::vector<ServerInfo>& servers)
 				}
 
 				std::string request = readRequest(newsockfd);
-				
-				//=================
 				it->clientSocket = newsockfd;
-				//=================
-
 				processRequest(request, *it);
-				write(newsockfd, it->getResponse().c_str(), it->getResponse().length());
-				close(newsockfd);
+
+				// Add new socket to write_fds
+				FD_SET(newsockfd, &write_fds);
+				if (newsockfd > max_fd)
+					max_fd = newsockfd;
+			}
+			
+			if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
+			{
+				// Write response to the client
+				int clientSocket = it->clientSocket;
+				
+				write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
+				// Remove client socket from read_fds and write_fds
+				FD_CLR(clientSocket, &read_fds);
+				FD_CLR(clientSocket, &write_fds);
+				close(clientSocket);
+				it->clientSocket = -1; // Set clientSocket to -1 after closing it
 			}
 		}
 	}
@@ -787,3 +795,205 @@ std::string getContentType(const std::string& filePath)
 	//std::cout << "Content type for " << filePath << ": " << contentType << std::endl; // *DEBUG*
 	return contentType;
 }
+
+
+
+
+
+
+// void	runServer(std::vector<ServerInfo>& servers)
+// {
+// 	fd_set read_fds;
+// 	FD_ZERO(&read_fds);
+
+// 	int max_fd = -1;
+// 	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 	{
+// 		int sockfd = it->getSocketFD();
+// 		FD_SET(sockfd, &read_fds);
+// 		if (sockfd > max_fd)
+// 			max_fd = sockfd;
+// 	}
+	
+// 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
+// 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
+// 	time_t now = time(NULL);
+// 	char timestamp[100];
+// 	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+
+// 	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 	{
+// 		std::vector<int> ports = it->getPortList();
+// 		for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+// 			std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
+// 		std::cout << std::endl;
+// 	}
+
+// 	while (1)
+// 	{
+// 		fd_set temp_fds = read_fds;
+// 		if (select(max_fd + 1, &temp_fds, NULL, NULL, NULL) < 0)
+// 		{
+// 			perror("Error on select");
+// 			exit(EXIT_FAILURE);
+// 		}
+
+// 		for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 		{
+// 			int sockfd = it->getSocketFD();
+// 			if (FD_ISSET(sockfd, &temp_fds))
+// 			{
+// 				sockaddr_in cli_addr;
+// 				socklen_t clilen = sizeof(cli_addr);
+// 				int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+// 				if (newsockfd < 0)
+// 				{
+// 					perror("Error on accept");
+// 					exit(EXIT_FAILURE);
+// 				}
+
+// 				std::string request = readRequest(newsockfd);
+				
+// 				//=================
+// 				it->clientSocket = newsockfd;
+// 				//=================
+
+// 				processRequest(request, *it);
+// 				write(newsockfd, it->getResponse().c_str(), it->getResponse().length());
+// 				close(newsockfd);
+// 			}
+// 		}
+// 	}
+// }
+
+
+
+// #include <vector>
+// #include <iostream>
+// #include <poll.h>
+// #include <ctime>
+// #include <cstring>
+// #include <unistd.h>
+// #include <sys/socket.h>
+// #include <netinet/in.h>
+// #include <algorithm>
+
+// // Functor para encontrar um servidor pelo socket FD
+// struct FindServerBySocketFD
+// {
+//     int fd;
+//     FindServerBySocketFD(int fd) : fd(fd) {}
+//     bool operator()(const ServerInfo& server) const
+//     {
+//         return server.getSocketFD() == fd;
+//     }
+// };
+
+// // Functor para encontrar um servidor pelo client socket
+// struct FindServerByClientSocket
+// {
+//     int fd;
+//     FindServerByClientSocket(int fd) : fd(fd) {}
+//     bool operator()(ServerInfo& server) const
+//     {
+//         return server.clientSocket == fd;
+//     }
+// };
+
+// // Functor para remover pollfd com fd == -1
+// struct RemovePollfdWithNegativeFD
+// {
+//     bool operator()(const struct pollfd& pfd) const
+//     {
+//         return pfd.fd == -1;
+//     }
+// };
+
+// void runServer(std::vector<ServerInfo>& servers)
+// {
+//     std::vector<struct pollfd> pollfds;
+//     for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+//     {
+//         struct pollfd pfd;
+//         pfd.fd = it->getSocketFD();
+//         pfd.events = POLLIN;
+//         pollfds.push_back(pfd);
+//     }
+	
+//     std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
+//               << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
+//     time_t now = time(NULL);
+//     char timestamp[100];
+//     strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+
+//     for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+//     {
+//         std::vector<int> ports = it->getPortList();
+//         for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+//             std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
+//         std::cout << std::endl;
+//     }
+
+//     while (1)
+//     {
+//         int ret = poll(&pollfds[0], pollfds.size(), -1);
+//         if (ret < 0)
+//         {
+//             perror("Error on poll");
+//             exit(EXIT_FAILURE);
+//         }
+
+//         for (std::vector<struct pollfd>::iterator pfdIt = pollfds.begin(); pfdIt != pollfds.end(); ++pfdIt)
+//         {
+//             if (pfdIt->revents & POLLIN)
+//             {
+//                 std::vector<ServerInfo>::iterator it = std::find_if(servers.begin(), servers.end(), FindServerBySocketFD(pfdIt->fd));
+
+//                 if (it != servers.end())
+//                 {
+//                     sockaddr_in cli_addr;
+//                     socklen_t clilen = sizeof(cli_addr);
+//                     int newsockfd = accept(pfdIt->fd, (struct sockaddr *)&cli_addr, &clilen);
+//                     if (newsockfd < 0)
+//                     {
+//                         perror("Error on accept");
+//                         exit(EXIT_FAILURE);
+//                     }
+
+//                     std::string request = readRequest(newsockfd);
+//                     it->clientSocket = newsockfd;
+//                     processRequest(request, *it);
+
+//                     struct pollfd client_pfd;
+//                     client_pfd.fd = newsockfd;
+//                     client_pfd.events = POLLOUT;
+//                     pollfds.push_back(client_pfd);
+//                 }
+//             }
+
+//             if (pfdIt->revents & POLLOUT)
+//             {
+//                 std::vector<ServerInfo>::iterator it = std::find_if(servers.begin(), servers.end(), FindServerByClientSocket(pfdIt->fd));
+
+//                 if (it != servers.end())
+//                 {
+//                     int clientSocket = it->clientSocket;
+//                     write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
+
+//                     close(clientSocket);
+//                     it->clientSocket = -1;
+
+//                     pfdIt->fd = -1;
+//                 }
+//             }
+//         }
+
+//         std::vector<struct pollfd>::iterator new_end = std::remove_if(pollfds.begin(), pollfds.end(), RemovePollfdWithNegativeFD());
+
+//         pollfds.erase(new_end, pollfds.end());
+//     }
+// }
+
+

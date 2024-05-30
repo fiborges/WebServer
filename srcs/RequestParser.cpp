@@ -8,6 +8,7 @@ const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
     //std::cout << GREEN << "Starting parseRequest...\n" << RESET;
+    std::cout << " ===== FIRST RAW : " << raw.size() << std::endl;
     if (!parseHeader(raw, msg)) {
         std::cout << "Header parsing failed\n";
         msg.error = "Header parsing failed";
@@ -199,6 +200,43 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
 //     msg.state = HTTrequestMSG::TRANSFER_CONTROL;
 //     return true;
 // }
+
+
+
+// bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
+//     std::string rawCopy = raw;  // Faz uma cópia de `raw`
+    
+//     size_t pos = rawCopy.find("\r\n");
+//     if (pos == std::string::npos) {
+//         std::cout << "Delimiter '\\r\\n' not found in request line\n";
+//         return false;
+//     }
+//     std::string requestLine = rawCopy.substr(0, pos);
+//     rawCopy.erase(0, pos + 2);
+//     std::istringstream requestLineStream(requestLine);
+//     if (!readRequestLine2(requestLineStream, msg)) {
+//         std::cout << "Failed to parse request line\n";
+//         return false;
+//     }
+
+//     pos = rawCopy.find("\r\n\r\n");
+//     if (pos == std::string::npos) {
+//         std::cout << "Delimiter '\\r\\n\\r\\n' not found in headers\n";
+//         return false;
+//     }
+//     std::string headers = rawCopy.substr(0, pos);
+//     rawCopy.erase(0, pos + 4);
+//     std::istringstream headersStream(headers);
+//     if (!readHeaders2(headersStream, msg)) {
+//         std::cout << "Failed to parse headers\n";
+//         return false;
+//     }
+
+//     return true;
+// }
+
+
+
 
 bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
     //std::cout << "Received HTTP request:\n" << raw << "\n";
@@ -448,6 +486,37 @@ bool HTTPParser::processMultipartData(const std::string& raw, const std::string&
 
     return true;
 }
+
+// size_t HTTPParser::getContentLength(const std::string& request)
+// {
+//     const std::string contentLengthHeader = "Content-Length: ";
+//     size_t start = request.find(contentLengthHeader);
+//     if (start == std::string::npos)
+//     {
+//         return 0; // Content-Length header not found
+//     }
+
+//     start += contentLengthHeader.size();
+//     size_t end = request.find("\r\n", start);
+//     if (end == std::string::npos)
+//     {
+//         return 0; // End of line not found after Content-Length header
+//     }
+
+//     std::string contentLengthStr = request.substr(start, end - start);
+//     std::istringstream iss(contentLengthStr);
+//     size_t contentLength;
+//     if (!(iss >> contentLength))
+//     {
+//         return 0; // Invalid content length value
+//     }
+
+//     return contentLength;
+// }
+
+
+
+
 
 size_t HTTPParser::getContentLength(const std::string& request)
 {

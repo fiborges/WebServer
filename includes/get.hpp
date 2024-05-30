@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/28 11:34:00 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/05/30 20:52:43 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,7 @@ class ServerInfo
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
 
+
 	public:
 		int	clientSocket;
 	
@@ -117,6 +118,7 @@ class ServerInfo
 
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
+		
 };
 
 std::string	methodToString(HTTrequestMSG::Method method);
