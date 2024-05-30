@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 15:08:46 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/05/30 13:41:31 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,28 @@ CGI::CGI()
 CGI::~CGI()
 {
 	std::cout << "CGI Destructor\n";
+}
+
+void	CGI::ExtractPathInfo(std::string& buffer)
+{
+	if (buffer.find("/UploadScript.py") == std::string::npos)
+		throw NoScriptAllowed();
+
+	size_t	path_position = buffer.find("/UploadScript.py") + 16;
+
+	while (buffer[path_position] != ' ')
+		this->Path_Info_ += buffer[path_position++];
+
+	// 	Necessario verificar aqui se PATH_INFO está de acordo com o diretorio de uploads autorizado
+	// no ficheiro de configuração.
+
+	std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
+
+	// Uma das primeiras verificações será ver se estão a tentar aceder a um diretorio transversal:
+
+	if (this->Path_Info_.find("..") != std::string::npos)
+		throw NotAcceptedUploadPath();
+
 }
 
 void	CGI::FindFinalBoundary(std::string& buffer)
@@ -89,7 +111,7 @@ void	CGI::CreateEnv()
 	std::string	value;
 
 	key = "PATH_INFO=";
-	value = "DATA";
+	value = this->Path_Info_;
 
 	this->EnvStrings_.push_back(key + value);
 
@@ -110,6 +132,8 @@ void	CGI::CreateEnv()
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
+
+	ExtractPathInfo(buffer);
 
 	/*
 		FindFinalBoundary will find the boundary Header and had two '-' characters
@@ -184,7 +208,7 @@ void	CGI::Child_process()
 	const char*	python_args[3];
 
 	python_args[0] = "/usr/bin/python3";
-	python_args[1] = "./cgi-bin/U_File_test4.py";
+	python_args[1] = "./cgi-bin/UploadScript.py";
 	python_args[2] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
@@ -228,6 +252,47 @@ void	CGI::Parent_process()
 	std::cout << "Response: " << response << std::endl;
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 }
+
+
+
+// ===========================Exceptions
+
+const char*	CGI::NoScriptAllowed::what() const throw()
+{
+	return ("ALERT: CGI request with not allowed script\n");
+}
+
+const char*	CGI::NotAcceptedUploadPath::what() const throw()
+{
+	return ("ALERT: CGI upload path was not accepted\n");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
 // {

@@ -16,7 +16,7 @@
 
 #include "CGI.hpp"
 
-#define PORT 8080
+#define PORT 8081
 
 void send_html_page(int client_socket)
 {
@@ -183,8 +183,15 @@ int	main(int argc, char **argv, char **envp)
 			send_html_page(new_socket);
 		else if (buffer_in_string.find("POST /cgi-bin") != std::string::npos)
 		{
-			CGI	cgi;
-			cgi.PerformCGI(new_socket, buffer_in_string);
+			try
+			{
+				CGI	cgi;
+				cgi.PerformCGI(new_socket, buffer_in_string);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
 		}
 		else if (buffer_in_string.find("GET /close_server") != std::string::npos)
 		{
