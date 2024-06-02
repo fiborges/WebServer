@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/30 20:51:11 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/01 15:29:42 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,24 @@ ServerInfo::ServerInfo()
 		handleError("Error opening socket.");
 		exit(-1);
 	}
+
+	memset(&serv_addr, 0, sizeof(serv_addr));
+
+	this->clientSocket = -1;
+
 	this->rootUrl = "resources";
+	this->response = "";
+
+	this->clientSockets.clear();
+	this->portListen.clear();
+
+	this->bytesReadTotal = 0;
+
+	this->cli_addrs.clear();
+	for (std::vector<sockaddr_in>::iterator it = this->cli_addrs.begin(); it != this->cli_addrs.end(); ++it)
+		memset(&(*it), 0, sizeof(*it));
 }
+
 ServerInfo::~ServerInfo()
 {
 }
@@ -55,7 +71,6 @@ std::string ServerInfo::getRootUrl() const
 {
 	return rootUrl;
 }
-
 
 void	ServerInfo::addSocketToList(int sockfd)
 {
@@ -117,7 +132,15 @@ void printLog(const std::string& method, const std::string& path, const std::str
 		"Connected with client at 127.0.0.1:" << CYAN << currentPort << RESET << std::endl;
 	}
 	std::cout << BG_CYAN_BLACK << timestamp << RESET << BLUE << " [" << RESET << requestCount << BLUE << "] \"" << methodColor << method << " " << path << " ";
-	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " " << server.getResponse().length() << std::endl;
+	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " ";
+
+	if (method == "GET") {
+		std::cout << server.getResponse().length();
+	} else if (method == "POST") {
+		std::cout << server.getBytesReadTotal();
+	}
+
+	std::cout << std::endl;
 	std::cout << BG_CYAN_BLACK << timestamp << RESET << RED << " [" << RESET << requestCount << RED << "] " \
 	<< BLUE << "Connection ended successfully" << RESET << std::endl;
 }
@@ -251,9 +274,89 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 
 
 
+void ServerInfo::setRedirectResponse(const std::string &location, const conf_File_Info &config)
+{
+	std::string statusMessage;
+
+	if (config.redirectURL.httpStatusCode == 301)
+	{
+		statusMessage = "301 Moved Permanently";
+	}
+	else if (config.redirectURL.httpStatusCode == 302)
+	{
+		statusMessage = "302 Found";
+	}
+	else
+	{
+		statusMessage = "302 Found"; // Default to 302 if an invalid status code is provided
+	}
+
+	std::string response = "HTTP/1.1 " + statusMessage + "\r\n"
+						   "Location: " + location + "\r\n"
+						   "Content-Length: 0\r\n"
+						   "\r\n";
+	setResponse(response);
+}
+
+void ServerInfo::handleRedirectRequest(ServerInfo &server, const conf_File_Info &config)
+{
+	std::cout << "  ==>>>>> httpStatusCode: " << config.redirectURL.httpStatusCode << std::endl;
+	std::cout << "  ==>>>>> destinationURL: " << config.redirectURL.destinationURL << std::endl;
+	if (config.redirectURL.destinationURL == "/redirect-permanent")
+	{
+		server.setRedirectResponse("http://www.permanent-example.com", config);
+	}
+	else if (config.redirectURL.destinationURL == "/redirect-temporary")
+	{
+		server.setRedirectResponse("http://www.temporary-example.com", config);
+	}
+	// else if (parser.redirectURL == "/redirect-if-query")
+	// {
+	//     if (query == "token=12345")
+	// 	{
+	//         server.setRedirectResponse("http://www.example.com/valid-token", 302);
+	//     } else
+	// 	{
+	//         server.setRedirectResponse("http://www.example.com/invalid-token", 302);
+	//     }
+	// }
+	else if (config.redirectURL.destinationURL.find("/rewrite-redirect/oldpath/") == 0)
+	{
+		std::string newPath = config.redirectURL.destinationURL;
+		newPath.replace(0, 19, "/newpath/");
+		server.setRedirectResponse("http://www.rewrite-example.com" + newPath, config);
+	}
+	// else if (parser.redirectURL == "/")
+	// {
+	//     std::string userAgent = server.getUserAgent();
+	//     if (userAgent.find("Mobile") != std::string::npos || 
+	//         userAgent.find("Android") != std::string::npos || 
+	//         userAgent.find("webOS") != std::string::npos || 
+	//         userAgent.find("iPhone") != std::string::npos || 
+	//         userAgent.find("iPad") != std::string::npos || 
+	//         userAgent.find("iPod") != std::string::npos || 
+	//         userAgent.find("BlackBerry") != std::string::npos || 
+	//         userAgent.find("IEMobile") != std::string::npos || 
+	//         userAgent.find("Opera Mini") != std::string::npos) {
+	//         server.setRedirectResponse("http://m.example.com", 302);
+	//     }
+	// 	else
+	// 	{
+	//         server.setRedirectResponse("https://example.com" + uri, 301);
+	//     }
+	// }
+	else
+	{
+		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404");
+	}
+}
+
+
+
 
 //Read the request from the client and return it as a string
-std::string readRequest(int sockfd)
+//std::string readRequest(int sockfd)
+std::string readRequest(int sockfd, ServerInfo& server)
 {
 	char buffer[4096];
 	std::string request;
@@ -289,10 +392,10 @@ std::string readRequest(int sockfd)
 	
 	size_t contentLength = parser.getContentLength(request);
 	
-	std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
+	//std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
 
 	size_t actualDataSize = request.size();
-	std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
+	//std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
 	size_t headerSize = request.find("\r\n\r\n") + 4;
 
 	if (contentLength > actualDataSize - headerSize)
@@ -302,7 +405,7 @@ std::string readRequest(int sockfd)
 		{
 			memset(buffer, 0, 4096);
 			ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), 0);
-			std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
+			//std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
 
 			if (bytesRead < 0)
 			{
@@ -321,7 +424,8 @@ std::string readRequest(int sockfd)
 
 			request.append(buffer, bytesRead);
 			bytesReadTotal += bytesRead;
-			std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
+			server.setBytesReadTotal(bytesReadTotal);
+			//std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
 
 			// Check if the total bytes read is greater than the raw size
 			if (bytesReadTotal > request.size() - headerSize) {
@@ -330,8 +434,7 @@ std::string readRequest(int sockfd)
 			}
 		}
 	}
-
-	std::cout << "Request received: \n" << request << std::endl; // Print the request
+	//std::cout << "Request received: \n" << request << std::endl; // Print the request
 	return request;
 }
 
@@ -339,18 +442,14 @@ std::string readRequest(int sockfd)
 
 
 // Process the request and send the response
-void processRequest(const std::string& request, ServerInfo& server)
+void processRequest(const std::string& request, ServerInfo& server, const conf_File_Info& config)
 {
-
 	if (request.empty())
 	{
 		//std::cout << "Received empty request, ignoring." << std::endl;
 		return;
 	}
 	
-	//std::string method;
-	//std::string path;
-	//std::string body;
 	std::string ParaCGI = request;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
@@ -362,7 +461,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		if (requestMsg.is_cgi == false)
-			handleRequest(requestMsg, server);
+			handleRequest(requestMsg, server, config);
 		else
 		{
 			CGI cgi;
@@ -384,7 +483,8 @@ bool fileExists(const std::string& filePath)
 }
 
 // Function to handle the request from the HTTP method
-void handleRequest(HTTrequestMSG& request, ServerInfo& server)
+
+void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_Info& config)
 {
 	if (request.path == "/favicon.ico")
 	{
@@ -397,6 +497,10 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 		}
 		else
 			server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+	}
+	else if (request.path == "/redirect")
+	{
+		server.handleRedirectRequest(server, config);
 	}
 	else
 	{
@@ -441,14 +545,17 @@ std::string readFileContent(const std::string& filePath)
 	return fileContent;
 }
 
-bool isValidFilePath(const std::string& path) {
+bool isValidFilePath(const std::string& path)
+{
 	struct stat buffer;
 	return (stat(path.c_str(), &buffer) == 0);
 }
 
-bool isDirectory(const std::string& path) {
+bool isDirectory(const std::string& path)
+{
 	struct stat buffer;
-	if (stat(path.c_str(), &buffer) == 0) {
+	if (stat(path.c_str(), &buffer) == 0)
+	{
 		return S_ISDIR(buffer.st_mode);
 	}
 	return false;
@@ -470,7 +577,7 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	struct stat buffer;
 	if (stat(fullPath.c_str(), &buffer) == 0)
 	{
-		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
+		if (S_ISREG(buffer.st_mode))
 		{
 			std::string fileContent = readFileContent(fullPath);
 			if (fileContent.empty())
@@ -483,7 +590,7 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 			std::string contentType = getContentType(fullPath);
 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
 		}
-		else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
+		else if (S_ISDIR(buffer.st_mode))
 		{
 			if (!requestMsg.path.empty() && requestMsg.path[requestMsg.path.length() - 1] != '/')
 			{
@@ -492,13 +599,12 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				return;
 			}
 
-			// Tentar encontrar e servir index.html dentro do diretório
 			std::string indexPath = fullPath;
 			if (indexPath[indexPath.length() - 1] != '/')
 				indexPath += '/';
 			indexPath += "index.html";
 
-			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
+			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode))
 			{
 				std::string fileContent = readFileContent(indexPath);
 				if (fileContent.empty())
@@ -655,9 +761,7 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 
 
 
-
-
-void	runServer(std::vector<ServerInfo>& servers)
+void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
 {
 	fd_set read_fds, write_fds;
 	FD_ZERO(&read_fds);
@@ -711,9 +815,9 @@ void	runServer(std::vector<ServerInfo>& servers)
 					exit(EXIT_FAILURE);
 				}
 
-				std::string request = readRequest(newsockfd);
+				std::string request = readRequest(newsockfd, *it);
 				it->clientSocket = newsockfd;
-				processRequest(request, *it);
+				processRequest(request, *it, config);
 
 				// Add new socket to write_fds
 				FD_SET(newsockfd, &write_fds);

@@ -63,23 +63,18 @@ void handle_sigint(int sig)
 	exit(0);
 }
 
-std::vector<ServerInfo> setupServers(const char* configFileName)
+void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, const conf_File_Info** config)
 {
-	ParserClass parser(configFileName);
-	//parser.debug();
+    ParserClass parser(configFileName);
+    ConfiguredServers configs = parser.fetchSpecifications();
 
-	ConfiguredServers configs = parser.fetchSpecifications();
-
-	std::vector<ServerInfo> servers;
-	for (size_t i = 0; i < configs.size(); ++i) {
-		ParserConfig parserConfig = configs[i];
-		const conf_File_Info* config = parserConfig.getServerConfigurations();
-		ServerInfo server;
-		setupServer(server, *config);
-		servers.push_back(server);
-	}
-
-	return servers;
+    for (size_t i = 0; i < configs.size(); ++i) {
+        ParserConfig parserConfig = configs[i];
+        *config = parserConfig.getServerConfigurations();
+        ServerInfo server;
+        setupServer(server, **config);
+        servers.push_back(server);
+    }
 }
 
 int main(int argc, char **argv)
@@ -98,8 +93,10 @@ int main(int argc, char **argv)
 	}
 	try
 	{
-		std::vector<ServerInfo> servers = setupServers(argv[1]);
-		runServer(servers);
+        std::vector<ServerInfo> servers;
+        const conf_File_Info* config;
+        setupServers(argv[1], servers, &config);
+        runServer(servers, *config);
 		servers.clear();
 		remove_directory(global_path);
 

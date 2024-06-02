@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/30 20:52:43 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/01 15:23:36 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,8 @@ class ServerInfo
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
 
+		int bytesReadTotal;
+
 
 	public:
 		int	clientSocket;
@@ -118,7 +120,22 @@ class ServerInfo
 
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
-		
+
+
+		//void handleRedirectRequest(ServerInfo &server, conf_File_Info &config);
+		void handleRedirectRequest(ServerInfo &server, const conf_File_Info &config);
+		void setRedirectResponse(const std::string &location, const conf_File_Info &config);
+		//void setRedirectResponse(const std::string &location, int statusCode);
+
+
+		int getBytesReadTotal() const {
+			return bytesReadTotal;
+		}
+
+		void setBytesReadTotal(int bytesRead) {
+			bytesReadTotal = bytesRead;
+		}
+			
 };
 
 std::string	methodToString(HTTrequestMSG::Method method);
@@ -132,12 +149,20 @@ int			remove_directory(const char *path); //to use in main() to remove the temp 
 
 void setupServer(ServerInfo& server, const conf_File_Info& config);
 //void		setupServer(ServerInfo& server, conf_File_Info& config);
+
 std::string	readRequest(int sockfd);
-void		processRequest(const std::string& request, ServerInfo& server);
-void		handleRequest(HTTrequestMSG& requestt, ServerInfo& server);
+std::string	readRequest(int sockfd, ServerInfo& server);
+void processRequest(const std::string& request, ServerInfo& server, const conf_File_Info& config);
+//void processRequest(const std::string& request, ServerInfo& server, conf_File_Info& config);
+//void		processRequest(const std::string& request, ServerInfo& server);
+void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_Info& config);
+//void handleRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info& config);
+//void		handleRequest(HTTrequestMSG& requestt, ServerInfo& server);
 std::string readFileContent(const std::string& filePath);
 
-void		runServer(std::vector<ServerInfo>& servers);
+void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config);
+//void runServer(std::vector<ServerInfo>& servers, conf_File_Info& config);
+//void		runServer(std::vector<ServerInfo>& servers);
 
 std::string readDirectoryContent(const std::string& directoryPath);
 bool ends_with(const std::string& value, const std::string& ending);

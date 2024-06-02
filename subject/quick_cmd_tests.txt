@@ -74,3 +74,8 @@ curl -X POST -H "Content-Type: text/plain" --data-binary @largefile.txt http://l
 curl -X POST -H "Content-Type: text/plain" -T largefile.txt http://localhost:8080/your_endpoint     -> serve para enviar arquivo como fluxo de dados
 
 curl -X POST -H "Content-Type: text/plain" -T subject/webserver.pdf http://localhost:8080/your_endpoint --output response.bin
+
+
+
+Evaluation Page
+curl -X POST -H "Content-Type: text/plain" --data "BODY IS HERE write something shorter or longer than body limit" http://localhost:8080/your-endpoint
