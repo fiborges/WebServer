@@ -9,7 +9,9 @@ import mimetypes
 cgitb.enable()
 
 # diretório onde os arquivos são armazenados
-upload_dir = "/home/brolivei/Documents/WebServer"
+#upload_dir = "/home/brolivei/Documents/WebServer"
+# diretório onde os arquivos são armazenados
+upload_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # ficheiros permitidos
 allowed_file_types = ["image/jpeg", "image/png", "image/gif", "application/pdf", "text/plain", "application/msword"]

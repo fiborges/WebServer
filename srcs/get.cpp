@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/01 15:29:42 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/03 15:14:32 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -515,7 +515,7 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_I
 		}
 		else if (request.method == HTTrequestMSG::DELETE)
 		{
-			// Processar solicitação DELETE, se necessário
+			server.handleDeleteRequest(request, server);
 		}
 		else if (request.method == HTTrequestMSG::UNKNOWN)
 		{
@@ -697,6 +697,30 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 // 	}
 // 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 // }
+
+
+void sendResponse(int sockfd, const std::string &response) {
+    send(sockfd, response.c_str(), response.length(), 0);
+}
+
+void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server) {
+	(void)server;
+    size_t pos = requestMsg.path.find("file=");
+    if (pos != std::string::npos) {
+        std::string fileName = requestMsg.path.substr(pos + 5);
+        fileName = fileName.substr(0, fileName.find(' '));
+        fileName = "DATA/" + fileName;
+        if (remove(fileName.c_str()) == 0) {
+            sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+        } else {
+            sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+        }
+    } else {
+        sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+    }
+}
+
+
 
 void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 {

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Files</title>
+</head>
+<body>
+    <h1>Delete Files</h1>
+    <form id="deleteForm" method="post" action="/cgi-bin/delete.py">
+        <label for="files">Select a file to delete:</label>
+        <select name="file" id="files">
+            <!-- File options will be populated here by the server -->
+        </select>
+        <button type="button" onclick="deleteFile()">Delete</button>
+    </form>
+
+    <script>
+        window.onload = function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/cgi-bin/delete.py", true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    console.log(xhr.responseText); // Add this line
+                    try {
+                        var files = xhr.responseText.split(",");
+                        var select = document.getElementById("files");
+                        for (var i = 0; i < files.length; i++) {
+                            var option = document.createElement("option");
+                            option.value = files[i];
+                            option.text = files[i];
+                            select.appendChild(option);
+                        }
+                    } catch (error) {
+                        console.error("Error parsing response:", error);
+                    }
+                }
+            };
+            xhr.send();
+        };
+    </script>
+
+    <!-- Neste exemplo, `xhr.responseText.split(",")` é usado para dividir a resposta do servidor em uma matriz de nomes de arquivos.
+    Isso pressupõe que o servidor está retornando os nomes dos arquivos como uma string delimitada por vírgulas,
+    como "file1.txt,file2.txt,file3.txt".
+Por favor, note que este é apenas um exemplo e você pode precisar ajustá-lo para se adequar ao seu código existente. -->
+
+    <script>
+        function deleteFile() {
+            var fileToDelete = document.getElementById("files").value;
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/cgi-bin/delete.py", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert("File deleted successfully");
+                    // Optionally, update the file list after deletion
+                    // You can reload the page or fetch the updated list using AJAX
+                } else if (xhr.readyState === 4) {
+                    alert("Failed to delete file");
+                }
+            };
+            xhr.send("file=" + encodeURIComponent(fileToDelete));
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+

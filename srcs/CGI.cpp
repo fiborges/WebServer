@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 21:17:43 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/03 14:26:52 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,15 +41,34 @@ void	CGI::ExtractBody(std::string& buffer)
 	this->Body_.append(buffer, boundStart + 4);
 }
 
-void	CGI::ExtractFileName()
-{
-	ssize_t	fileNamePos = this->Body_.find("filename=");
+// void	CGI::ExtractFileName()
+// {
+// 	ssize_t	fileNamePos = this->Body_.find("filename=");
 
-	while (this->Body_[fileNamePos + 10] != '"')
-	{
-		this->FileName_ += this->Body_[fileNamePos + 10];
-		fileNamePos++;
-	}
+// 	while (this->Body_[fileNamePos + 10] != '"')
+// 	{
+// 		this->FileName_ += this->Body_[fileNamePos + 10];
+// 		fileNamePos++;
+// 	}
+// }
+
+void CGI::ExtractFileName()
+{
+    std::string::size_type fileNamePos = this->Body_.find("filename=");
+
+    // Check if "filename=" was found in the string
+    if (fileNamePos != std::string::npos)
+    {
+        // Add 10 to skip past "filename=\""
+        fileNamePos += 10;
+
+        // Check if fileNamePos is within the bounds of the string
+        while (fileNamePos < this->Body_.size() && this->Body_[fileNamePos] != '"')
+        {
+            this->FileName_ += this->Body_[fileNamePos];
+            fileNamePos++;
+        }
+    }
 }
 
 void	CGI::ExtractFileContent()

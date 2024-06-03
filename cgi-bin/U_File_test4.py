@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    U_File_test4.py                                    :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
+#    By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/27 14:34:45 by brolivei         ###   ########.fr        #
+#    Updated: 2024/06/03 13:57:27 by fde-carv         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -26,14 +26,15 @@ def save_file(folder_name, file_name):
 			f.write(file_content)
 
 if __name__ == '__main__':
-		if len(sys.argv) != 2:
-			print("Usage: python script.py folder_name")
-			sys.exit(1)
+    if len(sys.argv) != 2:
+        print("Usage: python script.py folder_name")
+        sys.exit(1)
 
-		folder_name = sys.argv[1]
-		file_name = os.environ.get("PATH_INFO", "uploaded_file")
-		#file_content = sys.argv[3].encode('utf-8')
+    folder_name = sys.argv[1]
+    file_name = os.environ.get("PATH_INFO", "uploaded_file")
+    if not file_name or file_name.endswith('/'):
+        print("Invalid file name")
+        sys.exit(1)
 
-		#save_file(folder_name, file_name, file_content)
-		save_file(folder_name, file_name)
-		print('File saved successfully!')
+    save_file(folder_name, file_name)
+    print('File saved successfully!')

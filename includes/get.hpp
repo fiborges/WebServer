@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/01 15:23:36 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/03 13:29:20 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,7 @@ class ServerInfo
 		//void		handleGetRequest(const std::string& path, ServerInfo& server);
 		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server);
+		void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
 
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
@@ -167,5 +168,8 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config);
 std::string readDirectoryContent(const std::string& directoryPath);
 bool ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
+
+
+void sendResponse(int sockfd, const std::string &response);
 
 #endif
