@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/03 15:14:32 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/03 22:36:07 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,19 +20,13 @@ ServerInfo::ServerInfo()
 		handleError("Error opening socket.");
 		exit(-1);
 	}
-
 	memset(&serv_addr, 0, sizeof(serv_addr));
-
 	this->clientSocket = -1;
-
 	this->rootUrl = "resources";
 	this->response = "";
-
 	this->clientSockets.clear();
 	this->portListen.clear();
-
 	this->bytesReadTotal = 0;
-
 	this->cli_addrs.clear();
 	for (std::vector<sockaddr_in>::iterator it = this->cli_addrs.begin(); it != this->cli_addrs.end(); ++it)
 		memset(&(*it), 0, sizeof(*it));
@@ -134,14 +128,12 @@ void printLog(const std::string& method, const std::string& path, const std::str
 	std::cout << BG_CYAN_BLACK << timestamp << RESET << BLUE << " [" << RESET << requestCount << BLUE << "] \"" << methodColor << method << " " << path << " ";
 	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " ";
 
-	if (method == "GET") {
+	if (method == "GET")
 		std::cout << server.getResponse().length();
-	} else if (method == "POST") {
-		std::cout << server.getBytesReadTotal();
-	}
+	else if(method == "POST")
+		std::cout << server.getContentLength();
 
-	std::cout << std::endl;
-	std::cout << BG_CYAN_BLACK << timestamp << RESET << RED << " [" << RESET << requestCount << RED << "] " \
+	std::cout << "\n" << BG_CYAN_BLACK << timestamp << RESET << RED << " [" << RESET << requestCount << RED << "] " \
 	<< BLUE << "Connection ended successfully" << RESET << std::endl;
 }
 
@@ -165,45 +157,151 @@ bool is_directory(const std::string &path)
 		return (false);
 }
 
-//void setupDirectory(ServerInfo& server, conf_File_Info& config)
+
+
+std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
+{
+    DIR* dir;
+    struct dirent* ent;
+    std::vector<std::string> files;
+
+    if ((dir = opendir(directoryPath.c_str())) != NULL)
+    {
+        // Add all the files and directories within directory to the files vector
+        while ((ent = readdir(dir)) != NULL)
+        {
+            std::string filename = ent->d_name;
+            if (filename != "." && filename != "..") // Skip the current directory and parent directory
+                files.push_back(filename);
+        }
+        closedir(dir);
+    }
+    else
+    {
+        std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
+        return files;
+    }
+
+    std::sort(files.begin(), files.end()); // Sort the files vector
+
+    return files;
+}
+
 void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 {
-	//std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
-	//std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
-	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-	std::string rootDir = config.RootDirectory;
-	std::string rootUrl = server.getRootUrl();
-	if(rootDir.substr(0, rootUrl.length()) != rootUrl)
-	{
-		handleError("Error: Root URL should star with \'resources\' directory.");
-		exit(-1);
-	}
+    std::string rootDir = config.RootDirectory;
+    std::string rootUrl = server.getRootUrl();
+    if (rootDir.substr(0, rootUrl.length()) != rootUrl)
+    {
+        handleError("Error: Root URL should start with 'resources' directory.");
+        exit(-1);
+    }
 
-	std::string subDir = rootDir.substr(rootUrl.length());
+    std::string subDir = rootDir.substr(rootUrl.length());
 
-	if(!subDir.empty() && subDir[0] == '/')
-		subDir = subDir.substr(1);
+    if (!subDir.empty() && subDir[0] == '/')
+        subDir = subDir.substr(1);
 
-	std::string path = "";
-	std::stringstream ss(rootDir);
-	std::string token;
+    std::string path = "";
+    std::stringstream ss(rootDir);
+    std::string token;
 
-	while(std::getline(ss, token, '/')) {
-		path += token + "/";
-		if(!is_directory(path)) {
-			if(mkdir(path.c_str(), 0777) == -1) {
-				perror("Error creating directory");
-				exit(EXIT_FAILURE);
-			}
+    while (std::getline(ss, token, '/'))
+    {
+        path += token + "/";
+        if (!is_directory(path))
+        {
+            if (mkdir(path.c_str(), 0777) == -1)
+            {
+                perror("Error creating directory");
+                exit(EXIT_FAILURE);
+            }
 
-			if(chmod(path.c_str(), 0777) == -1) {
-				perror("Error changing directory permissions");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
+            if (chmod(path.c_str(), 0777) == -1)
+            {
+                perror("Error changing directory permissions");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    // Check if /DATA directory exists
+	// std::string dataDir = "./DATA";
+	// while (true) 
+	// {
+	// 	// Check if /DATA directory exists
+	// 	if (!is_directory(dataDir))
+	// 	{
+	// 		std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
+	// 		// Create /DATA directory
+	// 		if (mkdir(dataDir.c_str(), 0777) == -1)
+	// 		{
+	// 			perror("Error creating /DATA directory");
+	// 			exit(EXIT_FAILURE);
+	// 		}
+
+	// 		if (chmod(dataDir.c_str(), 0777) == -1)
+	// 		{
+	// 			perror("Error changing /DATA directory permissions");
+	// 			exit(EXIT_FAILURE);
+	// 		}
+	// 	}
+
+	// 	// Read the content of the /DATA directory and print it for debugging purposes
+	// 	std::vector<std::string> fileList = readDirectoryContent(dataDir);
+	// 	std::cout << "Files in /DATA directory: " << std::endl;
+	// 	for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it)
+	// 	{
+	// 		std::cout << *it << std::endl;
+	// 	}
+
+	// 	// Wait for a while before reading the directory again
+	// 	sleep(5);
+	// }
 }
+
+
+//void setupDirectory(ServerInfo& server, conf_File_Info& config)
+// void setupDirectory(ServerInfo& server, const conf_File_Info& config)
+// {
+// 	//std::cout << "\nRoot directory: " << config.RootDirectory << std::endl; // *DEBUG*
+// 	//std::cout << "Root URL: " << server.getRootUrl() << std::endl; // *DEBUG*
+// 	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+// 	std::string rootDir = config.RootDirectory;
+// 	std::string rootUrl = server.getRootUrl();
+// 	if(rootDir.substr(0, rootUrl.length()) != rootUrl)
+// 	{
+// 		handleError("Error: Root URL should star with \'resources\' directory.");
+// 		exit(-1);
+// 	}
+
+// 	std::string subDir = rootDir.substr(rootUrl.length());
+
+// 	if(!subDir.empty() && subDir[0] == '/')
+// 		subDir = subDir.substr(1);
+
+// 	std::string path = "";
+// 	std::stringstream ss(rootDir);
+// 	std::string token;
+
+// 	while(std::getline(ss, token, '/')) {
+// 		path += token + "/";
+// 		if(!is_directory(path)) {
+// 			if(mkdir(path.c_str(), 0777) == -1) {
+// 				perror("Error creating directory");
+// 				exit(EXIT_FAILURE);
+// 			}
+
+// 			if(chmod(path.c_str(), 0777) == -1) {
+// 				perror("Error changing directory permissions");
+// 				exit(EXIT_FAILURE);
+// 			}
+// 		}
+// 	}
+// }
 
 int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
@@ -233,11 +331,11 @@ int remove_directory(const char *path)
 }
 
 // Setup the server
-//void setupServer(ServerInfo& server, conf_File_Info& config)
 void setupServer(ServerInfo& server, const conf_File_Info& config)
 {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
+	if (sockfd < 0)
+	{
 		perror("Error on socket creation");
 		exit(EXIT_FAILURE);
 	}
@@ -355,7 +453,6 @@ void ServerInfo::handleRedirectRequest(ServerInfo &server, const conf_File_Info 
 
 
 //Read the request from the client and return it as a string
-//std::string readRequest(int sockfd)
 std::string readRequest(int sockfd, ServerInfo& server)
 {
 	char buffer[4096];
@@ -372,32 +469,22 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			exit(-1);
 		}
 		else if (bytesRead == 0)
-		{
 			break;
-		}
 		else
-		{
 			buffer[bytesRead] = '\0';
-			//std::cout << "Header received: " << buffer << std::endl; // Print the header
-		}
 
 		request.append(buffer, bytesRead);
-
-		// If we've reached the end of the header, break
 		if (request.find("\r\n\r\n") != std::string::npos)
 			break;
 	}
 
+	// Read the Body
 	HTTPParser parser;
-	
 	size_t contentLength = parser.getContentLength(request);
+	server.setContentLength(contentLength);
 	
-	//std::cout << "Content-Length: " << contentLength << std::endl; // Print Content-Length
-
 	size_t actualDataSize = request.size();
-	//std::cout << "Actual Data Size: " << actualDataSize << std::endl; // Print Actual Data Size
 	size_t headerSize = request.find("\r\n\r\n") + 4;
-
 	if (contentLength > actualDataSize - headerSize)
 	{
 		size_t bytesReadTotal = actualDataSize - headerSize;
@@ -421,14 +508,10 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			{
 				buffer[bytesRead] = '\0';
 			}
-
 			request.append(buffer, bytesRead);
 			bytesReadTotal += bytesRead;
-			server.setBytesReadTotal(bytesReadTotal);
-			//std::cout << "Total Bytes Read: " << bytesReadTotal << std::endl; // Print Total Bytes Read
-
-			// Check if the total bytes read is greater than the raw size
-			if (bytesReadTotal > request.size() - headerSize) {
+			if (bytesReadTotal > request.size() - headerSize)
+			{
 				std::cerr << "Read beyond the end of available data." << std::endl;
 				break;
 			}
@@ -437,8 +520,6 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	//std::cout << "Request received: \n" << request << std::endl; // Print the request
 	return request;
 }
-
-
 
 
 // Process the request and send the response
@@ -457,7 +538,6 @@ void processRequest(const std::string& request, ServerInfo& server, const conf_F
 	size_t maxSize = 100000; // Aumentar o tamanho máximo para 10MB
 	if(maxSize > requestCopy.size())
 		maxSize = requestCopy.size();
-	//std::cout << "Max size: " << maxSize << std::endl;	
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		if (requestMsg.is_cgi == false)
@@ -466,6 +546,41 @@ void processRequest(const std::string& request, ServerInfo& server, const conf_F
 		{
 			CGI cgi;
 			cgi.PerformCGI(server.clientSocket , ParaCGI);
+
+			std::string dataDir = "./DATA";
+
+			// Check if /DATA directory exists
+			if (!is_directory(dataDir))
+			{
+				std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
+				// Create /DATA directory
+				if (mkdir(dataDir.c_str(), 0777) == -1)
+				{
+					perror("Error creating /DATA directory");
+					exit(EXIT_FAILURE);
+				}
+
+				if (chmod(dataDir.c_str(), 0777) == -1)
+				{
+					perror("Error changing /DATA directory permissions");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			// Read the content of the /DATA directory and print it for debugging purposes
+			std::vector<std::string> fileList = readDirectoryContent(dataDir);
+			// Write the file list to a file
+			std::string fileListPath = "cgi-bin/fileList.txt";
+			std::ofstream outFile(fileListPath.c_str());
+			for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
+				outFile << *it << "\n";
+			}
+			outFile.close();
+
+
+
+
+			
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
 	}
@@ -483,7 +598,6 @@ bool fileExists(const std::string& filePath)
 }
 
 // Function to handle the request from the HTTP method
-
 void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_Info& config)
 {
 	if (request.path == "/favicon.ico")
@@ -532,7 +646,6 @@ void ServerInfo::handleUnknownRequest(HTTrequestMSG& requestMsg, ServerInfo &ser
 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 }
 
-
 std::string readFileContent(const std::string& filePath)
 {
 	std::ifstream fileStream(filePath.c_str());
@@ -560,7 +673,6 @@ bool isDirectory(const std::string& path)
 	}
 	return false;
 }
-
 
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
@@ -631,72 +743,11 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		std::cerr << "[DEBUG] Error retrieving file stats: " << fullPath << std::endl;
 		server.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal server error\n");
 	}
-
 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 }
 
 
 
-// void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
-// {
-// 	std::string fullPath = "resources/website" + requestMsg.path;
-
-// 	if (!fileExists(fullPath))
-// 	{
-// 		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
-// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-// 		return;
-// 	}
-
-// 	struct stat buffer;
-// 	if (stat(fullPath.c_str(), &buffer) == 0)
-// 	{
-// 		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
-// 		{
-// 			std::string fileContent = readFileContent(fullPath);
-// 			std::string contentType = getContentType(fullPath);
-// 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-// 		}
-// 		else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
-// 		{
-// 			if (!requestMsg.path.empty() && requestMsg.path[requestMsg.path.length() - 1] != '/')
-// 			{
-// 				server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + requestMsg.path + "/\r\n\r\n");
-// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-// 				return;
-// 			}
-
-// 			// Tentar encontrar e servir index.html dentro do diretório
-// 			std::string indexPath = fullPath;
-// 			if (indexPath[indexPath.length() - 1] != '/')
-// 				indexPath += '/';
-// 			indexPath += "index.html";
-
-// 			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
-// 			{
-// 				std::string fileContent = readFileContent(indexPath);
-// 				std::string contentType = getContentType(indexPath);
-// 				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-// 			}
-// 			else if (errno == ENOENT) // Se o arquivo/diretório não existir
-// 			{
-// 				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-// 			}
-// 			else // Se não houver index.html, retornar erro 403
-// 			{
-// 				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
-// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-// 			}
-// 		}
-// 	}
-// 	else // Se o arquivo não existir, retornar erro 404
-// 	{
-// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-// 	}
-// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-// }
 
 
 void sendResponse(int sockfd, const std::string &response) {
@@ -704,19 +755,28 @@ void sendResponse(int sockfd, const std::string &response) {
 }
 
 void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server) {
-	(void)server;
-    size_t pos = requestMsg.path.find("file=");
-    if (pos != std::string::npos) {
-        std::string fileName = requestMsg.path.substr(pos + 5);
-        fileName = fileName.substr(0, fileName.find(' '));
-        fileName = "DATA/" + fileName;
-        if (remove(fileName.c_str()) == 0) {
-            sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+    (void)server;
+    if (requestMsg.method == HTTrequestMSG::GET) {
+        // Return the list of files
+        std::string fileListPath = "cgi-bin/fileList.txt";
+        std::string fileList = readFileContent(fileListPath); // You need to implement readFileContent function
+        sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + fileList);
+    } else if (requestMsg.method == HTTrequestMSG::DELETE) {
+        size_t pos = requestMsg.path.find("file=");
+        if (pos != std::string::npos) {
+            std::string fileName = requestMsg.path.substr(pos + 5);
+            fileName = fileName.substr(0, fileName.find(' '));
+            fileName = "DATA/" + fileName;
+            if (remove(fileName.c_str()) == 0) {
+                sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+            } else {
+                sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+            }
         } else {
-            sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+            sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
         }
     } else {
-        sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+        sendResponse(sockfd, "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
     }
 }
 
@@ -732,7 +792,6 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 	}
 
 	size_t contentLength = atoi(contentLengthStr.c_str()); // Convertendo o valor do cabeçalho para um inteiro
-	std::cout << BLUE << "===clength: " << RESET << contentLength << std::endl;
 
 	if (request.body.size() != contentLength) // Verificando se o tamanho do corpo corresponde ao Content-Length
 	{
@@ -866,41 +925,41 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
 }
 
 
-std::string readDirectoryContent(const std::string& directoryPath)
-{
-	DIR* dir;
-	struct dirent* ent;
-	std::vector<std::string> files;
+// std::string readDirectoryContent(const std::string& directoryPath)
+// {
+// 	DIR* dir;
+// 	struct dirent* ent;
+// 	std::vector<std::string> files;
 
-	if ((dir = opendir(directoryPath.c_str())) != NULL)
-	{
-		// Add all the files and directories within directory to the files vector
-		while ((ent = readdir(dir)) != NULL)
-		{
-			std::string filename = ent->d_name;
-			if (filename != "." && filename != "..") // Skip the current directory and parent directory
-				files.push_back(filename);
-		}
-		closedir(dir);
-	}
-	else
-	{
-		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
-		return "";
-	}
+// 	if ((dir = opendir(directoryPath.c_str())) != NULL)
+// 	{
+// 		// Add all the files and directories within directory to the files vector
+// 		while ((ent = readdir(dir)) != NULL)
+// 		{
+// 			std::string filename = ent->d_name;
+// 			if (filename != "." && filename != "..") // Skip the current directory and parent directory
+// 				files.push_back(filename);
+// 		}
+// 		closedir(dir);
+// 	}
+// 	else
+// 	{
+// 		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
+// 		return "";
+// 	}
 
-	std::sort(files.begin(), files.end()); // Sort the files vector
+// 	std::sort(files.begin(), files.end()); // Sort the files vector
 
-	std::string directoryContent; // Convert the files vector to a string
-	for (std::vector<std::string>::const_iterator i = files.begin(); i != files.end(); ++i)
-	{
-		directoryContent += *i;
-		directoryContent += "\n";
-	}
+// 	std::string directoryContent; // Convert the files vector to a string
+// 	for (std::vector<std::string>::const_iterator i = files.begin(); i != files.end(); ++i)
+// 	{
+// 		directoryContent += *i;
+// 		directoryContent += "\n";
+// 	}
 
-	//std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
-	return directoryContent;
-}
+// 	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
+// 	return directoryContent;
+// }
 
 bool ends_with(const std::string& value, const std::string& ending)
 {
@@ -919,13 +978,72 @@ std::string getContentType(const std::string& filePath)
 		contentType = "application/javascript";
 	else // Default to text/plain for unknown file types
 		contentType = "text/plain";
-
-	//std::cout << "Content type for " << filePath << ": " << contentType << std::endl; // *DEBUG*
 	return contentType;
 }
 
 
 
+
+// void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
+// {
+// 	std::string fullPath = "resources/website" + requestMsg.path;
+
+// 	if (!fileExists(fullPath))
+// 	{
+// 		//std::cout << "[DEBUG] File does not exist: " << fullPath << std::endl;
+// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 		return;
+// 	}
+
+// 	struct stat buffer;
+// 	if (stat(fullPath.c_str(), &buffer) == 0)
+// 	{
+// 		if (S_ISREG(buffer.st_mode)) // Se for um arquivo regular
+// 		{
+// 			std::string fileContent = readFileContent(fullPath);
+// 			std::string contentType = getContentType(fullPath);
+// 			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 		}
+// 		else if (S_ISDIR(buffer.st_mode)) // Se for um diretório
+// 		{
+// 			if (!requestMsg.path.empty() && requestMsg.path[requestMsg.path.length() - 1] != '/')
+// 			{
+// 				server.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + requestMsg.path + "/\r\n\r\n");
+// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 				return;
+// 			}
+
+// 			// Tentar encontrar e servir index.html dentro do diretório
+// 			std::string indexPath = fullPath;
+// 			if (indexPath[indexPath.length() - 1] != '/')
+// 				indexPath += '/';
+// 			indexPath += "index.html";
+
+// 			if (stat(indexPath.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode)) // Verificar se há index.html no diretório
+// 			{
+// 				std::string fileContent = readFileContent(indexPath);
+// 				std::string contentType = getContentType(indexPath);
+// 				server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+// 			}
+// 			else if (errno == ENOENT) // Se o arquivo/diretório não existir
+// 			{
+// 				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 			}
+// 			else // Se não houver index.html, retornar erro 403
+// 			{
+// 				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nAccess to directories is forbidden.");
+// 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 			}
+// 		}
+// 	}
+// 	else // Se o arquivo não existir, retornar erro 404
+// 	{
+// 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+// 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// 	}
+// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+// }
 
 
 
@@ -1123,5 +1241,3 @@ std::string getContentType(const std::string& filePath)
 //         pollfds.erase(new_end, pollfds.end());
 //     }
 // }
-
-

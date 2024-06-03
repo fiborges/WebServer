@@ -20,45 +20,41 @@
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "/cgi-bin/delete.py", true);
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    console.log(xhr.responseText); // Add this line
-                    try {
-                        var files = xhr.responseText.split(",");
+                console.log('Ready state:', xhr.readyState); // Log the ready state
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
                         var select = document.getElementById("files");
-                        for (var i = 0; i < files.length; i++) {
-                            var option = document.createElement("option");
-                            option.value = files[i];
-                            option.text = files[i];
-                            select.appendChild(option);
-                        }
-                    } catch (error) {
-                        console.error("Error parsing response:", error);
+                        select.innerHTML = xhr.responseText;
+                        console.log('Response:', xhr.responseText); // Log the response
+                    } else {
+                        console.error('Error status:', xhr.status); // Log any error status
                     }
                 }
             };
+            xhr.onerror = function() {
+                console.error('Request failed'); // Log if the request fails
+            };
             xhr.send();
         };
-    </script>
 
-    <!-- Neste exemplo, `xhr.responseText.split(",")` é usado para dividir a resposta do servidor em uma matriz de nomes de arquivos.
-    Isso pressupõe que o servidor está retornando os nomes dos arquivos como uma string delimitada por vírgulas,
-    como "file1.txt,file2.txt,file3.txt".
-Por favor, note que este é apenas um exemplo e você pode precisar ajustá-lo para se adequar ao seu código existente. -->
-
-    <script>
         function deleteFile() {
             var fileToDelete = document.getElementById("files").value;
+            console.log('Deleting file:', fileToDelete); // Log the file to delete
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "/cgi-bin/delete.py", true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    alert("File deleted successfully");
-                    // Optionally, update the file list after deletion
-                    // You can reload the page or fetch the updated list using AJAX
-                } else if (xhr.readyState === 4) {
-                    alert("Failed to delete file");
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        alert("File deleted successfully");
+                        location.reload(); // Reload the page to update the file list
+                    } else {
+                        console.error('Error status:', xhr.status); // Log any error status
+                    }
                 }
+            };
+            xhr.onerror = function() {
+                console.error('Request failed'); // Log if the request fails
             };
             xhr.send("file=" + encodeURIComponent(fileToDelete));
         }
@@ -67,6 +63,11 @@ Por favor, note que este é apenas um exemplo e você pode precisar ajustá-lo p
 </html>
 
 
+
+<!-- Neste exemplo, `xhr.responseText.split(",")` é usado para dividir a resposta do servidor em uma matriz de nomes de arquivos.
+Isso pressupõe que o servidor está retornando os nomes dos arquivos como uma string delimitada por vírgulas,
+como "file1.txt,file2.txt,file3.txt".
+Por favor, note que este é apenas um exemplo e você pode precisar ajustá-lo para se adequar ao seu código existente. -->
 
 
 

@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/03 13:29:20 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/03 20:23:21 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,9 @@ class ServerInfo
 		std::vector<int> portListen;
 
 		int bytesReadTotal;
+		size_t contentLength;
+
+		std::string RootDirectory;
 
 
 	public:
@@ -129,12 +132,20 @@ class ServerInfo
 		//void setRedirectResponse(const std::string &location, int statusCode);
 
 
-		int getBytesReadTotal() const {
-			return bytesReadTotal;
-		}
+		// int getBytesReadTotal() const {
+		// 	return bytesReadTotal;
+		// }
 
-		void setBytesReadTotal(int bytesRead) {
-			bytesReadTotal = bytesRead;
+		// void setBytesReadTotal(int bytesRead) {
+		// 	bytesReadTotal = bytesRead;
+		// }
+
+		void setContentLength(size_t length) {
+        	contentLength = length;
+    	}
+
+		size_t getContentLength() const {
+			return contentLength;
 		}
 			
 };
@@ -165,7 +176,8 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config);
 //void runServer(std::vector<ServerInfo>& servers, conf_File_Info& config);
 //void		runServer(std::vector<ServerInfo>& servers);
 
-std::string readDirectoryContent(const std::string& directoryPath);
+std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
+//std::string readDirectoryContent(const std::string& directoryPath);
 bool ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
 

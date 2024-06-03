@@ -2,17 +2,20 @@
 import os
 import cgi
 import cgitb
-import json
 cgitb.enable()
 
-DATA_DIR = os.path.expanduser("~/fred/FRED/42_PORTO/13-WEBSERV/get-server-fred-tudo-para-grupo-2")
+DATA_DIR = os.path.expanduser("~/fred/FRED/42_PORTO/13-WEBSERV/get-server-fred-tudo-para-grupo-2/cgi-bin")
 
 def list_files():
     try:
-        files = os.listdir(DATA_DIR)
-        return files
+        with open(os.path.join(DATA_DIR, "fileList.txt"), "r") as f:
+            files = f.read().splitlines()
+        print(f"Files: {files}")  # Debug print
+        options = ''.join(f'<option value="{file}">{file}</option>' for file in files)
+        return options
     except Exception as e:
-        return []
+        print(f"Exception: {e}")  # Debug print
+        return ""
 
 def delete_file(file):
     try:
@@ -29,9 +32,9 @@ form = cgi.FieldStorage()
 if form.getvalue("file"):
     file_to_delete = form.getvalue("file")
     success = delete_file(file_to_delete)
-    print("Content-Type: application/json\n")
-    print(json.dumps({"success": success}))
+    print("Content-Type: text/plain\n")
+    print("success" if success else "failure")
 else:
     files = list_files()
-    print("Content-Type: application/json\n")
-    print(json.dumps(files))
+    print("Content-Type: text/html\n")
+    print(files)
