@@ -79,3 +79,25 @@ curl -X POST -H "Content-Type: text/plain" -T subject/webserver.pdf http://local
 
 Evaluation Page
 curl -X POST -H "Content-Type: text/plain" --data "BODY IS HERE write something shorter or longer than body limit" http://localhost:8080/your-endpoint
+
+
+=> verificar pasta do upload e delete e so tem ai a permissao
+
+
+
+
+
+
+No servidor Nginx, o código de status HTTP retornado após uma solicitação DELETE depende do resultado da operação. Aqui estão alguns possíveis códigos de status:
+
+- `200 OK`: A solicitação DELETE foi bem-sucedida e o recurso foi removido.
+- `202 Accepted`: A solicitação foi aceita para processamento, mas o processamento ainda não foi concluído.
+- `204 No Content`: A solicitação DELETE foi bem-sucedida, mas não há representação para incluir no corpo da resposta (por exemplo, o recurso foi removido).
+- `400 Bad Request`: A solicitação não pôde ser entendida ou estava faltando parâmetros necessários.
+- `401 Unauthorized`: A autenticação é necessária para acessar o recurso.
+- `403 Forbidden`: O servidor entendeu a solicitação, mas se recusa a autorizá-la.
+- `404 Not Found`: O recurso que você estava tentando alcançar não pôde ser encontrado no servidor.
+- `405 Method Not Allowed`: O método DELETE não é permitido para o recurso solicitado.
+- `500 Internal Server Error`: Um erro ocorreu no servidor.
+
+Por favor, note que esses são apenas alguns dos possíveis códigos de status HTTP que podem ser retornados. O código de status exato dependerá da implementação específica do servidor e do resultado da operação DELETE.

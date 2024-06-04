@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/03 22:36:07 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/04 12:40:09 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -491,7 +491,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		while (bytesReadTotal < contentLength)
 		{
 			memset(buffer, 0, 4096);
-			ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), 0);
+			ssize_t bytesRead = recv(sockfd, buffer, std::min(static_cast<size_t>(4095), contentLength - bytesReadTotal), MSG_DONTWAIT);
 			//std::cout << "Bytes read: " << bytesRead << std::endl; // Print the number of bytes read
 
 			if (bytesRead < 0)
@@ -547,38 +547,35 @@ void processRequest(const std::string& request, ServerInfo& server, const conf_F
 			CGI cgi;
 			cgi.PerformCGI(server.clientSocket , ParaCGI);
 
-			std::string dataDir = "./DATA";
+			// std::string dataDir = "./DATA";
 
-			// Check if /DATA directory exists
-			if (!is_directory(dataDir))
-			{
-				std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
-				// Create /DATA directory
-				if (mkdir(dataDir.c_str(), 0777) == -1)
-				{
-					perror("Error creating /DATA directory");
-					exit(EXIT_FAILURE);
-				}
+			// // Check if /DATA directory exists
+			// if (!is_directory(dataDir))
+			// {
+			// 	std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
+			// 	// Create /DATA directory
+			// 	if (mkdir(dataDir.c_str(), 0777) == -1)
+			// 	{
+			// 		perror("Error creating /DATA directory");
+			// 		exit(EXIT_FAILURE);
+			// 	}
 
-				if (chmod(dataDir.c_str(), 0777) == -1)
-				{
-					perror("Error changing /DATA directory permissions");
-					exit(EXIT_FAILURE);
-				}
-			}
+			// 	if (chmod(dataDir.c_str(), 0777) == -1)
+			// 	{
+			// 		perror("Error changing /DATA directory permissions");
+			// 		exit(EXIT_FAILURE);
+			// 	}
+			// }
 
-			// Read the content of the /DATA directory and print it for debugging purposes
-			std::vector<std::string> fileList = readDirectoryContent(dataDir);
-			// Write the file list to a file
-			std::string fileListPath = "cgi-bin/fileList.txt";
-			std::ofstream outFile(fileListPath.c_str());
-			for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
-				outFile << *it << "\n";
-			}
-			outFile.close();
-
-
-
+			// // Read the content of the /DATA directory and print it for debugging purposes
+			// std::vector<std::string> fileList = readDirectoryContent(dataDir);
+			// // Write the file list to a file
+			// std::string fileListPath = "cgi-bin/fileList.txt";
+			// std::ofstream outFile(fileListPath.c_str());
+			// for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
+			// 	outFile << *it << "\n";
+			// }
+			// outFile.close();
 
 			
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
@@ -629,7 +626,7 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_I
 		}
 		else if (request.method == HTTrequestMSG::DELETE)
 		{
-			server.handleDeleteRequest(request, server);
+			server.handleDeleteRequest(request, server, config);
 		}
 		else if (request.method == HTTrequestMSG::UNKNOWN)
 		{
@@ -750,33 +747,101 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 
 
-void sendResponse(int sockfd, const std::string &response) {
-    send(sockfd, response.c_str(), response.length(), 0);
+void sendResponse(int sockfd, const std::string& response)
+{
+    ssize_t result = send(sockfd, response.c_str(), response.size(), MSG_NOSIGNAL);
+
+    if (result == -1)
+    {
+        if (errno == EPIPE)
+        {
+            // Broken pipe error, handle it here
+            std::cerr << "Broken pipe error when sending response." << std::endl;
+            close(sockfd); // Close the socket
+            throw std::runtime_error("Broken pipe error when sending response."); // Throw an exception
+        }
+        else
+        {
+            // Other error, handle it here
+            std::cerr << "Error sending response: " << strerror(errno) << std::endl;
+        }
+    }
 }
 
-void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server) {
+void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server, const conf_File_Info& config)
+{
+	try {
     (void)server;
-    if (requestMsg.method == HTTrequestMSG::GET) {
-        // Return the list of files
-        std::string fileListPath = "cgi-bin/fileList.txt";
-        std::string fileList = readFileContent(fileListPath); // You need to implement readFileContent function
-        sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + fileList);
-    } else if (requestMsg.method == HTTrequestMSG::DELETE) {
-        size_t pos = requestMsg.path.find("file=");
-        if (pos != std::string::npos) {
-            std::string fileName = requestMsg.path.substr(pos + 5);
-            fileName = fileName.substr(0, fileName.find(' '));
-            fileName = "DATA/" + fileName;
-            if (remove(fileName.c_str()) == 0) {
-                sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
-            } else {
-                sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
-            }
-        } else {
-            sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
-        }
-    } else {
+	std::cout << "======>>>> Handling DELETE request: " << config.fileUploadDirectory << std::endl;
+	
+	if(config.fileUploadDirectory == "")
+	{
+		
+		std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+	}
+	
+    // if (requestMsg.method == HTTrequestMSG::GET)
+	// {
+    //     // Return the list of files
+    //     std::string fileListPath = "cgi-bin/fileList.txt";
+    //     std::string fileList = readFileContent(fileListPath); // You need to implement readFileContent function
+    //     sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + fileList);
+    // }
+	if (requestMsg.method == HTTrequestMSG::DELETE)
+	{
+		size_t pos = requestMsg.path.find("file=");
+		if (pos != std::string::npos)
+		{
+			std::string fileName = requestMsg.path.substr(pos + 5);
+			fileName = fileName.substr(0, fileName.find(' '));
+			
+			// Check for path traversal attacks
+			if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos)
+			{
+				sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return;
+			}
+			
+			fileName = "DATA/" + fileName;
+
+			// Check if the file exists and is accessible
+			if (access(fileName.c_str(), F_OK) != -1)
+			{
+				// The file exists and is accessible, try to delete it
+				if (remove(fileName.c_str()) == 0)
+				{
+					sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				}
+				else
+				{
+					sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				}
+			}
+			else
+			{
+				// The file does not exist or is not accessible
+				sendResponse(sockfd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+			}
+		}
+    	else
+    	{
+        	sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+        	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+    	}
+	}
+	else
+	{
         sendResponse(sockfd, "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+    }
+	} catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return;
     }
 }
 

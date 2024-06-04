@@ -1,73 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Files</title>
-</head>
-<body>
-    <h1>Delete Files</h1>
-    <form id="deleteForm" method="post" action="/cgi-bin/delete.py">
-        <label for="files">Select a file to delete:</label>
-        <select name="file" id="files">
-            <!-- File options will be populated here by the server -->
-        </select>
-        <button type="button" onclick="deleteFile()">Delete</button>
-    </form>
-
+    <!-- ... restante do seu código ... -->
     <script>
-        window.onload = function() {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/cgi-bin/delete.py", true);
-            xhr.onreadystatechange = function() {
-                console.log('Ready state:', xhr.readyState); // Log the ready state
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        var select = document.getElementById("files");
-                        select.innerHTML = xhr.responseText;
-                        console.log('Response:', xhr.responseText); // Log the response
-                    } else {
-                        console.error('Error status:', xhr.status); // Log any error status
-                    }
-                }
-            };
-            xhr.onerror = function() {
-                console.error('Request failed'); // Log if the request fails
-            };
-            xhr.send();
-        };
-
         function deleteFile() {
-            var fileToDelete = document.getElementById("files").value;
-            console.log('Deleting file:', fileToDelete); // Log the file to delete
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/cgi-bin/delete.py", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        alert("File deleted successfully");
-                        location.reload(); // Reload the page to update the file list
-                    } else {
-                        console.error('Error status:', xhr.status); // Log any error status
-                    }
-                }
-            };
-            xhr.onerror = function() {
-                console.error('Request failed'); // Log if the request fails
-            };
-            xhr.send("file=" + encodeURIComponent(fileToDelete));
+            var input = document.getElementById('file');
+            var file = input.files[0];
+            if (file) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('DELETE', '/delete.html?file=' + encodeURIComponent(file.name), true);
+                xhr.send();
+            }
         }
     </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Upload a File</h1>
+        <a href="/index.html"><button class="buttons glow-on-hover"><b>Home</b></button></a>
+        <input type="file" name="file" id="file" class="buttons glow-on-hover">
+        <button onclick="deleteFile()" class="buttons glow-on-hover upload-button">Delete</button>
+    </div>
 </body>
+
 </html>
-
-
-
-<!-- Neste exemplo, `xhr.responseText.split(",")` é usado para dividir a resposta do servidor em uma matriz de nomes de arquivos.
-Isso pressupõe que o servidor está retornando os nomes dos arquivos como uma string delimitada por vírgulas,
-como "file1.txt,file2.txt,file3.txt".
-Por favor, note que este é apenas um exemplo e você pode precisar ajustá-lo para se adequar ao seu código existente. -->
-
-
-
