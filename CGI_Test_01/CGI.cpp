@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/30 13:41:31 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/04 10:35:54 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,6 @@ void	CGI::ExtractPathInfo(std::string& buffer)
 
 	if (this->Path_Info_.find("..") != std::string::npos)
 		throw NotAcceptedUploadPath();
-
 }
 
 void	CGI::FindFinalBoundary(std::string& buffer)
