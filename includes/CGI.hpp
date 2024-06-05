@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/05 15:02:47 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/05 15:19:20 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,12 @@ class CGI
 		};
 
 		class	NotAcceptedUploadPath : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class	NoUploadPathConfigurated : public std::exception
 		{
 			public:
 				virtual const char* what() const throw();
