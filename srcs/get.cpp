@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 15:05:19 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/05 18:28:25 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -254,41 +254,75 @@ void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 			}
 		}
 	}
-
-	// Check if /DATA directory exists
-	// std::string dataDir = "./DATA";
-	// while (true)
-	// {
-	// 	// Check if /DATA directory exists
-	// 	if (!is_directory(dataDir))
-	// 	{
-	// 		std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
-	// 		// Create /DATA directory
-	// 		if (mkdir(dataDir.c_str(), 0777) == -1)
-	// 		{
-	// 			perror("Error creating /DATA directory");
-	// 			exit(EXIT_FAILURE);
-	// 		}
-
-	// 		if (chmod(dataDir.c_str(), 0777) == -1)
-	// 		{
-	// 			perror("Error changing /DATA directory permissions");
-	// 			exit(EXIT_FAILURE);
-	// 		}
-	// 	}
-
-	// 	// Read the content of the /DATA directory and print it for debugging purposes
-	// 	std::vector<std::string> fileList = readDirectoryContent(dataDir);
-	// 	std::cout << "Files in /DATA directory: " << std::endl;
-	// 	for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it)
-	// 	{
-	// 		std::cout << *it << std::endl;
-	// 	}
-
-	// 	// Wait for a while before reading the directory again
-	// 	sleep(5);
-	// }
 }
+
+
+bool mkdirs(const std::string& path)
+{
+	size_t pos = 0;
+	std::string dir;
+	int mdret;
+
+	if(path[path.size() - 1] != '/') {
+		// force trailing / so we can handle everything in loop
+		dir = path + "/";
+	} else {
+		dir = path;
+	}
+
+	while((pos = dir.find_first_of('/', pos)) != std::string::npos) {
+		std::string subDir = dir.substr(0, pos++);
+		if(subDir.size() > 0) { // if leading / first time is 0 length
+			mdret = mkdir(subDir.c_str(), 0777);
+			if(mdret && errno != EEXIST) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory) {
+	// Verificar se o diretório raiz do servidor existe
+	struct stat rootInfo;
+	if (stat(serverRoot.c_str(), &rootInfo) == 0 && S_ISDIR(rootInfo.st_mode)) {
+		// O diretório raiz do servidor existe
+		std::string fullUploadDirectory = serverRoot;
+		if (!uploadDirectory.empty() && uploadDirectory[0] != '/') {
+			// Adiciona uma barra apenas se o uploadDirectory não for vazio e não começar com uma barra
+			fullUploadDirectory += "/";
+		}
+		fullUploadDirectory += uploadDirectory;
+
+		std::cout << "Attempting to create upload directory: " << fullUploadDirectory << std::endl;
+
+		// Verificar se o diretório de upload existe
+		struct stat uploadInfo;
+		if (stat(fullUploadDirectory.c_str(), &uploadInfo) != 0) {
+			std::cerr << "Error: Upload directory '" << fullUploadDirectory << "' does not exist. Creating it..." << std::endl;
+			if (mkdirs(fullUploadDirectory.c_str()) != 0) {
+				std::cerr << "Error creating upload directory '" << fullUploadDirectory << "': " << strerror(errno) << std::endl;
+			} else {
+				std::cout << "Upload directory '" << fullUploadDirectory << "' created successfully." << std::endl;
+			}
+		} else if (!(uploadInfo.st_mode & S_IFDIR)) {
+			std::cerr << "Error: '" << fullUploadDirectory << "' is not a directory." << std::endl;
+		} else {
+			std::cout << "Upload directory validated: " << fullUploadDirectory << std::endl;
+		}
+	} else {
+		// O diretório raiz do servidor não existe, não é possível criar o diretório de upload
+		std::cerr << "Error: Server root directory '" << serverRoot << "' does not exist." << std::endl;
+	}
+}
+
+
+
+
+
+
+
 
 
 //void setupDirectory(ServerInfo& server, conf_File_Info& config)
@@ -337,24 +371,22 @@ int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct F
 	(void)ftwbuf;
 	std::string filename(fpath);
 
-	// std::cout << RED << "Processing file: " << filename << RESET << std::endl; // *DEBUG*
-	if(filename.find("/website") == std::string::npos && filename.find("/upload") == std::string::npos)
+	// If the path starts with "resources/website", do not remove it
+	if(filename.substr(0, 17) == "resources/website")
 	{
-		// std::cout << RED << "Removing file or directory: " << filename << RESET << std::endl; // *DEBUG*
-		if(typeflag == FTW_D)
-			return rmdir(fpath);
-		else
-			return remove(fpath);
+		return 0;
 	}
-	return 0;
+
+	// Remove other files or directories
+	if(typeflag == FTW_D)
+		return rmdir(fpath);
+	else
+		return remove(fpath);
 }
 
-// To use in main() to remove the temp directory
 int remove_directory(const char *path)
 {
-	//std::cout << RED << "Path provided to remove_directory: " << path << RESET << std::endl; // *DEBUG*
-	//std::cout << RED << "Calling nftw for directory: " << path << RESET << std::endl; // *DEBUG*
-	int result = nftw(path, remove_file, 64, FTW_DEPTH | FTW_PHYS);
+	int result = nftw(path, remove_file, 64, FTW_DEPTH | FTW_PHYS | FTW_DEPTH);
 	return result;
 }
 
@@ -375,7 +407,11 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(config.portListen);
 	server.setAddress(serv_addr);
-	setupDirectory(server,config);
+	setupDirectory(server, config);
+	std::string serverRoot = config.RootDirectory;
+	std::string fileUploadDirectory = config.fileUploadDirectory;
+	setupUploadDirectory(serverRoot, fileUploadDirectory);
+
 	int opt = 1;
 	if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
@@ -829,103 +865,103 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 
 std::string extractFileNameFromURL(const std::string& url) {
-    std::string fileName;
-    std::istringstream iss(url);
-    std::string token;
+	std::string fileName;
+	std::istringstream iss(url);
+	std::string token;
 
-    // Procura pelo token 'file=' na URL
-    while (std::getline(iss, token, '=')) {
-        if (token == "file") {
-            // Se encontrar 'file=', extrai o próximo token como o nome do arquivo
-            if (std::getline(iss, fileName, '&')) {
-                // Remove os caracteres de escape '%20' substituindo-os por espaços
-                size_t pos;
-                while ((pos = fileName.find("%20")) != std::string::npos) {
-                    fileName.replace(pos, 3, " ");
-                }
-                break;
-            }
-        }
-    }
+	// Procura pelo token 'file=' na URL
+	while (std::getline(iss, token, '=')) {
+		if (token == "file") {
+			// Se encontrar 'file=', extrai o próximo token como o nome do arquivo
+			if (std::getline(iss, fileName, '&')) {
+				// Remove os caracteres de escape '%20' substituindo-os por espaços
+				size_t pos;
+				while ((pos = fileName.find("%20")) != std::string::npos) {
+					fileName.replace(pos, 3, " ");
+				}
+				break;
+			}
+		}
+	}
 
-    return fileName;
+	return fileName;
 }
 
 void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server){
-    try {
-        if(server.portListen.empty()) {
-            std::cerr << "No ports available." << std::endl;
-            return;
-        }
+	try {
+		if(server.portListen.empty()) {
+			std::cerr << "No ports available." << std::endl;
+			return;
+		}
 
-        int port = server.portListen[0];
-        std::cout << "Port NO DELETE : " << port << std::endl;
-        conf_File_Info &serverConfig = server.getConfig(port);
+		int port = server.portListen[0];
+		std::cout << "Port NO DELETE : " << port << std::endl;
+		conf_File_Info &serverConfig = server.getConfig(port);
 
-        if(serverConfig.fileUploadDirectory.empty()) {
-            std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
-            setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nFile upload directory not set.");
+		if(serverConfig.fileUploadDirectory.empty()) {
+			std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
+			setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nFile upload directory not set.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-            return;
-        }
+			return;
+		}
 
-        if (requestMsg.method != HTTrequestMSG::DELETE) {
-            setResponse("HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
+		if (requestMsg.method != HTTrequestMSG::DELETE) {
+			setResponse("HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-            return;
-        }
+			return;
+		}
 
-        // Extract file name from query string
-        std::string fileName = extractFileNameFromURL(requestMsg.query);
+		// Extract file name from query string
+		std::string fileName = extractFileNameFromURL(requestMsg.query);
 
-        std::cout << "Request pathAAA: " << requestMsg.path << std::endl;
-        std::cout << "Query string: " << requestMsg.query << std::endl;
-        std::cout << "File nameAAA: " << fileName << std::endl;
+		std::cout << "Request pathAAA: " << requestMsg.path << std::endl;
+		std::cout << "Query string: " << requestMsg.query << std::endl;
+		std::cout << "File nameAAA: " << fileName << std::endl;
 
-        if (fileName.empty()) {
-            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+		if (fileName.empty()) {
+			setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-            return;
-        }
+			return;
+		}
 
-        // Validate the file name format
-        if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos) {
-            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+		// Validate the file name format
+		if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos) {
+			setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-            return;
-        }
+			return;
+		}
 
-        std::string dataDirectory = "DATA/"; // Specify your data directory here
-        std::cout << "Data directory: " << dataDirectory << std::endl;
-        std::string filePath = dataDirectory + fileName;
-        std::cout << "File path: " << filePath << std::endl;
+		std::string dataDirectory = "DATA/"; // Specify your data directory here
+		std::cout << "Data directory: " << dataDirectory << std::endl;
+		std::string filePath = dataDirectory + fileName;
+		std::cout << "File path: " << filePath << std::endl;
 
-        // Check if the file path is within the data directory
-        if (filePath.substr(0, dataDirectory.size()) != dataDirectory) {
-            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+		// Check if the file path is within the data directory
+		if (filePath.substr(0, dataDirectory.size()) != dataDirectory) {
+			setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-            return;
-        }
+			return;
+		}
 
-        // Check if the file exists and is accessible
-        if (access(filePath.c_str(), F_OK) != -1) {
-            // The file exists and is accessible, try to delete it
-            if (remove(filePath.c_str()) == 0) {
-                setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
-            } else {
-                setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
-            }
+		// Check if the file exists and is accessible
+		if (access(filePath.c_str(), F_OK) != -1) {
+			// The file exists and is accessible, try to delete it
+			if (remove(filePath.c_str()) == 0) {
+				setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+			} else {
+				setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+			}
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-        } else {
-            // The file does not exist or is not accessible
-            setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
+		} else {
+			// The file does not exist or is not accessible
+			setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-        }
-    } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nInternal Server Error.");
+		}
+	} catch (const std::runtime_error& e) {
+		std::cerr << e.what() << std::endl;
+		setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nInternal Server Error.");
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-    }
+	}
 }
 
 
