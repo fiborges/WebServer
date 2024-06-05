@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 18:28:25 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 20:12:05 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -614,6 +614,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 
 			// Use the first port in the list
 			int listeningPort = ports[0];
+			std::cout << "Listening port: " << listeningPort << std::endl;
 
 			// Get the configuration for the listening port
 			conf_File_Info &serverConfig = server.getConfig(listeningPort);
@@ -931,7 +932,15 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 			return;
 		}
 
-		std::string dataDirectory = "DATA/"; // Specify your data directory here
+		// ----------------------//
+		// std::string rootDirectory1 = server.configs[port].RootDirectory;
+		// std::cout << "RootDirectory: " << rootDirectory1 << std::endl;
+		// std::string fileUploadDirectory = server.configs[port].fileUploadDirectory;
+		// std::cout << "FileUploadDirectory: " << fileUploadDirectory << std::endl;
+		// std::string dataDirectory = rootDirectory1 + fileUploadDirectory + "/";
+		std::string dataDirectory = "uploads/";
+		//-------------------------//
+		
 		std::cout << "Data directory: " << dataDirectory << std::endl;
 		std::string filePath = dataDirectory + fileName;
 		std::cout << "File path: " << filePath << std::endl;
