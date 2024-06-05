@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/05 15:05:45 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/05 15:19:39 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,6 +136,10 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer, conf_File_Info
 	std::cout << "======CGI======\n\n";
 	std::cout << info.fileUploadDirectory;
 	std::cout << "\n\n======CGI======\n\n";
+
+	if (info.fileUploadDirectory.empty())
+		throw NoUploadPathConfigurated();
+
 
 	this->ClientSocket_ = ClientSocket;
 
@@ -273,6 +277,10 @@ const char*	CGI::NotAcceptedUploadPath::what() const throw()
 	return ("ALERT: CGI upload path was not accepted\n");
 }
 
+const char* CGI::NoUploadPathConfigurated::what() const throw()
+{
+	return ("ALERT: CGI there's no upload directory configurated\n");
+}
 
 
 
