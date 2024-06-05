@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/04 12:40:09 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 09:48:51 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,9 @@ ServerInfo::ServerInfo()
 	this->cli_addrs.clear();
 	for (std::vector<sockaddr_in>::iterator it = this->cli_addrs.begin(); it != this->cli_addrs.end(); ++it)
 		memset(&(*it), 0, sizeof(*it));
+	this->contentLength = 0;
+	this->RootDirectory = "";
+	this->configs = std::map<int, conf_File_Info>();
 }
 
 ServerInfo::~ServerInfo()
@@ -81,6 +84,32 @@ std::vector<int> ServerInfo::getPortList() const
 	return portListen;
 }
 
+std::vector<int>& ServerInfo::getSockets()
+{
+	return clientSockets;
+};
+
+void ServerInfo::setContentLength(size_t length)
+{
+	contentLength = length;
+}
+
+size_t ServerInfo::getContentLength() const
+{
+	return contentLength;
+}
+
+void ServerInfo::addConfig(int port, const conf_File_Info& config)
+{
+	configs[port] = config;
+}
+
+conf_File_Info& ServerInfo::getConfig(int port)
+{
+	return configs[port];
+}
+			
+
 // ================================================================================================= //
 // ======================================= HELPER FUNCTIONS ======================================== //
 // ================================================================================================= //
@@ -111,7 +140,6 @@ void printLog(const std::string& method, const std::string& path, const std::str
 
 	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
 
-	// Extract status code from HTTP response
 	std::string statusCodeStr;
 	size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
 	if (statusCodePos != std::string::npos && httpResponse.length() >= statusCodePos + 3)
@@ -120,7 +148,8 @@ void printLog(const std::string& method, const std::string& path, const std::str
 
 	std::string statusColor = (statusCode == 200) ? GREEN : RED;
 	std::vector<int> ports = server.getPortList();
-	if (!ports.empty()) {
+	if (!ports.empty())
+	{
 		int currentPort = ports.front();
 		std::cout << BG_CYAN_BLACK << timestamp << RESET << GREEN << " [" << RESET << requestCount << GREEN << "] " << BLUE << \
 		"Connected with client at 127.0.0.1:" << CYAN << currentPort << RESET << std::endl;
@@ -158,76 +187,75 @@ bool is_directory(const std::string &path)
 }
 
 
-
 std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
 {
-    DIR* dir;
-    struct dirent* ent;
-    std::vector<std::string> files;
+	DIR* dir;
+	struct dirent* ent;
+	std::vector<std::string> files;
 
-    if ((dir = opendir(directoryPath.c_str())) != NULL)
-    {
-        // Add all the files and directories within directory to the files vector
-        while ((ent = readdir(dir)) != NULL)
-        {
-            std::string filename = ent->d_name;
-            if (filename != "." && filename != "..") // Skip the current directory and parent directory
-                files.push_back(filename);
-        }
-        closedir(dir);
-    }
-    else
-    {
-        std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
-        return files;
-    }
+	if ((dir = opendir(directoryPath.c_str())) != NULL)
+	{
+		// Add all the files and directories within directory to the files vector
+		while ((ent = readdir(dir)) != NULL)
+		{
+			std::string filename = ent->d_name;
+			if (filename != "." && filename != "..") // Skip the current directory and parent directory
+				files.push_back(filename);
+		}
+		closedir(dir);
+	}
+	else
+	{
+		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
+		return files;
+	}
 
-    std::sort(files.begin(), files.end()); // Sort the files vector
+	std::sort(files.begin(), files.end()); // Sort the files vector
 
-    return files;
+	return files;
 }
 
 void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 {
-    chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    std::string rootDir = config.RootDirectory;
-    std::string rootUrl = server.getRootUrl();
-    if (rootDir.substr(0, rootUrl.length()) != rootUrl)
-    {
-        handleError("Error: Root URL should start with 'resources' directory.");
-        exit(-1);
-    }
+	std::string rootDir = config.RootDirectory;
+	std::string rootUrl = server.getRootUrl();
+	if (rootDir.substr(0, rootUrl.length()) != rootUrl)
+	{
+		handleError("Error: Root URL should start with 'resources' directory.");
+		exit(-1);
+	}
 
-    std::string subDir = rootDir.substr(rootUrl.length());
+	std::string subDir = rootDir.substr(rootUrl.length());
 
-    if (!subDir.empty() && subDir[0] == '/')
-        subDir = subDir.substr(1);
+	if (!subDir.empty() && subDir[0] == '/')
+		subDir = subDir.substr(1);
 
-    std::string path = "";
-    std::stringstream ss(rootDir);
-    std::string token;
+	std::string path = "";
+	std::stringstream ss(rootDir);
+	std::string token;
 
-    while (std::getline(ss, token, '/'))
-    {
-        path += token + "/";
-        if (!is_directory(path))
-        {
-            if (mkdir(path.c_str(), 0777) == -1)
-            {
-                perror("Error creating directory");
-                exit(EXIT_FAILURE);
-            }
+	while (std::getline(ss, token, '/'))
+	{
+		path += token + "/";
+		if (!is_directory(path))
+		{
+			if (mkdir(path.c_str(), 0777) == -1)
+			{
+				perror("Error creating directory");
+				exit(EXIT_FAILURE);
+			}
 
-            if (chmod(path.c_str(), 0777) == -1)
-            {
-                perror("Error changing directory permissions");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+			if (chmod(path.c_str(), 0777) == -1)
+			{
+				perror("Error changing directory permissions");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
 
-    // Check if /DATA directory exists
+	// Check if /DATA directory exists
 	// std::string dataDir = "./DATA";
 	// while (true) 
 	// {
@@ -368,8 +396,8 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		exit(EXIT_FAILURE);
 	}
 	server.addPortToList(config.portListen);
+	server.addConfig(config.portListen, config);
 }
-
 
 
 void ServerInfo::setRedirectResponse(const std::string &location, const conf_File_Info &config)
@@ -377,17 +405,11 @@ void ServerInfo::setRedirectResponse(const std::string &location, const conf_Fil
 	std::string statusMessage;
 
 	if (config.redirectURL.httpStatusCode == 301)
-	{
 		statusMessage = "301 Moved Permanently";
-	}
 	else if (config.redirectURL.httpStatusCode == 302)
-	{
 		statusMessage = "302 Found";
-	}
 	else
-	{
 		statusMessage = "302 Found"; // Default to 302 if an invalid status code is provided
-	}
 
 	std::string response = "HTTP/1.1 " + statusMessage + "\r\n"
 						   "Location: " + location + "\r\n"
@@ -448,7 +470,6 @@ void ServerInfo::handleRedirectRequest(ServerInfo &server, const conf_File_Info 
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404");
 	}
 }
-
 
 
 
@@ -523,7 +544,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 
 // Process the request and send the response
-void processRequest(const std::string& request, ServerInfo& server, const conf_File_Info& config)
+void processRequest(const std::string& request, ServerInfo& server)
 {
 	if (request.empty())
 	{
@@ -541,7 +562,32 @@ void processRequest(const std::string& request, ServerInfo& server, const conf_F
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		if (requestMsg.is_cgi == false)
-			handleRequest(requestMsg, server, config);
+		{
+			std::vector<int> ports = server.getPortList();
+			for (std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
+				std::cout << CYAN << "VECTOR Port: "<< *it << RESET << " ";
+			}
+			std::cout << std::endl;
+
+
+			// Check if there are any ports in the list
+			if (ports.empty()) {
+				std::cerr << "Error: No ports found." << std::endl;
+				return;
+			}
+
+			// Use the first port in the list
+			int listeningPort = ports[0];
+
+			// Get the configuration for the listening port
+			conf_File_Info &serverConfig = server.getConfig(listeningPort);
+
+			std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
+			int portListenCopy = serverConfig.portListen;
+			std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
+			std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
+			handleRequest(requestMsg, server);
+		}
 		else
 		{
 			CGI cgi;
@@ -577,7 +623,7 @@ void processRequest(const std::string& request, ServerInfo& server, const conf_F
 			// }
 			// outFile.close();
 
-			
+			//config
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
 	}
@@ -595,7 +641,7 @@ bool fileExists(const std::string& filePath)
 }
 
 // Function to handle the request from the HTTP method
-void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_Info& config)
+void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 {
 	if (request.path == "/favicon.ico")
 	{
@@ -611,7 +657,7 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_I
 	}
 	else if (request.path == "/redirect")
 	{
-		server.handleRedirectRequest(server, config);
+		//server.handleRedirectRequest(server, config);
 	}
 	else
 	{
@@ -626,7 +672,7 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server, const conf_File_I
 		}
 		else if (request.method == HTTrequestMSG::DELETE)
 		{
-			server.handleDeleteRequest(request, server, config);
+			server.handleDeleteRequest(request, server);
 		}
 		else if (request.method == HTTrequestMSG::UNKNOWN)
 		{
@@ -749,99 +795,75 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 void sendResponse(int sockfd, const std::string& response)
 {
-    ssize_t result = send(sockfd, response.c_str(), response.size(), MSG_NOSIGNAL);
+	ssize_t result = send(sockfd, response.c_str(), response.size(), MSG_NOSIGNAL);
 
-    if (result == -1)
-    {
-        if (errno == EPIPE)
-        {
-            // Broken pipe error, handle it here
-            std::cerr << "Broken pipe error when sending response." << std::endl;
-            close(sockfd); // Close the socket
-            throw std::runtime_error("Broken pipe error when sending response."); // Throw an exception
-        }
-        else
-        {
-            // Other error, handle it here
-            std::cerr << "Error sending response: " << strerror(errno) << std::endl;
-        }
-    }
-}
-
-void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server, const conf_File_Info& config)
-{
-	try {
-    (void)server;
-	std::cout << "======>>>> Handling DELETE request: " << config.fileUploadDirectory << std::endl;
-	
-	if(config.fileUploadDirectory == "")
+	if (result == -1)
 	{
-		
-		std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
-		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-	}
-	
-    // if (requestMsg.method == HTTrequestMSG::GET)
-	// {
-    //     // Return the list of files
-    //     std::string fileListPath = "cgi-bin/fileList.txt";
-    //     std::string fileList = readFileContent(fileListPath); // You need to implement readFileContent function
-    //     sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + fileList);
-    // }
-	if (requestMsg.method == HTTrequestMSG::DELETE)
-	{
-		size_t pos = requestMsg.path.find("file=");
-		if (pos != std::string::npos)
+		if (errno == EPIPE)
 		{
-			std::string fileName = requestMsg.path.substr(pos + 5);
-			fileName = fileName.substr(0, fileName.find(' '));
-			
-			// Check for path traversal attacks
-			if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos)
-			{
-				sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
-				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				return;
-			}
-			
-			fileName = "DATA/" + fileName;
-
-			// Check if the file exists and is accessible
-			if (access(fileName.c_str(), F_OK) != -1)
-			{
-				// The file exists and is accessible, try to delete it
-				if (remove(fileName.c_str()) == 0)
-				{
-					sendResponse(sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
-					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				}
-				else
-				{
-					sendResponse(sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
-					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				}
-			}
-			else
-			{
-				// The file does not exist or is not accessible
-				sendResponse(sockfd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
-				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-			}
+			// Broken pipe error, handle it here
+			std::cerr << "Broken pipe error when sending response." << std::endl;
 		}
-    	else
-    	{
-        	sendResponse(sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
-        	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-    	}
+		else
+		{
+			// Other error, handle it here
+			std::cerr << "Error sending response: " << strerror(errno) << std::endl;
+		}
 	}
-	else
-	{
-        sendResponse(sockfd, "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
-		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-    }
-	} catch (const std::runtime_error& e) {
+}
+void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
+{
+    try {
+        if(server.portListen.empty()) {
+            std::cerr << "No ports available." << std::endl;
+            return;
+        }
+
+        int port = server.portListen[0];
+		std::cout << "Port NO DELETE : " << port << std::endl;
+        conf_File_Info &serverConfig = server.getConfig(port);
+
+        if(serverConfig.fileUploadDirectory == "") {
+            std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
+            sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nFile upload directory not set.");
+            return;
+        }
+
+        if (requestMsg.method == HTTrequestMSG::DELETE) {
+            size_t pos = requestMsg.path.find("file=");
+            if (pos != std::string::npos) {
+                std::string fileName = requestMsg.path.substr(pos + 5);
+                fileName = fileName.substr(0, fileName.find(' '));
+
+                // Check for path traversal attacks
+                if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos) {
+                    sendResponse(server.sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+                    return;
+                }
+
+                fileName = serverConfig.fileUploadDirectory + "/" + fileName;
+
+                // Check if the file exists and is accessible
+                if (access(fileName.c_str(), F_OK) != -1) {
+                    // The file exists and is accessible, try to delete it
+                    if (remove(fileName.c_str()) == 0) {
+                        sendResponse(server.sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
+                    } else {
+                        sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
+                    }
+                } else {
+                    // The file does not exist or is not accessible
+                    sendResponse(server.sockfd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
+                }
+            } else {
+                sendResponse(server.sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+            }
+        } else {
+            sendResponse(server.sockfd, "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
+        }
+    } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
-        return;
+        sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nInternal Server Error.");
     }
 }
 
@@ -849,14 +871,14 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 {
-	std::string contentLengthStr = request.headers["Content-Length"]; // Assumindo que request.headers é um std::map<std::string, std::string>
+	std::string contentLengthStr = request.headers["Content-Length"];
 	if (contentLengthStr.empty())
 	{
 		this->setResponse("HTTP/1.1 411 Length Required\r\nContent-Type: text/plain\r\n\r\nError: Content-Length header is missing");
 		return;
 	}
 
-	size_t contentLength = atoi(contentLengthStr.c_str()); // Convertendo o valor do cabeçalho para um inteiro
+	size_t contentLength = atoi(contentLengthStr.c_str());
 
 	if (request.body.size() != contentLength) // Verificando se o tamanho do corpo corresponde ao Content-Length
 	{
@@ -906,10 +928,7 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 }
 
 
-
-
-
-void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
+void runServer(std::vector<ServerInfo>& servers)
 {
 	fd_set read_fds, write_fds;
 	FD_ZERO(&read_fds);
@@ -965,7 +984,8 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
 
 				std::string request = readRequest(newsockfd, *it);
 				it->clientSocket = newsockfd;
-				processRequest(request, *it, config);
+				processRequest(request, *it);
+
 
 				// Add new socket to write_fds
 				FD_SET(newsockfd, &write_fds);
@@ -988,6 +1008,30 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
 		}
 	}
 }
+
+
+bool ends_with(const std::string& value, const std::string& ending)
+{
+	if (ending.size() > value.size()) return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+std::string getContentType(const std::string& filePath)
+{
+	std::string contentType;
+	if (ends_with(filePath, ".html"))
+		contentType = "text/html";
+	else if (ends_with(filePath, ".css"))
+		contentType = "text/css";
+	else if (ends_with(filePath, ".js"))
+		contentType = "application/javascript";
+	else // Default to text/plain for unknown file types
+		contentType = "text/plain";
+	return contentType;
+}
+
+
+
 
 
 // std::string readDirectoryContent(const std::string& directoryPath)
@@ -1025,27 +1069,6 @@ void runServer(std::vector<ServerInfo>& servers, const conf_File_Info& config)
 // 	std::cout << "Directory content:\n" << directoryContent << std::endl; // Print directory content
 // 	return directoryContent;
 // }
-
-bool ends_with(const std::string& value, const std::string& ending)
-{
-	if (ending.size() > value.size()) return false;
-	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
-
-std::string getContentType(const std::string& filePath)
-{
-	std::string contentType;
-	if (ends_with(filePath, ".html"))
-		contentType = "text/html";
-	else if (ends_with(filePath, ".css"))
-		contentType = "text/css";
-	else if (ends_with(filePath, ".js"))
-		contentType = "application/javascript";
-	else // Default to text/plain for unknown file types
-		contentType = "text/plain";
-	return contentType;
-}
-
 
 
 

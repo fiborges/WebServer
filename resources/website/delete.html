@@ -10,7 +10,16 @@
             if (file) {
                 var xhr = new XMLHttpRequest();
                 xhr.open('DELETE', '/delete.html?file=' + encodeURIComponent(file.name), true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        alert('File deleted successfully');
+                    } else if (xhr.readyState == 4) {
+                        alert('Error deleting file: ' + xhr.responseText);
+                    }
+                };
                 xhr.send();
+            } else {
+                alert('Please select a file to delete.');
             }
         }
     </script>

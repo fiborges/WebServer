@@ -63,19 +63,72 @@ void handle_sigint(int sig)
 	exit(0);
 }
 
-void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, const conf_File_Info** config)
-{
-    ParserClass parser(configFileName);
-    ConfiguredServers configs = parser.fetchSpecifications();
+// void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, const conf_File_Info** config)
+// {
+//     ParserClass parser(configFileName);
+//     ConfiguredServers configs = parser.fetchSpecifications();
 
-    for (size_t i = 0; i < configs.size(); ++i) {
-        ParserConfig parserConfig = configs[i];
-        *config = parserConfig.getServerConfigurations();
-        ServerInfo server;
-        setupServer(server, **config);
-        servers.push_back(server);
-    }
+//     for (size_t i = 0; i < configs.size(); ++i) {
+//         ParserConfig parserConfig = configs[i];
+//         *config = parserConfig.getServerConfigurations();
+//         ServerInfo server;
+//         setupServer(server, **config);
+//         servers.push_back(server);
+//     }
+// }
+
+
+// int main(int argc, char **argv)
+// {
+// 	// Configurar o manipulador de sinal
+// 		signal(SIGINT, handle_sigint);
+// 		global_path = "resources/";
+
+// 	if (argc != 2)
+// 	{
+// 		std::cout << RED << "Error: Incorrect number of parameters provided.\n" << RESET;
+// 		std::cout << GREEN << "Usage: Please run the program with the correct configuration file as follows:\n" << RESET;
+// 		std::cout << "./webserv <config_file>\n";
+// 		std::cout << YELLOW << "Example: ./webserv config.txt\n" << RESET;
+// 		return (1);
+// 	}
+// 	try
+// 	{
+//         std::vector<ServerInfo> servers;
+//         const conf_File_Info* config;
+//         setupServers(argv[1], servers, &config);
+//         runServer(servers, *config);
+// 		servers.clear();
+// 		remove_directory(global_path);
+
+// 		std::cout << GREEN << "\nConfig file parsed successfully\n" << RESET;
+// 	}
+// 	catch(const std::exception &e)
+// 	{
+// 		std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
+// 	}
+	
+// 	return 0;
+// }
+
+
+
+void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, std::vector<const conf_File_Info*>* configs)
+{
+	ParserClass parser(configFileName);
+	ConfiguredServers configuredServers = parser.fetchSpecifications();
+
+	for (size_t i = 0; i < configuredServers.size(); ++i)
+	{
+		ParserConfig parserConfig = configuredServers[i];
+		const conf_File_Info* config = parserConfig.getServerConfigurations();
+		configs->push_back(config);
+		ServerInfo server;
+		setupServer(server, *config);
+		servers.push_back(server);
+	}
 }
+
 
 int main(int argc, char **argv)
 {
@@ -93,10 +146,12 @@ int main(int argc, char **argv)
 	}
 	try
 	{
-        std::vector<ServerInfo> servers;
-        const conf_File_Info* config;
-        setupServers(argv[1], servers, &config);
-        runServer(servers, *config);
+		std::vector<ServerInfo> servers;
+		std::vector<const conf_File_Info*> configs;
+		setupServers(argv[1], servers, &configs);
+		for (size_t i = 0; i < configs.size(); ++i)
+			runServer(servers);
+	
 		servers.clear();
 		remove_directory(global_path);
 
