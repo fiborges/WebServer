@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 13:53:36 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 15:05:19 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ conf_File_Info& ServerInfo::getConfig(int port)
 {
 	return configs[port];
 }
-			
+
 
 // ================================================================================================= //
 // ======================================= HELPER FUNCTIONS ======================================== //
@@ -257,7 +257,7 @@ void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 
 	// Check if /DATA directory exists
 	// std::string dataDir = "./DATA";
-	// while (true) 
+	// while (true)
 	// {
 	// 	// Check if /DATA directory exists
 	// 	if (!is_directory(dataDir))
@@ -449,14 +449,14 @@ void ServerInfo::handleRedirectRequest(ServerInfo &server, const conf_File_Info 
 	// else if (parser.redirectURL == "/")
 	// {
 	//     std::string userAgent = server.getUserAgent();
-	//     if (userAgent.find("Mobile") != std::string::npos || 
-	//         userAgent.find("Android") != std::string::npos || 
-	//         userAgent.find("webOS") != std::string::npos || 
-	//         userAgent.find("iPhone") != std::string::npos || 
-	//         userAgent.find("iPad") != std::string::npos || 
-	//         userAgent.find("iPod") != std::string::npos || 
-	//         userAgent.find("BlackBerry") != std::string::npos || 
-	//         userAgent.find("IEMobile") != std::string::npos || 
+	//     if (userAgent.find("Mobile") != std::string::npos ||
+	//         userAgent.find("Android") != std::string::npos ||
+	//         userAgent.find("webOS") != std::string::npos ||
+	//         userAgent.find("iPhone") != std::string::npos ||
+	//         userAgent.find("iPad") != std::string::npos ||
+	//         userAgent.find("iPod") != std::string::npos ||
+	//         userAgent.find("BlackBerry") != std::string::npos ||
+	//         userAgent.find("IEMobile") != std::string::npos ||
 	//         userAgent.find("Opera Mini") != std::string::npos) {
 	//         server.setRedirectResponse("http://m.example.com", 302);
 	//     }
@@ -503,7 +503,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	HTTPParser parser;
 	size_t contentLength = parser.getContentLength(request);
 	server.setContentLength(contentLength);
-	
+
 	size_t actualDataSize = request.size();
 	size_t headerSize = request.find("\r\n\r\n") + 4;
 	if (contentLength > actualDataSize - headerSize)
@@ -551,7 +551,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 		//std::cout << "Received empty request, ignoring." << std::endl;
 		return;
 	}
-	
+
 	std::string ParaCGI = request;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
@@ -561,8 +561,8 @@ void processRequest(const std::string& request, ServerInfo& server)
 		maxSize = requestCopy.size();
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
-		if (requestMsg.is_cgi == false)
-		{
+		//if (requestMsg.is_cgi == false)
+		//{
 			std::vector<int> ports = server.getPortList();
 			for (std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
 				std::cout << CYAN << "VECTOR Port: "<< *it << RESET << " ";
@@ -582,16 +582,26 @@ void processRequest(const std::string& request, ServerInfo& server)
 			// Get the configuration for the listening port
 			conf_File_Info &serverConfig = server.getConfig(listeningPort);
 
+		if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
+		{
 			std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
 			int portListenCopy = serverConfig.portListen;
 			std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
 			std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
 			handleRequest(requestMsg, server);
 		}
+		//}
 		else
 		{
-			CGI cgi;
-			cgi.PerformCGI(server.clientSocket , ParaCGI);
+			try
+			{
+				CGI cgi;
+				cgi.PerformCGI(server.clientSocket , ParaCGI, serverConfig);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
 
 			// std::string dataDir = "./DATA";
 
@@ -996,8 +1006,8 @@ void runServer(std::vector<ServerInfo>& servers)
 		if (sockfd > max_fd)
 			max_fd = sockfd;
 	}
-	
-	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
+
+	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
 	time_t now = time(NULL);
@@ -1046,12 +1056,12 @@ void runServer(std::vector<ServerInfo>& servers)
 				if (newsockfd > max_fd)
 					max_fd = newsockfd;
 			}
-			
+
 			if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
 			{
 				// Write response to the client
 				int clientSocket = it->clientSocket;
-				
+
 				write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
 				// Remove client socket from read_fds and write_fds
 				FD_CLR(clientSocket, &read_fds);
@@ -1202,8 +1212,8 @@ std::string getContentType(const std::string& filePath)
 // 		if (sockfd > max_fd)
 // 			max_fd = sockfd;
 // 	}
-	
-// 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
+
+// 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
 // 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
 // 	time_t now = time(NULL);
@@ -1242,7 +1252,7 @@ std::string getContentType(const std::string& filePath)
 // 				}
 
 // 				std::string request = readRequest(newsockfd);
-				
+
 // 				//=================
 // 				it->clientSocket = newsockfd;
 // 				//=================
@@ -1308,8 +1318,8 @@ std::string getContentType(const std::string& filePath)
 //         pfd.events = POLLIN;
 //         pollfds.push_back(pfd);
 //     }
-	
-//     std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " 
+
+//     std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
 //               << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
 //     time_t now = time(NULL);
