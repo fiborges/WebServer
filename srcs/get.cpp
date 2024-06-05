@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 09:48:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 13:53:36 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -793,26 +793,55 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 
 
-void sendResponse(int sockfd, const std::string& response)
-{
-	ssize_t result = send(sockfd, response.c_str(), response.size(), MSG_NOSIGNAL);
+// void sendResponse(int sockfd, const std::string& response)
+// {
+//     ssize_t result = send(sockfd, response.c_str(), response.size(), MSG_NOSIGNAL);
 
-	if (result == -1)
-	{
-		if (errno == EPIPE)
-		{
-			// Broken pipe error, handle it here
-			std::cerr << "Broken pipe error when sending response." << std::endl;
-		}
-		else
-		{
-			// Other error, handle it here
-			std::cerr << "Error sending response: " << strerror(errno) << std::endl;
-		}
-	}
+//     if (result == -1)
+//     {
+//         if (errno == EPIPE)
+//         {
+//             // Broken pipe error, handle it here
+//             std::cerr << "Broken pipe error when sending response." << std::endl;
+//         }
+//         else
+//         {
+//             // Other error, handle it here
+//             std::cerr << "Error sending response: " << strerror(errno) << std::endl;
+//         }
+//     }
+//     else if (result == 0)
+//     {
+//         // Socket closed by peer
+//         std::cerr << "Socket closed by peer." << std::endl;
+//     }
+// }
+
+
+std::string extractFileNameFromURL(const std::string& url) {
+    std::string fileName;
+    std::istringstream iss(url);
+    std::string token;
+
+    // Procura pelo token 'file=' na URL
+    while (std::getline(iss, token, '=')) {
+        if (token == "file") {
+            // Se encontrar 'file=', extrai o próximo token como o nome do arquivo
+            if (std::getline(iss, fileName, '&')) {
+                // Remove os caracteres de escape '%20' substituindo-os por espaços
+                size_t pos;
+                while ((pos = fileName.find("%20")) != std::string::npos) {
+                    fileName.replace(pos, 3, " ");
+                }
+                break;
+            }
+        }
+    }
+
+    return fileName;
 }
-void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
-{
+
+void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server){
     try {
         if(server.portListen.empty()) {
             std::cerr << "No ports available." << std::endl;
@@ -820,52 +849,77 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
         }
 
         int port = server.portListen[0];
-		std::cout << "Port NO DELETE : " << port << std::endl;
+        std::cout << "Port NO DELETE : " << port << std::endl;
         conf_File_Info &serverConfig = server.getConfig(port);
 
-        if(serverConfig.fileUploadDirectory == "") {
+        if(serverConfig.fileUploadDirectory.empty()) {
             std::cout << "======>>>> File upload directory not set in the configuration file." << std::endl;
-            sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nFile upload directory not set.");
+            setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nFile upload directory not set.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
             return;
         }
 
-        if (requestMsg.method == HTTrequestMSG::DELETE) {
-            size_t pos = requestMsg.path.find("file=");
-            if (pos != std::string::npos) {
-                std::string fileName = requestMsg.path.substr(pos + 5);
-                fileName = fileName.substr(0, fileName.find(' '));
+        if (requestMsg.method != HTTrequestMSG::DELETE) {
+            setResponse("HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+            return;
+        }
 
-                // Check for path traversal attacks
-                if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos) {
-                    sendResponse(server.sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
-                    return;
-                }
+        // Extract file name from query string
+        std::string fileName = extractFileNameFromURL(requestMsg.query);
 
-                fileName = serverConfig.fileUploadDirectory + "/" + fileName;
+        std::cout << "Request pathAAA: " << requestMsg.path << std::endl;
+        std::cout << "Query string: " << requestMsg.query << std::endl;
+        std::cout << "File nameAAA: " << fileName << std::endl;
 
-                // Check if the file exists and is accessible
-                if (access(fileName.c_str(), F_OK) != -1) {
-                    // The file exists and is accessible, try to delete it
-                    if (remove(fileName.c_str()) == 0) {
-                        sendResponse(server.sockfd, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
-                    } else {
-                        sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
-                    }
-                } else {
-                    // The file does not exist or is not accessible
-                    sendResponse(server.sockfd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
-                }
+        if (fileName.empty()) {
+            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+            return;
+        }
+
+        // Validate the file name format
+        if (fileName.find("..") != std::string::npos || fileName.find("/") != std::string::npos) {
+            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+            return;
+        }
+
+        std::string dataDirectory = "DATA/"; // Specify your data directory here
+        std::cout << "Data directory: " << dataDirectory << std::endl;
+        std::string filePath = dataDirectory + fileName;
+        std::cout << "File path: " << filePath << std::endl;
+
+        // Check if the file path is within the data directory
+        if (filePath.substr(0, dataDirectory.size()) != dataDirectory) {
+            setResponse("HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nInvalid file name.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+            return;
+        }
+
+        // Check if the file exists and is accessible
+        if (access(filePath.c_str(), F_OK) != -1) {
+            // The file exists and is accessible, try to delete it
+            if (remove(filePath.c_str()) == 0) {
+                setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nFile deleted successfully.");
             } else {
-                sendResponse(server.sockfd, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\nNo file specified.");
+                setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nError deleting file.");
             }
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
         } else {
-            sendResponse(server.sockfd, "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\nMethod not allowed.");
+            // The file does not exist or is not accessible
+            setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\nFile not found.");
+			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
         }
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
-        sendResponse(server.sockfd, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nInternal Server Error.");
+        setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\nInternal Server Error.");
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
     }
 }
+
+
+
 
 
 

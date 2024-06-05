@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 09:49:21 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 12:20:15 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,8 +130,12 @@ class ServerInfo
 		size_t getContentLength() const;
 		void addConfig(int port, const conf_File_Info& config);
 		conf_File_Info& getConfig(int port);
+
+		
 			
 };
+
+std::string extractFileNameFromURL(const std::string& url);
 
 std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
