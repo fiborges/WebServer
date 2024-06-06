@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/28 11:34:00 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/05 16:46:00 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,60 +85,84 @@ class ServerInfo
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
 
+		int bytesReadTotal;
+		size_t contentLength;
+
+		std::string RootDirectory;
+
+		std::map<int, conf_File_Info> configs;
+
+
 	public:
 		int	clientSocket;
 	
 		ServerInfo();
 		~ServerInfo();
 
-		//std::vector<int>& getSockets();
-
-		std::vector<int>& getSockets()
-		{
-			return this->clientSockets;
-		};
-
 		void		setSocketFD(int socket);
 		int			getSocketFD() const;
 		void		setAddress(const sockaddr_in& address);
-		//const sockaddr_in& getAddress() const;
+
 		void		setResponse(const std::string& response);
 		std::string	getResponse() const;
-		//void	decodeAndStoreUrl(const std::string& url);
+
 		std::string	getRootUrl() const;
-		//std::vector<int>& getSockets()
-		//std::vector<int>& getClientSockets()
 		void		addSocketToList(int sockfd);
 
 		void		handleUnknownRequest(HTTrequestMSG& request, ServerInfo &server);
 		//void		handleGetRequest(const std::string& path, ServerInfo& server);
 		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server);
+		//void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server, const conf_File_Info& config);
+		void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
 
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
+
+		std::vector<int>& getSockets();
+
+		//void handleRedirectRequest(ServerInfo &server, conf_File_Info &config);
+		void handleRedirectRequest(ServerInfo &server, const conf_File_Info &config);
+		void setRedirectResponse(const std::string &location, const conf_File_Info &config);
+		//void setRedirectResponse(const std::string &location, int statusCode);
+
+		void setContentLength(size_t length);
+		size_t getContentLength() const;
+		void addConfig(int port, const conf_File_Info& config);
+		conf_File_Info& getConfig(int port);
+
+		
+			
 };
+
+std::string extractFileNameFromURL(const std::string& url);
 
 std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
 void setupDirectory(ServerInfo& server, const conf_File_Info& config);
-//void		setupDirectory(ServerInfo& server, conf_File_Info& config);
+
 int			remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 int			remove_directory(const char *path); //to use in main() to remove the temp directory
 
 void setupServer(ServerInfo& server, const conf_File_Info& config);
-//void		setupServer(ServerInfo& server, conf_File_Info& config);
+
 std::string	readRequest(int sockfd);
+std::string	readRequest(int sockfd, ServerInfo& server);
 void		processRequest(const std::string& request, ServerInfo& server);
-void		handleRequest(HTTrequestMSG& requestt, ServerInfo& server);
+void handleRequest(HTTrequestMSG& request, ServerInfo& server);
+
 std::string readFileContent(const std::string& filePath);
 
-void		runServer(std::vector<ServerInfo>& servers);
+void runServer(std::vector<ServerInfo>& servers);
 
-std::string readDirectoryContent(const std::string& directoryPath);
+std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
+
 bool ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
+
+
+void setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory);
 
 #endif

@@ -52,6 +52,15 @@ public:
     static bool saveRequestBodyToFile(const std::string& body, std::string& filePath);
 
     size_t getContentLength(const std::string& request);
+    bool headerHasField(const std::string& field, const std::string& request) {
+        HTTrequestMSG msg;
+        std::string requestCopy = request;
+        if (!parseRequest(requestCopy, msg, requestCopy.size())) {
+            return false;
+        }
+        return msg.headers.find(field) != msg.headers.end();
+    }
+
 
 private:
     static void readRequestLine(std::istringstream& stream, HTTrequestMSG& msg);

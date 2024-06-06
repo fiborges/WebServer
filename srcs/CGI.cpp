@@ -3,15 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 11:29:14 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/06 15:56:53 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/CGI.hpp"
-#include <fstream>
 
 CGI::CGI()
 {}
@@ -19,6 +18,35 @@ CGI::CGI()
 CGI::~CGI()
 {
 	std::cout << "CGI Destructor\n";
+}
+
+CGI::CGI(HTTrequestMSG& requestMsg)
+{
+	this->requestMsg_ = requestMsg;
+}
+
+void	CGI::ExtractPathInfo(std::string& buffer, conf_File_Info& info)
+{
+	if (buffer.find("/UploadScript.py") == std::string::npos)
+		throw NoScriptAllowed();
+
+	size_t	path_position = buffer.find("/UploadScript.py") + 16;
+
+	while (buffer[path_position] != ' ')
+		this->Path_Info_ += buffer[path_position++];
+
+	// 	Necessario verificar aqui se PATH_INFO está de acordo com o diretorio de uploads autorizado
+	// no ficheiro de configuração.
+
+	std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
+
+	if (info.fileUploadDirectory.find(this->Path_Info_) == std::string::npos)
+		throw NotAcceptedUploadPath();
+
+	// Uma das primeiras verificações será ver se estão a tentar aceder a um diretorio transversal:
+
+	if (this->Path_Info_.find("..") != std::string::npos)
+		throw NotAcceptedUploadPath();
 }
 
 void	CGI::FindFinalBoundary(std::string& buffer)
@@ -81,7 +109,6 @@ void	CGI::SendContentToScript()
 		}
 		bytesWritten += bytes;
 	}
-	std::cout << "====I Send the request to the script\n\n====";
 	close(this->P_FD[1]);
 }
 
@@ -90,12 +117,17 @@ void	CGI::CreateEnv()
 	std::string	key;
 	std::string	value;
 
+	key = "PATH_INFO=";
+	value = this->Path_Info_;
+
+	this->EnvStrings_.push_back(key + value);
+
 	key = "CONTENT_LENGTH=";
 	value = this->FileContent_.size();
 
 	this->EnvStrings_.push_back(key + value);
 
-	key = "PATH_INFO=";
+	key = "FILE_NAME=";
 
 	this->EnvStrings_.push_back(key + this->FileName_);
 
@@ -104,9 +136,20 @@ void	CGI::CreateEnv()
 	this->Env_.push_back(NULL);
 }
 
-void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
+void	CGI::PerformCGI(const int ClientSocket, std::string& buffer, conf_File_Info& info)
 {
+	std::cout << "======CGI======\n\n";
+	std::cout << info.fileUploadDirectory << std::endl;
+	std::cout << "QUERY: " << this->requestMsg_.query << std::endl;
+	std::cout << "\n\n======CGI======\n\n";
+
+	if (info.fileUploadDirectory.empty())
+		throw NoUploadPathConfigurated();
+
+
 	this->ClientSocket_ = ClientSocket;
+
+	ExtractPathInfo(buffer, info);
 
 	/*
 		FindFinalBoundary will find the boundary Header and had two '-' characters
@@ -178,14 +221,11 @@ void	CGI::Child_process()
 
 	CreateEnv();
 
-	const char*	python_args[4];
+	const char*	python_args[3];
 
 	python_args[0] = "/usr/bin/python3";
-	python_args[1] = "./cgi-bin/U_File_test4.py";
-	python_args[2] = "DATA";
-	//python_args[2] = this->FileName_.c_str();
-	//python_args[4] = fileContent.data();
-	python_args[3] = NULL; // Alteração
+	python_args[1] = "./cgi-bin/UploadScript.py";
+	python_args[2] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
@@ -202,8 +242,6 @@ void	CGI::Parent_process()
 	SendContentToScript();
 
 	wait(NULL);
-
-	std::cout << "CILD FINISH\n\n";
 
 	char		line[1024];
 	std::string	response;
@@ -227,13 +265,54 @@ void	CGI::Parent_process()
 			break;
 	}
 	close(this->C_FD[0]);
-
-	std::cout << "SENDING THE RESPONSE\n\n";
 	std::cout << "Response: " << response << std::endl;
-	std::cout << "SOCKET DO CLIENTE(INCGI.): " << this->ClientSocket_ << std::endl;
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
-	std::cout << "DONE\n\n";
 }
+
+
+
+// ===========================Exceptions
+
+const char*	CGI::NoScriptAllowed::what() const throw()
+{
+	return ("ALERT: CGI request with not allowed script\n");
+}
+
+const char*	CGI::NotAcceptedUploadPath::what() const throw()
+{
+	return ("ALERT: CGI upload path was not accepted\n");
+}
+
+const char* CGI::NoUploadPathConfigurated::what() const throw()
+{
+	return ("ALERT: CGI there's no upload directory configurated\n");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // void	CGI::PerformCGI(const int ClientSocket, std::string buffer_in)
 // {

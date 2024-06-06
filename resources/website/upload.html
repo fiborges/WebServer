@@ -154,7 +154,7 @@
 
         .upload-button {
             /* Add your custom styles here. For example: */
-            background-color: #8d0000;
+            background-color: #0f5905;
             color: #ffffff;
             font-weight: bold
         }
@@ -168,7 +168,7 @@
     <div class="container">
         <h1>Upload a File</h1>
         <a href="/index.html"><button class="buttons glow-on-hover"><b>Home</b></button></a>
-        <form action="/cgi-bin" method="post" enctype="multipart/form-data">
+        <form action="/cgi-bin/UploadScript.py/uploads" method="post" enctype="multipart/form-data">
             <input type="file" name="file" id="file" class="buttons glow-on-hover">
             <input type="submit" value="Upload" class="buttons glow-on-hover upload-button">
         </form>

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 10:30:32 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/06 15:49:13 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@
 #include <fcntl.h>
 #include <limits.h>
 
+#include "conf_info.hpp"
+#include "RequestParser.hpp"
 //#include "LOG_CLASS.hpp"
 
 class CGI
@@ -43,13 +45,18 @@ class CGI
 		std::string	Body_;
 		std::string	FileName_;
 		std::string	FileContent_;
+		// PATH_INFO:
+		std::string	Path_Info_;
 
 		std::vector<std::string>	EnvStrings_;
 		std::vector<char*>			Env_;
 
+		HTTrequestMSG	requestMsg_;
+
 		void	Child_process();
 		void	Parent_process();
 
+		void	ExtractPathInfo(std::string& buffer, conf_File_Info& info);
 		void	FindFinalBoundary(std::string& buffer);
 		void	ExtractBody(std::string& buffer);
 		void	ExtractFileName();
@@ -66,8 +73,28 @@ class CGI
 		//const CGI&	operator=(const CGI& other);
 		~CGI();
 
+		CGI(HTTrequestMSG& requestMsg);
+
 		// Public Method
-		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
+		void	PerformCGI(const int ClientSocket, std::string& buffer_in, conf_File_Info& info);
+
+		class	NoScriptAllowed : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class	NotAcceptedUploadPath : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class	NoUploadPathConfigurated : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
 };
 
 #endif

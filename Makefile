@@ -42,11 +42,18 @@ download:
 	@echo "\n[${WHITE}${GREEN}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
 
 large:
-	@for i in $$(seq 10000000 -1 1); do \
+	@mkdir -p resources/FILES
+	@for i in $$(seq 100000 -1 1); do \
 		echo "[$$i] Our group FFB is the Best!!!"; \
-	done > largefile.txt
-	@echo "[0] ==> LAST LINE 😁😁😁 <==" >> largefile.txt
+	done > resources/FILES/largefile.txt
+	@echo "[0] ==> LAST LINE 😁😁😁 <==" >> resources/FILES/largefile.txt
 	@echo "\n ${GREEN}largefile.txt${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
+	@wget -O resources/FILES/imagem.jpg "https://wallpapercave.com/wp/wp4575206.jpg" > /dev/null 2>&1
+	@echo " ${GREEN}imagem.jpg${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
+	@wget -O resources/FILES/video.mp4 "https://videocdn.cdnpk.net/joy/content/video/free/2018-09/large_preview/180824_TheEarth_39.mp4" > /dev/null 2>&1
+	@echo " ${GREEN}video.mp4${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
+	@wget -O resources/FILES/webserver.pdf "https://cdn.intra.42.fr/pdf/pdf/125778/en.subject.pdf" > /dev/null 2>&1
+	@echo " ${GREEN}webserver.pdf${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
 
 clean:
 	@$(RM) $(BUILD)
@@ -56,7 +63,12 @@ clean:
 	@test -f ubuntu_cgi_tester && rm ubuntu_cgi_tester > /dev/null 2>&1 || true
 	@test -f cgi_tester && rm cgi_tester > /dev/null 2>&1 || true
 	@test -f ubuntu_tester && rm ubuntu_tester > /dev/null 2>&1 || true
-	@test -f largefile.txt && rm largefile.txt > /dev/null 2>&1 || true
+	@test -f resources/FILES/largefile.txt && rm resources/FILES/largefile.txt > /dev/null 2>&1 || true
+	@test -f resources/FILES/imagem.jpg && rm resources/FILES/imagem.jpg > /dev/null 2>&1 || true
+	@test -f resources/FILES/video.mp4 && rm resources/FILES/video.mp4 > /dev/null 2>&1 || true
+	@test -f resources/FILES/webserver.pdf && rm resources/FILES/video.mp4 > /dev/null 2>&1 || true
+	@test -d DATA && rm -rf DATA > /dev/null 2>&1 || true
+	@test -d resources/FILES && rm -rf resources/FILES > /dev/null 2>&1 || true
 	
 fclean:	clean
 	@$(RM) $(NAME)
