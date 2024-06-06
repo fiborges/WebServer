@@ -55,23 +55,23 @@
             margin-bottom: 20px;
         }
 
-        /* Agrupar os botões "Browse" e "Delete" na mesma linha */
-        .button-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center; /* Alinhar verticalmente os botões */
-        }
-
         /* Estilizar a mensagem "Selected file" */
         .file-message {
-            margin-top: 10px; /* Espaço superior */
-            margin-bottom: 10px; /* Espaço inferior */
-            padding-left: 10px; /* Espaço à esquerda */
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding-left: 4em;
+            text-align: left;
         }
 
         /* Estilizar o texto da mensagem */
         .file-message strong {
             font-weight: bold;
+            color: rgb(255, 255, 255);
+            font-size: 20px; 
+        }
+
+        .file-name {
+            color: red;
         }
 
         /* Estilos para a animação glow-on-hover */
@@ -162,7 +162,7 @@
             };
             xhr.send();
             // Exibindo o nome do arquivo selecionado
-            document.getElementById('file-message').innerHTML = '<strong>Selected file:</strong> ' + file.name;
+            document.getElementById('file-message').innerHTML = '<strong>Selected file:</strong> <span class="file-name">' + file.name + '</span>';
             // Limpar o valor do input file
             input.value = '';
         }

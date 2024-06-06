@@ -101,3 +101,7 @@ No servidor Nginx, o código de status HTTP retornado após uma solicitação DE
 - `500 Internal Server Error`: Um erro ocorreu no servidor.
 
 Por favor, note que esses são apenas alguns dos possíveis códigos de status HTTP que podem ser retornados. O código de status exato dependerá da implementação específica do servidor e do resultado da operação DELETE.
+
+
+mudar caminho da root manual de resorses para o caminho vindo da perser da filipa
+Postman

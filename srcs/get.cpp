@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 20:12:05 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/06 12:39:17 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -257,65 +257,65 @@ void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 }
 
 
-bool mkdirs(const std::string& path)
-{
-	size_t pos = 0;
-	std::string dir;
-	int mdret;
+// bool mkdirs(const std::string& path)
+// {
+// 	size_t pos = 0;
+// 	std::string dir;
+// 	int mdret;
 
-	if(path[path.size() - 1] != '/') {
-		// force trailing / so we can handle everything in loop
-		dir = path + "/";
-	} else {
-		dir = path;
-	}
+// 	if(path[path.size() - 1] != '/') {
+// 		// force trailing / so we can handle everything in loop
+// 		dir = path + "/";
+// 	} else {
+// 		dir = path;
+// 	}
 
-	while((pos = dir.find_first_of('/', pos)) != std::string::npos) {
-		std::string subDir = dir.substr(0, pos++);
-		if(subDir.size() > 0) { // if leading / first time is 0 length
-			mdret = mkdir(subDir.c_str(), 0777);
-			if(mdret && errno != EEXIST) {
-				return false;
-			}
-		}
-	}
+// 	while((pos = dir.find_first_of('/', pos)) != std::string::npos) {
+// 		std::string subDir = dir.substr(0, pos++);
+// 		if(subDir.size() > 0) { // if leading / first time is 0 length
+// 			mdret = mkdir(subDir.c_str(), 0777);
+// 			if(mdret && errno != EEXIST) {
+// 				return false;
+// 			}
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
-void setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory) {
-	// Verificar se o diretório raiz do servidor existe
-	struct stat rootInfo;
-	if (stat(serverRoot.c_str(), &rootInfo) == 0 && S_ISDIR(rootInfo.st_mode)) {
-		// O diretório raiz do servidor existe
-		std::string fullUploadDirectory = serverRoot;
-		if (!uploadDirectory.empty() && uploadDirectory[0] != '/') {
-			// Adiciona uma barra apenas se o uploadDirectory não for vazio e não começar com uma barra
-			fullUploadDirectory += "/";
-		}
-		fullUploadDirectory += uploadDirectory;
+// void setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory) {
+// 	// Verificar se o diretório raiz do servidor existe
+// 	struct stat rootInfo;
+// 	if (stat(serverRoot.c_str(), &rootInfo) == 0 && S_ISDIR(rootInfo.st_mode)) {
+// 		// O diretório raiz do servidor existe
+// 		std::string fullUploadDirectory = serverRoot;
+// 		if (!uploadDirectory.empty() && uploadDirectory[0] != '/') {
+// 			// Adiciona uma barra apenas se o uploadDirectory não for vazio e não começar com uma barra
+// 			fullUploadDirectory += "/";
+// 		}
+// 		fullUploadDirectory += uploadDirectory;
 
-		std::cout << "Attempting to create upload directory: " << fullUploadDirectory << std::endl;
+// 		std::cout << "Attempting to create upload directory: " << fullUploadDirectory << std::endl;
 
-		// Verificar se o diretório de upload existe
-		struct stat uploadInfo;
-		if (stat(fullUploadDirectory.c_str(), &uploadInfo) != 0) {
-			std::cerr << "Error: Upload directory '" << fullUploadDirectory << "' does not exist. Creating it..." << std::endl;
-			if (mkdirs(fullUploadDirectory.c_str()) != 0) {
-				std::cerr << "Error creating upload directory '" << fullUploadDirectory << "': " << strerror(errno) << std::endl;
-			} else {
-				std::cout << "Upload directory '" << fullUploadDirectory << "' created successfully." << std::endl;
-			}
-		} else if (!(uploadInfo.st_mode & S_IFDIR)) {
-			std::cerr << "Error: '" << fullUploadDirectory << "' is not a directory." << std::endl;
-		} else {
-			std::cout << "Upload directory validated: " << fullUploadDirectory << std::endl;
-		}
-	} else {
-		// O diretório raiz do servidor não existe, não é possível criar o diretório de upload
-		std::cerr << "Error: Server root directory '" << serverRoot << "' does not exist." << std::endl;
-	}
-}
+// 		// Verificar se o diretório de upload existe
+// 		struct stat uploadInfo;
+// 		if (stat(fullUploadDirectory.c_str(), &uploadInfo) != 0) {
+// 			std::cerr << "Error: Upload directory '" << fullUploadDirectory << "' does not exist. Creating it..." << std::endl;
+// 			if (mkdirs(fullUploadDirectory.c_str()) != 0) {
+// 				std::cerr << "Error creating upload directory '" << fullUploadDirectory << "': " << strerror(errno) << std::endl;
+// 			} else {
+// 				std::cout << "Upload directory '" << fullUploadDirectory << "' created successfully." << std::endl;
+// 			}
+// 		} else if (!(uploadInfo.st_mode & S_IFDIR)) {
+// 			std::cerr << "Error: '" << fullUploadDirectory << "' is not a directory." << std::endl;
+// 		} else {
+// 			std::cout << "Upload directory validated: " << fullUploadDirectory << std::endl;
+// 		}
+// 	} else {
+// 		// O diretório raiz do servidor não existe, não é possível criar o diretório de upload
+// 		std::cerr << "Error: Server root directory '" << serverRoot << "' does not exist." << std::endl;
+// 	}
+// }
 
 
 
@@ -407,10 +407,10 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(config.portListen);
 	server.setAddress(serv_addr);
-	setupDirectory(server, config);
-	std::string serverRoot = config.RootDirectory;
-	std::string fileUploadDirectory = config.fileUploadDirectory;
-	setupUploadDirectory(serverRoot, fileUploadDirectory);
+	// setupDirectory(server, config);
+	// std::string serverRoot = config.RootDirectory;
+	// std::string fileUploadDirectory = config.fileUploadDirectory;
+	// setupUploadDirectory(serverRoot, fileUploadDirectory);
 
 	int opt = 1;
 	if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
@@ -588,6 +588,10 @@ void processRequest(const std::string& request, ServerInfo& server)
 		return;
 	}
 
+	// verificar map de configuração //	criar nova funcao
+
+
+
 	std::string ParaCGI = request;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
@@ -690,6 +694,12 @@ bool fileExists(const std::string& filePath)
 // Function to handle the request from the HTTP method
 void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 {
+	// int port = server.getPortList()[0];
+	// std::string filePath = server.getConfig(port).RootDirectory + request.path;
+	// std::cout << "Port HANDLE REQUEST : " << port << std::endl;
+	// conf_File_Info &serverConfig = server.getConfig(port);
+
+	
 	if (request.path == "/favicon.ico")
 	{
 		std::string faviconPath = "resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
@@ -709,6 +719,7 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 	else
 	{
 		std::string filePath = "resources/website" + request.path; // adjust this to your actual file path
+		//std::string filePath = server.configs[port].RootDirectory + request.path;
 		if (request.method == HTTrequestMSG::GET)
 		{
 			server.handleGetRequest(request, server);
