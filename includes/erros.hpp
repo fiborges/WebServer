@@ -1,19 +1,19 @@
-#ifndef SERVER_ERROR_HANDLER_HPP
-#define SERVER_ERROR_HANDLER_HPP
+#ifndef ERROS_HPP
+#define ERROS_HPP
 
 #include "librarie.hpp"
 #include "RequestParser.hpp"
 #include "parser.hpp"
+#include "parserConfig.hpp"
 
 class ServerErrorHandler {
-private:
-    static std::map<int, std::string> errorMessages;
-
 public:
-    static void initialize(); // Função para inicializar o mapa de erros
-    static std::string getErrorMessage(int errorCode);
-    //void sendErrorResponse(HttpResponse& response, int errorCode, const std::string& errorMsg);
-
+    ServerErrorHandler();
+    std::string generateErrorPage(int errorCode);
+private:
+    std::map<int, std::string> errorMessages;
+    std::string generateErrorPage(int errorCode, const std::string& errorMessage);
+    void initializeErrorMessages();
 };
 
 #endif
