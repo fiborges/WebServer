@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/06 12:39:17 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/06 15:05:00 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -217,7 +217,7 @@ std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
 
 void setupDirectory(ServerInfo& server, const conf_File_Info& config)
 {
-	chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	//chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
 	std::string rootDir = config.RootDirectory;
 	std::string rootUrl = server.getRootUrl();
@@ -431,8 +431,23 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		perror("Error on listen");
 		exit(EXIT_FAILURE);
 	}
+	
 	server.addPortToList(config.portListen);
 	server.addConfig(config.portListen, config);
+	
+	std::string actualRoot = config.RootDirectory;
+	conf_File_Info configForFirstPort = server.getConfig(server.getPortList()[0]);
+	std::string serverRoot = configForFirstPort.RootDirectory;
+
+	//std::cout << "Actual Root: " << actualRoot << std::endl;
+	//std::cout << "Server Root: " << serverRoot << std::endl;
+
+	if (serverRoot != actualRoot) {
+		throw std::runtime_error("404 Not Found: The requested server root does not match the actual server root.");
+	}
+	
+	if(serverRoot[serverRoot.size() - 1] != '/')
+		serverRoot += "/";
 }
 
 
@@ -627,8 +642,10 @@ void processRequest(const std::string& request, ServerInfo& server)
 		{
 			std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
 			int portListenCopy = serverConfig.portListen;
+			std::string rootDirectoryCopy = serverConfig.RootDirectory;
 			std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
 			std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
+			std::cout << RED << "!!!!! config root: " << rootDirectoryCopy << RESET << std::endl;
 			handleRequest(requestMsg, server);
 		}
 		//}
