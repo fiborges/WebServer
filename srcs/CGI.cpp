@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/06 15:56:53 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/08 11:17:07 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,11 +140,13 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer, conf_File_Info
 {
 	std::cout << "======CGI======\n\n";
 	std::cout << info.fileUploadDirectory << std::endl;
-	std::cout << "QUERY: " << this->requestMsg_.query << std::endl;
+	std::cout << "PATH_: " << this->requestMsg_.path << std::endl;
 	std::cout << "\n\n======CGI======\n\n";
 
-	if (info.fileUploadDirectory.empty())
-		throw NoUploadPathConfigurated();
+	// if (info.fileUploadDirectory.empty())
+	// 	throw NoUploadPathConfigurated();
+
+	// DEVO FAZER UM NOVO METODO SÓ PARA VERIFICAR SE O REQUEST VEM TODO ALINHADO COM AS REGRAS DO .CONF?
 
 
 	this->ClientSocket_ = ClientSocket;
