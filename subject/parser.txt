@@ -1,0 +1,479 @@
+
+=== Initializing Parser ===
+Client Body Size Validated: 10240 bytes
+Upload Directory Validated: /var/www/uploads
+HTTP Method Allowed: get
+HTTP Method Allowed: post
+HTTP Method Allowed: post
+CGI Configuration Validated: /usr/local/bin/cgi-script
+CGI Script Path: /usr/local/bin/cgi-script
+Client Body Size Validated: 20480 bytes
+Upload Directory Validated: /var/www/anotheruploads
+HTTP Method Allowed: get
+HTTP Method Allowed: post
+HTTP Method Allowed: get
+CGI Configuration Validated: /usr/local/bin/anothercgi-script
+CGI Script Path: /usr/local/bin/anothercgi-script
+Client Body Size Validated: 5120 bytes
+Upload Directory Validated: /var/www/onemoreuploads
+HTTP Method Allowed: get
+HTTP Method Allowed: post
+HTTP Method Allowed: get
+HTTP Method Allowed: post
+CGI Configuration Validated: /usr/local/bin/onemorecgi-script
+CGI Script Path: /usr/local/bin/onemorecgi-script
+
+=== Server 1 Configuration ===
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: true
+std::map<int, std::string> errorMap:
+  404 -> /404.html
+  500 -> /50x.html
+  502 -> /50x.html
+  503 -> /50x.html
+  504 -> /50x.html
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 10240
+std::string fileUploadDirectory: /var/www/uploads
+Locations LocationsMap:
+int portListen: 0
+std::string ServerName:
+std::string defaultFile: index.html
+std::string RootDirectory: /var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: get post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /=/exact-match ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/exact
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /cgi-bin ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI: /usr/local/bin/cgi-script
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /images ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/images
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /redirect ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 301
+  destinationURL: http://example.com/newpage
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /upload ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/uploads
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Server 2 Configuration ===
+int portListen: 8083
+std::string ServerName: anotherexample.com
+std::string defaultFile: home.html
+std::string RootDirectory: resources/var/www/anotherhtml
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+  404 -> /another404.html
+  500 -> /another50x.html
+  502 -> /another50x.html
+  503 -> /another50x.html
+  504 -> /another50x.html
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 20480
+std::string fileUploadDirectory: /var/www/anotheruploads
+Locations LocationsMap:
+int portListen: 0
+std::string ServerName:
+std::string defaultFile: home.html
+std::string RootDirectory: /var/www/anotherhtml
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: get post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /files ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/files
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: get
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /media ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/media
+std::string Path_CGI:
+bool directoryListingEnabled: true
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /oldpath ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 302
+  destinationURL: http://anotherexample.com/newpath
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /scripts ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI: /usr/local/bin/anothercgi-script
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Server 3 Configuration ===
+int portListen: 8084
+std::string ServerName: onemoreexample.com
+std::string defaultFile: main.html
+std::string RootDirectory: resources/var/www/onemorehtml
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+  404 -> /onemore404.html
+  500 -> /onemore50x.html
+  502 -> /onemore50x.html
+  503 -> /onemore50x.html
+  504 -> /onemore50x.html
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 5120
+std::string fileUploadDirectory: /var/www/onemoreuploads
+Locations LocationsMap:
+int portListen: 0
+std::string ServerName:
+std::string defaultFile: main.html
+std::string RootDirectory: /var/www/onemorehtml
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: get post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /bin ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI: /usr/local/bin/onemorecgi-script
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /docs ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/docs
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: get post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /pictures ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory: /var/www/pictures
+std::string Path_CGI:
+bool directoryListingEnabled: true
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+--- Location: /redirectme ---
+int portListen: 0
+std::string ServerName:
+std::string defaultFile:
+std::string RootDirectory:
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 301
+  destinationURL: http://onemoreexample.com/anotherpage
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /test/path ===
+No specific path matched for /test/path. Returning root (/) as default.
+Matched Path: /
+
+--- Location: / ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /cgi-bin/script ===
+Matched Path: /cgi-bin
+
+--- Location: /cgi-bin ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI: /usr/local/bin/cgi-script
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /upload/file ===
+Matched Path: /upload
+
+--- Location: /upload ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: /var/www/uploads
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods: post
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /redirect ===
+Matched Path: /redirect
+
+--- Location: /redirect ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 301
+  destinationURL: http://example.com/newpage
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /non-existent ===
+No specific path matched for /non-existent. Returning root (/) as default.
+Matched Path: /
+
+--- Location: / ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:
+
+=== Testing Path: /exact-match ===
+No specific path matched for /exact-match. Returning root (/) as default.
+Matched Path: /
+
+--- Location: / ---
+int portListen: 8082
+std::string ServerName: example.com
+std::string defaultFile: index.html
+std::string RootDirectory: resources/var/www/html
+std::string Path_CGI:
+bool directoryListingEnabled: false
+std::map<int, std::string> errorMap:
+ForwardingURL redirectURL:
+  httpStatusCode: 0
+  destinationURL:
+std::set<std::string> allowedMethods:
+int maxRequestSize: 0
+std::string fileUploadDirectory:
+Locations LocationsMap:
+Exact Locations LocationsMap:

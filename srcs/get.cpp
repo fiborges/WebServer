@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/06 15:05:00 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/08 09:43:21 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -442,7 +442,8 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	//std::cout << "Actual Root: " << actualRoot << std::endl;
 	//std::cout << "Server Root: " << serverRoot << std::endl;
 
-	if (serverRoot != actualRoot) {
+	if (serverRoot != actualRoot)
+	{
 		throw std::runtime_error("404 Not Found: The requested server root does not match the actual server root.");
 	}
 	
@@ -594,6 +595,24 @@ std::string readRequest(int sockfd, ServerInfo& server)
 }
 
 
+void processLocations(ServerInfo& server)
+{
+    std::vector<int> ports = server.getPortList();
+    int listeningPort = ports[0];
+    conf_File_Info &serverConfig = server.getConfig(listeningPort);
+    for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it) {
+        std::cout << "LOCATION: " << it->first << std::endl;
+        std::cout << "Value (portListen): " << it->second.portListen << std::endl;
+        std::cout << "Value (ServerName): " << it->second.ServerName << std::endl;
+        // Adicione mais campos conforme necessário
+        std::cout << "std::set<std::string> allowedMethods: ";
+        for (std::set<std::string>::const_iterator method_it = it->second.allowedMethods.begin(); method_it != it->second.allowedMethods.end(); ++method_it) {
+            std::cout << *method_it << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 // Process the request and send the response
 void processRequest(const std::string& request, ServerInfo& server)
 {
@@ -604,7 +623,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	}
 
 	// verificar map de configuração //	criar nova funcao
-
+	processLocations(server);
 
 
 	std::string ParaCGI = request;
