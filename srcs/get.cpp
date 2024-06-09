@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/08 09:43:21 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/09 17:02:51 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ void	ServerInfo::setResponse(const std::string& response)
 {
 	this->response = response;
 }
+
 
 std::string	ServerInfo::getResponse() const
 {
@@ -138,7 +139,7 @@ void printLog(const std::string& method, const std::string& path, const std::str
 	char timestamp[100];
 	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
 
-	std::string methodColor = (method == "GET") ? YELLOW : CYAN;
+	std::string methodColor = (method == "GET") ? YELLOW : (method == "POST") ? CYAN : MAGENTA;
 
 	std::string statusCodeStr;
 	size_t statusCodePos = httpResponse.find("HTTP/1.1") + 9; // Position after "HTTP/1.1"
@@ -154,8 +155,11 @@ void printLog(const std::string& method, const std::string& path, const std::str
 		std::cout << BG_CYAN_BLACK << timestamp << RESET << GREEN << " [" << RESET << requestCount << GREEN << "] " << BLUE << \
 		"Connected with client at 127.0.0.1:" << CYAN << currentPort << RESET << std::endl;
 	}
-	std::cout << BG_CYAN_BLACK << timestamp << RESET << BLUE << " [" << RESET << requestCount << BLUE << "] \"" << methodColor << method << " " << path << " ";
-	std::cout << version << RESET << "\" " << statusColor << statusCode << RESET << " ";
+	std::cout << BG_CYAN_BLACK << timestamp << RESET << BLUE << " [" << RESET << requestCount << BLUE << "]" \
+		<< RESET << methodColor << " \"" << method << " " << path << " ";
+	if (!version.empty())
+		std::cout << version;
+	std::cout << "\" " << RESET << statusColor << statusCode << RESET << " ";
 
 	if (method == "GET")
 		std::cout << server.getResponse().length();
@@ -176,14 +180,21 @@ void handleError(const std::string& errorMessage) //, int errorCode)
 // check if the path is a directory
 bool is_directory(const std::string &path)
 {
-	DIR *dir = opendir(path.c_str());
+	char cwd[1024];
+	getcwd(cwd, sizeof(cwd));
+	std::string full_path = std::string(cwd) + "/" + path;
+	DIR *dir = opendir(full_path.c_str());
 	if (dir)
 	{
+		std::cout << " @@@@@@ Directory " << full_path << " exists.\n";
 		closedir(dir);
 		return true;
 	}
 	else
-		return (false);
+	{
+		std::cout << " @@@@@@ Directory " << full_path << " does not exist.\n";
+		return false;
+	}
 }
 
 
@@ -449,6 +460,7 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	
 	if(serverRoot[serverRoot.size() - 1] != '/')
 		serverRoot += "/";
+	std::cout << " +++++ Server Root: " << serverRoot << std::endl;
 }
 
 
@@ -595,22 +607,200 @@ std::string readRequest(int sockfd, ServerInfo& server)
 }
 
 
-void processLocations(ServerInfo& server)
+// void processRulesRequest(ServerInfo& server)
+// {
+//     std::vector<int> ports = server.getPortList();
+//     int listeningPort = ports[0];
+//     conf_File_Info &serverConfig = server.getConfig(listeningPort);
+//     for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it) {
+//         std::cout << "LOCATION: " << it->first << std::endl;
+//         std::cout << "Value (portListen): " << it->second.portListen << std::endl;
+//         std::cout << "Value (ServerName): " << it->second.ServerName << std::endl;
+//         std::cout << "Value (RootDirectory): " << it->second.RootDirectory << std::endl;
+		
+// 		// Adicione mais campos conforme necessário
+//         std::cout << "std::set<std::string> allowedMethods: ";
+//         for (std::set<std::string>::const_iterator method_it = it->second.allowedMethods.begin(); method_it != it->second.allowedMethods.end(); ++method_it) {
+//             std::cout << *method_it << " ";
+//         }
+//         std::cout << std::endl;
+//     }
+// }
+
+void printServerConfig(const conf_File_Info &serverConfig) {
+	// ------- DENTRO DO PRINT ---------
+
+	std::cout << BOLD << "int portListen: " << RESET << serverConfig.portListen << std::endl;
+	std::cout << BOLD << "std::string ServerName: " << RESET << serverConfig.ServerName << std::endl;
+	std::cout << BOLD << "std::string defaultFile: " << RESET << serverConfig.defaultFile << std::endl;
+	std::cout << BOLD << "std::string RootDirectory: " << RESET << serverConfig.RootDirectory << std::endl;
+	std::cout << BOLD << "std::string Path_CGI: " << RESET << serverConfig.Path_CGI << std::endl;
+	std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (serverConfig.directoryListingEnabled ? "true" : "false") << std::endl;
+	std::cout << BOLD << "std::map<int, std::string> errorMap: " << RESET << std::endl;
+	for (std::map<int, std::string>::const_iterator it = serverConfig.errorMap.begin(); it != serverConfig.errorMap.end(); ++it) {
+		std::cout << "  " << it->first << " -> " << it->second << std::endl;
+	}
+	std::cout << BOLD << "ForwardingURL redirectURL: " << RESET << std::endl;
+	std::cout << "  httpStatusCode: " << serverConfig.redirectURL.httpStatusCode << std::endl;
+	std::cout << "  destinationURL: " << serverConfig.redirectURL.destinationURL << std::endl;
+	std::cout << BOLD << "std::set<std::string> allowedMethods: " << RESET;
+	for (std::set<std::string>::const_iterator it = serverConfig.allowedMethods.begin(); it != serverConfig.allowedMethods.end(); ++it) {
+		std::cout << *it << " ";
+	}
+	std::cout << std::endl;
+	std::cout << BOLD << "int maxRequestSize: " << RESET << serverConfig.maxRequestSize << std::endl;
+	std::cout << BOLD << "std::string fileUploadDirectory: " << RESET << serverConfig.fileUploadDirectory << std::endl;
+	std::cout << BOLD << "Locations LocationsMap: " << RESET << std::endl;
+	for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it) {
+		std::cout << BOLD << "==>LOCATION: " << RESET << it->first << std::endl;
+		std::cout << "Value (portListen): " << RESET << it->second.portListen << std::endl;
+		std::cout << "Value (ServerName): " << RESET << it->second.ServerName << std::endl;
+		std::cout << "Value (RootDirectory): " << RESET << it->second.RootDirectory << std::endl;
+		std::cout << "Value (defaultFile): " << RESET << it->second.defaultFile << std::endl;
+		std::cout << "Value (Path_CGI): " << RESET << it->second.Path_CGI << std::endl;
+		std::cout << "Value (directoryListingEnabled): " << RESET << (it->second.directoryListingEnabled ? "true" : "false") << std::endl;
+		std::cout << "Value (errorMap): " << RESET << std::endl;
+		for (std::map<int, std::string>::const_iterator it_err = it->second.errorMap.begin(); it_err != it->second.errorMap.end(); ++it_err) {
+			std::cout << "  " << it_err->first << " -> " << it_err->second << std::endl;
+		}
+		std::cout << "Value (redirectURL): " << RESET << std::endl;
+		std::cout << "  httpStatusCode: " << it->second.redirectURL.httpStatusCode << std::endl;
+		std::cout << "  destinationURL: " << it->second.redirectURL.destinationURL << std::endl;
+		std::cout << "Value (allowedMethods): " << RESET;
+		for (std::set<std::string>::const_iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth) {
+			std::cout << *it_meth << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	for (Locations::const_iterator it = serverConfig.ExactLocationsMap.begin(); it != serverConfig.ExactLocationsMap.end(); ++it) {
+		std::cout << BOLD << "==>LOCATION: " << RESET << it->first << std::endl;
+		std::cout << "Value (portListen): " << RESET << it->second.portListen << std::endl;
+		std::cout << "Value (ServerName): " << RESET << it->second.ServerName << std::endl;
+		std::cout << "Value (RootDirectory): " << RESET << it->second.RootDirectory << std::endl;
+		std::cout << "Value (defaultFile): " << RESET << it->second.defaultFile << std::endl;
+		std::cout << "Value (Path_CGI): " << RESET << it->second.Path_CGI << std::endl;
+		std::cout << "Value (directoryListingEnabled): " << RESET << (it->second.directoryListingEnabled ? "true" : "false") << std::endl;
+		std::cout << "Value (errorMap): " << RESET << std::endl;
+		for (std::map<int, std::string>::const_iterator it_err = it->second.errorMap.begin(); it_err != it->second.errorMap.end(); ++it_err) {
+			std::cout << "  " << it_err->first << " -> " << it_err->second << std::endl;
+		}
+		std::cout << "Value (redirectURL): " << RESET << std::endl;
+		std::cout << "  httpStatusCode: " << it->second.redirectURL.httpStatusCode << std::endl;
+		std::cout << "  destinationURL: " << it->second.redirectURL.destinationURL << std::endl;
+		std::cout << "Value (allowedMethods): " << RESET;
+		for (std::set<std::string>::const_iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth) {
+			std::cout << *it_meth << " ";
+		}
+		std::cout << std::endl;
+	}
+	// ----------- FORA DO PRINT -------------------
+}
+
+// void getAllowedMethods(const char* allowedMethods)
+// {
+//     // Print the allowedMethods string before splitting
+//     std::cout << "Allowed methods string: " << allowedMethods << std::endl;
+
+//     char* methods = new char[strlen(allowedMethods) + 1];
+//     std::strcpy(methods, allowedMethods);
+
+//     char* method = std::strtok(methods, " ");
+//     while (method != NULL) {
+//         std::cout << method << '\n';
+//         method = std::strtok(NULL, " ");
+//     }
+
+//     delete[] methods;
+// }
+
+bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
-    std::vector<int> ports = server.getPortList();
-    int listeningPort = ports[0];
-    conf_File_Info &serverConfig = server.getConfig(listeningPort);
-    for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it) {
-        std::cout << "LOCATION: " << it->first << std::endl;
-        std::cout << "Value (portListen): " << it->second.portListen << std::endl;
-        std::cout << "Value (ServerName): " << it->second.ServerName << std::endl;
-        // Adicione mais campos conforme necessário
-        std::cout << "std::set<std::string> allowedMethods: ";
-        for (std::set<std::string>::const_iterator method_it = it->second.allowedMethods.begin(); method_it != it->second.allowedMethods.end(); ++method_it) {
-            std::cout << *method_it << " ";
-        }
-        std::cout << std::endl;
-    }
+
+	
+	std::vector<int> ports = server.getPortList();
+	int listeningPort = ports[0];
+	conf_File_Info &serverConfig = server.getConfig(listeningPort);
+
+	//printServerConfig(server.getConfig(listeningPort));
+
+	bool methodAllowed = false;
+	
+	std::cout << ">>>>>requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
+	if (serverConfig.LocationsMap.size() > 0)
+	{
+		for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
+		{
+			if (it->first == "" || it->first == "/")
+			{
+				if (serverConfig.RootDirectory != it->second.RootDirectory)
+				{
+					std::cout << " ## Root directory1 : " << serverConfig.RootDirectory << std::endl;
+					std::cout << " ## Root directory2 : " << it->second.RootDirectory << std::endl;
+					serverConfig.RootDirectory = it->second.RootDirectory;
+					std::cout << " ## Root directory changed to: " << serverConfig.RootDirectory << std::endl;
+					if (!is_directory(serverConfig.RootDirectory))
+					{
+						std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
+						server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+						requestMsg.path = serverConfig.RootDirectory + " is not found";
+						requestMsg.version = "";
+						printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+						return false;
+					}
+					else {
+						std::cout << "Directory exists: " << serverConfig.RootDirectory << std::endl;
+					}
+				}
+			}
+			std::string requestMethod = methodToString(requestMsg.method);
+			std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);
+			
+			for (std::set<std::string>::iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth)
+			{
+				std::string allowedMethod = *it_meth;
+				std::transform(allowedMethod.begin(), allowedMethod.end(), allowedMethod.begin(), ::toupper);
+
+				std::cout << "Current allowedMethods string: " << *it_meth << std::endl;
+				std::cout << MAGENTA << "Checking method: " << RESET << allowedMethod << std::endl;
+				std::cout << "Request method: " << requestMethod << std::endl;
+
+				if (allowedMethod == requestMethod)
+				{
+					methodAllowed = true;
+					break;
+				}
+				if (methodAllowed)
+				{
+					return true;
+				}
+			}
+			
+			if (!methodAllowed)
+			{
+				std::cerr << "Error: Forbidden method." << std::endl;
+				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
+				requestMsg.path = "Forbidden";
+				requestMsg.version = "";
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return false;
+			}
+		}
+		
+	}
+
+	if (!is_directory(serverConfig.RootDirectory))
+	{
+		std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
+		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+		requestMsg.path = serverConfig.RootDirectory + " is not found";
+		requestMsg.version = "";
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+
+		return false;
+	}
+
+	return true;
 }
 
 // Process the request and send the response
@@ -622,10 +812,6 @@ void processRequest(const std::string& request, ServerInfo& server)
 		return;
 	}
 
-	// verificar map de configuração //	criar nova funcao
-	processLocations(server);
-
-
 	std::string ParaCGI = request;
 	std::string requestCopy = request;
 	HTTrequestMSG requestMsg;
@@ -633,86 +819,55 @@ void processRequest(const std::string& request, ServerInfo& server)
 	size_t maxSize = 100000; // Aumentar o tamanho máximo para 10MB
 	if(maxSize > requestCopy.size())
 		maxSize = requestCopy.size();
+
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
-		//if (requestMsg.is_cgi == false)
-		//{
-			std::vector<int> ports = server.getPortList();
-			for (std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-				std::cout << CYAN << "VECTOR Port: "<< *it << RESET << " ";
-			}
-			std::cout << std::endl;
+		std::vector<int> ports = server.getPortList();
 
-
-			// Check if there are any ports in the list
-			if (ports.empty()) {
-				std::cerr << "Error: No ports found." << std::endl;
-				return;
-			}
-
-			// Use the first port in the list
-			int listeningPort = ports[0];
-			std::cout << "Listening port: " << listeningPort << std::endl;
-
-			// Get the configuration for the listening port
-			conf_File_Info &serverConfig = server.getConfig(listeningPort);
-
-		if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
+		if (ports.empty())
 		{
-			std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
-			int portListenCopy = serverConfig.portListen;
-			std::string rootDirectoryCopy = serverConfig.RootDirectory;
-			std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
-			std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
-			std::cout << RED << "!!!!! config root: " << rootDirectoryCopy << RESET << std::endl;
-			handleRequest(requestMsg, server);
+			std::cerr << "Error: No ports found." << std::endl;
+			return;
 		}
-		//}
-		else
+
+		// Use the first port in the list
+		int listeningPort = ports[0];
+		conf_File_Info &serverConfig = server.getConfig(listeningPort);
+
+		// Salvar o diretório raiz original
+		std::string originalRootDirectory = serverConfig.RootDirectory;
+
+		std::cout << " ##****** Root directory : " << serverConfig.RootDirectory << std::endl;
+
+		if (processRulesRequest(requestMsg, server) == true)
 		{
-			try
+			if (!requestMsg.is_cgi) // ======ALTERAÇÂO======
 			{
-				CGI cgi;
-				cgi.PerformCGI(server.clientSocket , ParaCGI, serverConfig);
+				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
+				int portListenCopy = serverConfig.portListen;
+				std::string rootDirectoryCopy = serverConfig.RootDirectory;
+				std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
+				std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
+				std::cout << RED << "!!!!! config root: " << rootDirectoryCopy << RESET << std::endl;
+				handleRequest(requestMsg, server);
 			}
-			catch(const std::exception& e)
+			else
 			{
-				std::cerr << e.what() << '\n';
+				try
+				{
+					CGI cgi;
+					cgi.PerformCGI(server.clientSocket , ParaCGI, serverConfig);
+				}
+				catch(const std::exception& e)
+				{
+					std::cerr << e.what() << '\n';
+				}
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 			}
-
-			// std::string dataDir = "./DATA";
-
-			// // Check if /DATA directory exists
-			// if (!is_directory(dataDir))
-			// {
-			// 	std::cout << "Directory /DATA does not exist yet. It will be created." << std::endl;
-			// 	// Create /DATA directory
-			// 	if (mkdir(dataDir.c_str(), 0777) == -1)
-			// 	{
-			// 		perror("Error creating /DATA directory");
-			// 		exit(EXIT_FAILURE);
-			// 	}
-
-			// 	if (chmod(dataDir.c_str(), 0777) == -1)
-			// 	{
-			// 		perror("Error changing /DATA directory permissions");
-			// 		exit(EXIT_FAILURE);
-			// 	}
-			// }
-
-			// // Read the content of the /DATA directory and print it for debugging purposes
-			// std::vector<std::string> fileList = readDirectoryContent(dataDir);
-			// // Write the file list to a file
-			// std::string fileListPath = "cgi-bin/fileList.txt";
-			// std::ofstream outFile(fileListPath.c_str());
-			// for (std::vector<std::string>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
-			// 	outFile << *it << "\n";
-			// }
-			// outFile.close();
-
-			//config
-			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
+
+		// Reverter o diretório raiz para o original após o processamento
+		serverConfig.RootDirectory = originalRootDirectory;
 	}
 	else
 	{
@@ -720,6 +875,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 		std::cout << "Error message: " << requestMsg.error << std::endl;
 	}
 }
+
 
 bool fileExists(const std::string& filePath)
 {
@@ -1139,9 +1295,12 @@ void runServer(std::vector<ServerInfo>& servers)
 				}
 
 				std::string request = readRequest(newsockfd, *it);
+				//std::cout << "Request no RUNSERVER: " << request << std::endl;
 				it->clientSocket = newsockfd;
 				processRequest(request, *it);
-
+				
+				// verificar map de configuração //	criar nova funcao
+				//processRulesRequest(request, *it);
 
 				// Add new socket to write_fds
 				FD_SET(newsockfd, &write_fds);

@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/05 16:46:00 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/09 11:38:06 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,6 +81,10 @@ class ServerInfo
 		sockaddr_in serv_addr;
 		std::vector<sockaddr_in> cli_addrs;
 		std::string response;
+		
+		//std::string status;
+		//std::string method;
+		
 		std::string rootUrl;
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
@@ -151,6 +155,9 @@ void setupServer(ServerInfo& server, const conf_File_Info& config);
 std::string	readRequest(int sockfd);
 std::string	readRequest(int sockfd, ServerInfo& server);
 void		processRequest(const std::string& request, ServerInfo& server);
+
+bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
+
 void handleRequest(HTTrequestMSG& request, ServerInfo& server);
 
 std::string readFileContent(const std::string& filePath);
