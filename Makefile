@@ -9,7 +9,7 @@ RM			=	rm -rf
 CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -g #-fsanitize=address
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
-SRCS		=	$(DIR_SRCS)/mainRq.cpp $(DIR_SRCS)/parser.cpp\
+SRCS		=	$(DIR_SRCS)/main2.cpp $(DIR_SRCS)/parser.cpp\
 				$(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp\
 				$(DIR_SRCS)/RequestParser.cpp $(DIR_SRCS)/erros.cpp\
 				$(DIR_SRCS)/get.cpp $(DIR_SRCS)/CGI.cpp

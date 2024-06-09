@@ -51,21 +51,26 @@ void ParserClass::readAndProcessConfig() {
     validateRequiredParameters();
 }
 
-void ParserClass::validateRequiredParameters()
-{
-    for (std::vector<conf_File_Info>::iterator configIterator = conf_info.begin(); configIterator != conf_info.end(); ++configIterator)
-    {
-        if (configIterator->portListen == 0)
-        {
+void ParserClass::validateRequiredParameters() {
+    for (std::vector<conf_File_Info>::iterator configIterator = conf_info.begin(); configIterator != conf_info.end(); ++configIterator) {
+        if (configIterator->portListen == 0) {
             throw ConfigError("Error: Missing 'listen' directive in a server block. Every server block must include a 'listen' directive to specify the port number.");
         }
-        if (configIterator->ServerName.empty())
-        {
+        if (configIterator->ServerName.empty()) {
             throw ConfigError("Error: Missing 'server_name' directive in a server block. You must define 'server_name' to identify the server within the network.");
         }
-        if (configIterator->RootDirectory.empty())
-        {
+        if (configIterator->RootDirectory.empty()) {
             throw ConfigError("Error: Missing 'root' directive in a server block. Every server block must include a 'root' directive to specify the root directory.");
+        }
+
+        // Verificar se a configuração de redirecionamento e CGI estão definidas em qualquer localização e propagá-las
+        for (std::map<std::string, conf_File_Info>::iterator locIter = configIterator->LocationsMap.begin(); locIter != configIterator->LocationsMap.end(); ++locIter) {
+            if (locIter->second.redirectURL.httpStatusCode != 0) {
+                configIterator->redirectURL = locIter->second.redirectURL;
+            }
+            if (!locIter->second.Path_CGI.empty()) {
+                configIterator->Path_CGI = locIter->second.Path_CGI;
+            }
         }
     }
 }
@@ -106,19 +111,80 @@ void ParserClass::handleServerModule(const ParserUtils::Strings& pieces)
     }
 }
 
-void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces)
-{
+void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
+    if (pieces.size() < 2 || pieces[pieces.size() - 1] != "{") {
+        throw ConfigError(createErrorMsg("Configuration Syntax Error: Each 'location' directive must be followed by a path and then an opening '{'. "
+            "Please check your configuration file and ensure proper syntax."));
+    }
+
+    std::string location = pieces[1];
+
+    locationPrefix = ParserUtils::normalizePath(location);
+
+    if (locationPrefix.empty()) {
+        locationPrefix = "/"; // Corrigir para path raiz
+    }
+
+    if (conFileInProgress->LocationsMap.find(locationPrefix) != conFileInProgress->LocationsMap.end()) {
+        throw ConfigError(createErrorMsg("Duplicate location detected: " + locationPrefix));
+    } else {
+        conFileInProgress->LocationsMap[locationPrefix] = conf_File_Info();
+    }
+}
+
+void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
     if (pieces[0] == "}") {
         currentState = "In";
     } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
         throw ConfigError(createErrorMsg("Error: Invalid directive '" + pieces[0] + "' within a location block. 'listen' and 'server_name' directives should be placed at the server block level, not within location blocks."));
     } else if (validationMapKeys.count(pieces[0])) {
+        std::string locationPath = locationPrefix;
+        if (locationPath.empty()) {
+            locationPath = "/"; // Corrigir para path raiz
+        }
+
         confFileHandler handler = validationMapKeys.at(pieces[0]);
-        (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPrefix]);
+        (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
     } else {
         throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
     }
 }
+
+/*void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
+    if (pieces[0] == "}") {
+        currentState = "In";
+    } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
+        throw ConfigError(createErrorMsg("Error: Invalid directive '" + pieces[0] + "' within a location block. 'listen' and 'server_name' directives should be placed at the server block level, not within location blocks."));
+    } else if (validationMapKeys.count(pieces[0])) {
+        std::string locationPath = locationPrefix;
+        if (locationPath.empty()) {
+            locationPath = "/"; // Corrigir para path raiz
+        }
+
+        confFileHandler handler = validationMapKeys.at(pieces[0]);
+        (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
+    } else {
+        throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
+    }
+}*/
+
+inline void ParserClass::startLocationModule(const std::string& location) {
+    std::string locationPath = ParserUtils::normalizePath(location);
+    if (locationPath.empty()) {
+        locationPath = "/"; // Corrigir para path raiz
+    }
+
+    if (conFileInProgress->LocationsMap.find(locationPath) != conFileInProgress->LocationsMap.end()) {
+        throw ConfigError(createErrorMsg("Duplicate location detected: " + locationPath));
+    } else {
+        conFileInProgress->LocationsMap[locationPath] = conf_File_Info();
+    }
+
+    contextHistory.push(&conFileInProgress->LocationsMap[locationPath]);
+    conFileInProgress = contextHistory.top();
+}
+
+
 
 void ParserClass::ensureAllModulesClosed()
 {
@@ -126,19 +192,20 @@ void ParserClass::ensureAllModulesClosed()
     throw ConfigError(createErrorMsg("Configuration Error: Unexpected end of file. Make sure all blocks are properly closed with a closing curly brace '}' and there are no unmatched opening braces '{'."));
 }
 
-void ParserClass::checkAndConfirmValidMap()
-{
+void ParserClass::checkAndConfirmValidMap() {
     validationMapKeys["listen"] = &ParserClass::confirmListenSettings;
     validationMapKeys["server_name"] = &ParserClass::confirmServerName;
     validationMapKeys["index"] = &ParserClass::checkIndex;
     validationMapKeys["root"] = &ParserClass::confirmRootPath;
     validationMapKeys["autoindex"] = &ParserClass::checkAutoindex;
     validationMapKeys["error_page"] = &ParserClass::verifyErrorPage;
-    validationMapKeys["cgi_pass"] = &ParserClass::confirmCGISettings;
     validationMapKeys["redirect"] = &ParserClass::confirmRedirect;
     validationMapKeys["limit_except"] = &ParserClass::checkProcedures;
     validationMapKeys["client_body_size"] = &ParserClass::ensureClientBodyCapacity;
-    validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDir;
+    validationMapKeys["cgi_pass"] = &ParserClass::confirmCGISettings;
+    validationMapKeys["cgi_ext"] = &ParserClass::confirmCGIExtension; // Adicionado
+    validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDirectory;
+    validationMapKeys["upload_to"] = &ParserClass::confirmUploadToDirectory; // Adicionado
 }
 
 std::string ParserClass::createErrorMsg(const std::string& erro_msg)
@@ -152,21 +219,6 @@ inline void ParserClass::checkServer(const ParserUtils::Strings& pieces)
 {
     if (pieces.size() != 2 || pieces[1] != "{"){
         throw ConfigError(createErrorMsg("Error: The 'server' directive should be followed by an opening '{'. Please check your configuration file and ensure proper syntax."));
-    }
-}
-
-inline void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
-    if (pieces.size() < 2 || pieces[pieces.size() - 1] != "{") {
-        throw ConfigError(createErrorMsg(RED "Configuration Syntax Error: Each 'location' directive must be followed by a path and then an opening '{'. "
-            "Please check your configuration file and ensure proper syntax." RESET));
-    }
-
-    std::string location = pieces[1];
-    if (location[0] == '=') {
-        location = location.substr(1); // Remove '='
-        if (location.empty()) {
-            throw ConfigError(createErrorMsg(RED "Configuration Syntax Error: The exact location cannot be empty after '='." RESET));
-        }
     }
 }
 
@@ -220,9 +272,14 @@ void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf
     }
 }
 
-void ParserClass::confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* keyword) {
+void ParserClass::confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
     ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
-    keyword->Path_CGI = commandParts[1];
+    Keyword->Path_CGI = commandParts[1];
+}
+
+void ParserClass::confirmCGIExtension(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->cgiExtension = commandParts[1];
 }
 
 void ParserClass::confirmRedirect(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
@@ -236,19 +293,19 @@ void ParserClass::confirmRedirect(const ParserUtils::Strings& commandParts, conf
     Keyword->redirectURL.destinationURL = commandParts[2];
 }
 
-void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
-{
+void ParserClass::checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
     ensureCorrectArgNumber(commandParts, commandParts.size() < 2);
 
     static std::set<std::string> permittedHTTPMethods;
-    permittedHTTPMethods.insert("get");
-    permittedHTTPMethods.insert("post");
-    permittedHTTPMethods.insert("delete");
+    permittedHTTPMethods.insert("GET");
+    permittedHTTPMethods.insert("POST");
+    permittedHTTPMethods.insert("DELETE");
 
     Keyword->allowedMethods.clear();
-    for (size_t cmd_Index = 1; cmd_Index < commandParts.size(); ++cmd_Index){
-        std::string currentMethod = ParserUtils::toLower(commandParts[cmd_Index]);
-        if (!permittedHTTPMethods.count(currentMethod)){
+    for (size_t cmd_Index = 1; cmd_Index < commandParts.size(); ++cmd_Index) {
+        std::string currentMethod = commandParts[cmd_Index];
+        std::transform(currentMethod.begin(), currentMethod.end(), currentMethod.begin(), ::toupper);
+        if (!permittedHTTPMethods.count(currentMethod)) {
             throw ConfigError(createErrorMsg("Configuration Error: Invalid HTTP method '" + commandParts[cmd_Index] + "'. Valid methods are GET, POST, and DELETE."));
         }
         Keyword->allowedMethods.insert(currentMethod);
@@ -303,13 +360,14 @@ void ParserClass::ensureClientBodyCapacity(const ParserUtils::Strings& commandPa
     Keyword->maxRequestSize = bodySize;
 }
 
-
-void ParserClass::confirmUploadDir(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
-{
-    if (commandParts.size() != 2) {
-        throw ConfigError(createErrorMsg("Configuration Error: 'upload_dir' directive requires exactly one path as argument."));
-    }
+void ParserClass::confirmUploadDirectory(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
     Keyword->fileUploadDirectory = commandParts[1];
+}
+
+void ParserClass::confirmUploadToDirectory(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->uploadToDirectory = commandParts[1];
 }
 
 inline void ParserClass::ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition)
@@ -326,19 +384,6 @@ void ParserClass::startServerModule()
     contextHistory.push(&conf_info.back());
     conFileInProgress = &conf_info.back();
 }
-
-inline void ParserClass::startLocationModule(const std::string& location) {
-    if (location[0] == '=') {
-        std::string exactLocation = location.substr(1);
-        conFileInProgress->ExactLocationsMap[exactLocation] = conf_File_Info();
-        contextHistory.push(&conFileInProgress->ExactLocationsMap[exactLocation]);
-    } else {
-        conFileInProgress->LocationsMap[location] = conf_File_Info();
-        contextHistory.push(&conFileInProgress->LocationsMap[location]);
-    }
-    conFileInProgress = contextHistory.top();
-}
-
 
 void ParserClass::endCurrentModule()
 {

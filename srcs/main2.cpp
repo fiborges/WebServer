@@ -11,34 +11,37 @@ void printSubHeader(const std::string& subHeader) {
 
 void printConfig(const conf_File_Info& config, const std::string& location = "") {
     if (!location.empty()) {
-        printSubHeader("Location: " + location);
+        std::cout << BOLD << CYAN << "\n Location: " << location << RESET << std::endl;
     }
+
     std::cout << BOLD << "int portListen: " << RESET << config.portListen << std::endl;
     std::cout << BOLD << "std::string ServerName: " << RESET << config.ServerName << std::endl;
     std::cout << BOLD << "std::string defaultFile: " << RESET << config.defaultFile << std::endl;
     std::cout << BOLD << "std::string RootDirectory: " << RESET << config.RootDirectory << std::endl;
     std::cout << BOLD << "std::string Path_CGI: " << RESET << config.Path_CGI << std::endl;
+    std::cout << BOLD << "std::string cgiExtension: " << RESET << config.cgiExtension << std::endl; // Adicionado
     std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (config.directoryListingEnabled ? "true" : "false") << std::endl;
-    std::cout << BOLD << "std::map<int, std::string> errorMap: " << RESET << std::endl;
+
+    std::cout << BOLD << YELLOW << "std::map<int, std::string> errorMap: " << RESET << std::endl;
     for (std::map<int, std::string>::const_iterator it = config.errorMap.begin(); it != config.errorMap.end(); ++it) {
         std::cout << "  " << it->first << " -> " << it->second << std::endl;
     }
-    std::cout << BOLD << "ForwardingURL redirectURL: " << RESET << std::endl;
-    std::cout << "  httpStatusCode: " << config.redirectURL.httpStatusCode << std::endl;
-    std::cout << "  destinationURL: " << config.redirectURL.destinationURL << std::endl;
-    std::cout << BOLD << "std::set<std::string> allowedMethods: " << RESET;
+
+    std::cout << BOLD << MAGENTA << "ForwardingURL redirectURL: " << RESET << std::endl;
+    std::cout << "  " << BOLD << "httpStatusCode: " << RESET << config.redirectURL.httpStatusCode << std::endl;
+    std::cout << "  " << BOLD << "destinationURL: " << RESET << config.redirectURL.destinationURL << std::endl;
+
+    std::cout << BOLD << "std::set<std::string> allowedMethods: " << RESET << std::endl;
     for (std::set<std::string>::const_iterator it = config.allowedMethods.begin(); it != config.allowedMethods.end(); ++it) {
-        std::cout << *it << " ";
+        std::cout << "  " << *it << std::endl;
     }
-    std::cout << std::endl;
+
     std::cout << BOLD << "int maxRequestSize: " << RESET << config.maxRequestSize << std::endl;
     std::cout << BOLD << "std::string fileUploadDirectory: " << RESET << config.fileUploadDirectory << std::endl;
-    std::cout << BOLD << "Locations LocationsMap: " << RESET << std::endl;
-    for (Locations::const_iterator it = config.LocationsMap.begin(); it != config.LocationsMap.end(); ++it) {
-        printConfig(it->second, it->first);
-    }
-    std::cout << BOLD << "Exact Locations LocationsMap: " << RESET << std::endl;
-    for (Locations::const_iterator it = config.ExactLocationsMap.begin(); it != config.ExactLocationsMap.end(); ++it) {
+    std::cout << BOLD << "std::string uploadToDirectory: " << RESET << config.uploadToDirectory << std::endl; // Adicionado
+
+    std::cout << BOLD << "\n Locations LocationsMap: " << RESET << std::endl;
+    for (std::map<std::string, conf_File_Info>::const_iterator it = config.LocationsMap.begin(); it != config.LocationsMap.end(); ++it) {
         printConfig(it->second, it->first);
     }
 }
@@ -50,6 +53,8 @@ void testMatching(const ParserConfig& parserConfig, const std::string& path) {
         ParserConfig context = parserConfig.extractContext(matchedPath);
         std::cout << GREEN << "Matched Path: " << matchedPath << RESET << std::endl;
         printConfig(*context.getServerConfigurations(), matchedPath);
+        std::cout << BOLD << "cgiExtension: " << RESET << context.fetchCGIExtension() << std::endl; // Adicionado
+        std::cout << BOLD << "uploadToDirectory: " << RESET << context.fetchUploadToDirectory() << std::endl; // Adicionado
     } catch (const std::exception& e) {
         std::cout << RED << "Error: " << e.what() << RESET << std::endl;
     }
@@ -77,7 +82,7 @@ int main() {
             testMatching(servers[0], "/upload/file");
             testMatching(servers[0], "/redirect");
             testMatching(servers[0], "/non-existent");
-            testMatching(servers[0], "/exact-match");
+            testMatching(servers[0], "/.py"); // Adicionado para testar cgi_ext
         }
 
         delete parser; // Liberar a memória alocada

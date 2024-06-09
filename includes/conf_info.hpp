@@ -30,7 +30,8 @@ struct conf_File_Info
     int maxRequestSize;
     std::string fileUploadDirectory;
     Locations LocationsMap;
-    Locations ExactLocationsMap;
+    std::string cgiExtension; // Adicionado
+    std::string uploadToDirectory; // Adicionado
 };
 
 #endif
