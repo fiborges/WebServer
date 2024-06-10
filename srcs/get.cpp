@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/09 17:02:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/10 14:37:20 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,7 +182,9 @@ bool is_directory(const std::string &path)
 {
 	char cwd[1024];
 	getcwd(cwd, sizeof(cwd));
-	std::string full_path = std::string(cwd) + "/" + path;
+	//std::string full_path = std::string(cwd) + "/" + path;
+	std::string full_path = std::string(cwd) + path;
+	std::cout << " @@@@@@ Full path: " << full_path << std::endl;
 	DIR *dir = opendir(full_path.c_str());
 	if (dir)
 	{
@@ -226,46 +228,46 @@ std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
 	return files;
 }
 
-void setupDirectory(ServerInfo& server, const conf_File_Info& config)
-{
-	//chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+// void setupDirectory(ServerInfo& server, const conf_File_Info& config)
+// {
+// 	//chmod("/resources/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-	std::string rootDir = config.RootDirectory;
-	std::string rootUrl = server.getRootUrl();
-	if (rootDir.substr(0, rootUrl.length()) != rootUrl)
-	{
-		handleError("Error: Root URL should start with 'resources' directory.");
-		exit(-1);
-	}
+// 	std::string rootDir = config.RootDirectory;
+// 	std::string rootUrl = server.getRootUrl();
+// 	if (rootDir.substr(0, rootUrl.length()) != rootUrl)
+// 	{
+// 		handleError("Error: Root URL should start with 'resources' directory.");
+// 		exit(-1);
+// 	}
 
-	std::string subDir = rootDir.substr(rootUrl.length());
+// 	std::string subDir = rootDir.substr(rootUrl.length());
 
-	if (!subDir.empty() && subDir[0] == '/')
-		subDir = subDir.substr(1);
+// 	if (!subDir.empty() && subDir[0] == '/')
+// 		subDir = subDir.substr(1);
 
-	std::string path = "";
-	std::stringstream ss(rootDir);
-	std::string token;
+// 	std::string path = "";
+// 	std::stringstream ss(rootDir);
+// 	std::string token;
 
-	while (std::getline(ss, token, '/'))
-	{
-		path += token + "/";
-		if (!is_directory(path))
-		{
-			if (mkdir(path.c_str(), 0777) == -1)
-			{
-				perror("Error creating directory");
-				exit(EXIT_FAILURE);
-			}
+// 	while (std::getline(ss, token, '/'))
+// 	{
+// 		path += token + "/";
+// 		if (!is_directory(path))
+// 		{
+// 			if (mkdir(path.c_str(), 0777) == -1)
+// 			{
+// 				perror("Error creating directory");
+// 				exit(EXIT_FAILURE);
+// 			}
 
-			if (chmod(path.c_str(), 0777) == -1)
-			{
-				perror("Error changing directory permissions");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
-}
+// 			if (chmod(path.c_str(), 0777) == -1)
+// 			{
+// 				perror("Error changing directory permissions");
+// 				exit(EXIT_FAILURE);
+// 			}
+// 		}
+// 	}
+// }
 
 
 // bool mkdirs(const std::string& path)
@@ -714,10 +716,232 @@ void printServerConfig(const conf_File_Info &serverConfig) {
 //     delete[] methods;
 // }
 
+
+std::string getFirstDirectory(const std::string& path) {
+    size_t pos = path.find('/');
+    if (pos != std::string::npos) {
+        // Retorne a substring até a primeira barra
+        return path.substr(0, pos);
+    }
+    // Se não houver barra na string, retorne a string inteira
+    return path;
+}
+
+
+
+// std::string getNewPath(const std::string& root, const std::string& path) {
+//     std::string newPath = path;
+
+//     // Check if the first character is a slash and remove it if it is
+//     if (!newPath.empty() && newPath[0] == '/') {
+//         newPath.erase(0, 1);
+//     }
+
+//     std::istringstream rootStream(root);
+//     std::istringstream pathStream(newPath);
+//     std::string rootDir, pathDir;
+
+//     // Compare the directories while they are equal
+//     while (std::getline(rootStream, rootDir, '/') && std::getline(pathStream, pathDir, '/') && rootDir == pathDir) {}
+
+//     // If all directories are equal, return the newPath
+//     if (!std::getline(rootStream, rootDir, '/') && !std::getline(pathStream, pathDir, '/')) {
+//         return "/" + newPath;
+//     }
+
+//     // Build the new path with the remaining directories from path
+//     newPath = pathDir;
+//     while (std::getline(pathStream, pathDir, '/')) {
+//         newPath += "/" + pathDir;
+//     }
+
+// 	std::string newPath2 = "/" + newPath;
+// 	std::cout << "New path2: " << newPath2 << std::endl;
+//     return newPath2;
+// }
+
+
+
+std::string getNewPath(const std::string& root, const std::string& path) {
+    std::istringstream rootStream(root);
+    std::string mutableRoot = root; // Create a copy of root that we can modify
+    std::string mutablePath = path; // Create a copy of path that we can modify
+    std::istringstream pathStream(mutablePath);
+    std::string rootDir, pathDir, commonPart, differentPart;
+
+    std::cout << "[getNewPath] root: " << mutableRoot << std::endl;
+    std::cout << "[getNewPath] path: " << mutablePath << std::endl;
+
+    if (!mutableRoot.empty() && mutableRoot[0] != '/'){
+        mutableRoot = "/" + mutableRoot;
+    }
+
+    std::cout << "[getNewPath] root after modification: " << mutableRoot << std::endl;
+
+    while (std::getline(rootStream, rootDir, '/') && std::getline(pathStream, pathDir, '/') && rootDir == pathDir) {
+        commonPart += rootDir + "/";
+    }
+
+    std::cout << "[getNewPath] commonPart: " << commonPart << std::endl;
+
+	if (!rootDir.empty() && !pathDir.empty()) {
+    differentPart = rootDir + "/" + pathDir;
+	} else {
+		differentPart = rootDir + pathDir;
+	}
+
+    // differentPart = rootDir + pathDir;
+	std::cout << "[getNewPath] pathDir: " << pathDir << std::endl;
+
+    while (std::getline(pathStream, pathDir, '/')) {
+        differentPart += "/" + pathDir;
+    }
+
+    std::cout << "differentPart: " << differentPart << std::endl;
+
+    std::string totalPath = commonPart + differentPart;
+
+    std::cout << "totalPath: " << totalPath << std::endl;
+
+    return totalPath;
+}
+
+// // Função para dividir uma string em um vetor de substrings com base em um delimitador
+// std::vector<std::string> split(const std::string& str, char delimiter) {
+//     std::vector<std::string> tokens;
+//     std::string token;
+//     std::istringstream tokenStream(str);
+//     while (std::getline(tokenStream, token, delimiter)) {
+//         tokens.push_back(token);
+//     }
+//     return tokens;
+// }
+
+// // Função para unir um vetor de substrings em uma string com base em um delimitador
+// std::string join(const std::vector<std::string>& tokens, char delimiter) {
+//     std::ostringstream joined;
+//     for (size_t i = 0; i < tokens.size(); ++i) {
+//         if (i != 0) {
+//             joined << delimiter;
+//         }
+//         joined << tokens[i];
+//     }
+//     return joined.str();
+// }
+
+// // Função para normalizar o caminho (remover ., processar ..)
+// std::string normalizePath(const std::vector<std::string>& pathComponents) {
+//     std::vector<std::string> stack;
+//     for (std::vector<std::string>::const_iterator it = pathComponents.begin(); it != pathComponents.end(); ++it) {
+//         const std::string& component = *it;
+//         if (component == "." || component.empty()) {
+//             // Ignorar "." e partes vazias
+//             continue;
+//         }
+//         if (component == "..") {
+//             if (!stack.empty()) {
+//                 stack.pop_back();
+//             }
+//         } else {
+//             stack.push_back(component);
+//         }
+//     }
+//     return "/" + join(stack, '/');
+// }
+
+// std::string getNewPath(const std::string& root, const std::string& path) {
+//     std::vector<std::string> rootComponents = split(root, '/');
+//     std::vector<std::string> pathComponents = split(path, '/');
+
+//     // Normaliza e junta os componentes do caminho raiz e do caminho relativo
+//     std::vector<std::string> fullPathComponents = rootComponents;
+//     fullPathComponents.insert(fullPathComponents.end(), pathComponents.begin(), pathComponents.end());
+
+//     // Normaliza o caminho final
+//     std::string normalizedPath = normalizePath(fullPathComponents);
+
+//     return normalizedPath;
+// }
+
+// bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
+// {
+//     std::vector<int> ports = server.getPortList();
+//     int listeningPort = ports[0];
+//     conf_File_Info &serverConfig = server.getConfig(listeningPort);
+
+//     bool methodAllowed = false;
+
+//     std::cout << ">>>>>requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
+
+//     if (serverConfig.LocationsMap.size() > 0)
+//     {
+//         for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
+//         {
+//             std::string newRootDirectory = "/" + getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+//             std::cout << "** Novo caminho absoluto: " << newRootDirectory << std::endl;
+
+//             if (!is_directory(newRootDirectory)) // Presumindo que você tenha uma função is_directory
+//             {
+//                 std::cerr << "O diretório raiz não existe: " << newRootDirectory << std::endl;
+//                 server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+//                 requestMsg.path = newRootDirectory + " não encontrado";
+//                 requestMsg.version = "";
+//                 printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+//                 return false;
+//             }
+//             else
+//             {
+//                 serverConfig.RootDirectory = newRootDirectory;
+//                 std::cout << "Diretório existe: " << serverConfig.RootDirectory << std::endl;
+//             }
+
+//             std::string requestMethod = methodToString(requestMsg.method);
+//             std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);
+
+//             for (std::set<std::string>::const_iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth)
+//             {
+//                 std::string method = *it_meth;
+//                 std::transform(method.begin(), method.end(), method.begin(), ::toupper);
+
+//                 if (method == requestMethod)
+//                 {
+//                     methodAllowed = true;
+//                     break;
+//                 }
+//             }
+
+//             if (methodAllowed)
+//             {
+//                 return true;
+//             }
+//             else
+//             {
+//                 std::cerr << "Erro: Método proibido." << std::endl;
+//                 server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
+//                 requestMsg.path = "Forbidden";
+//                 requestMsg.version = "";
+//                 printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+//                 return false;
+//             }
+//         }
+//     }
+//     else if (!is_directory(serverConfig.RootDirectory)) // Presumindo que você tenha uma função is_directory
+//     {
+//         std::cerr << "O diretório raiz não existe: " << serverConfig.RootDirectory << std::endl;
+//         server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+//         requestMsg.path = serverConfig.RootDirectory + " não encontrado";
+//         requestMsg.version = "";
+//         printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+//         return false;
+//     }
+
+//     return true;
+// }
+
+
+
 bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
-
-	
 	std::vector<int> ports = server.getPortList();
 	int listeningPort = ports[0];
 	conf_File_Info &serverConfig = server.getConfig(listeningPort);
@@ -729,15 +953,29 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	std::cout << ">>>>>requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
 	if (serverConfig.LocationsMap.size() > 0)
 	{
+		
 		for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
 		{
+			// std::string newRootDirectory = "/" + getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+            // std::cout << "** Novo caminho absoluto: " << newRootDirectory << std::endl;
+
+
+			getFirstDirectory(serverConfig.RootDirectory);
+			std::cout << GREEN << "First directory: " << getFirstDirectory(serverConfig.RootDirectory) << RESET << std::endl;
+			std::cout << "** root original: " << serverConfig.RootDirectory << std::endl;
+			std::cout << "** it->second: " << it->second.RootDirectory << std::endl;
+			std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+			std::cout << "** New path: " << fred << std::endl;
+			std::cout << "** it->first: " << it->first << std::endl;
 			if (it->first == "" || it->first == "/")
 			{
 				if (serverConfig.RootDirectory != it->second.RootDirectory)
 				{
+					//serverConfig.RootDirectory = "/" + getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+					serverConfig.RootDirectory = "/" + serverConfig.RootDirectory;
 					std::cout << " ## Root directory1 : " << serverConfig.RootDirectory << std::endl;
 					std::cout << " ## Root directory2 : " << it->second.RootDirectory << std::endl;
-					serverConfig.RootDirectory = it->second.RootDirectory;
+					//serverConfig.RootDirectory = "/" + getFirstDirectory(serverConfig.RootDirectory) + it->second.RootDirectory;
 					std::cout << " ## Root directory changed to: " << serverConfig.RootDirectory << std::endl;
 					if (!is_directory(serverConfig.RootDirectory))
 					{
@@ -753,6 +991,11 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					}
 				}
 			}
+			else
+			{
+				//serverConfig.RootDirectory = fred;
+				//std::cout << " ## Root FRED : " << serverConfig.RootDirectory << std::endl;
+			}
 			std::string requestMethod = methodToString(requestMsg.method);
 			std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);
 			
@@ -761,9 +1004,9 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				std::string allowedMethod = *it_meth;
 				std::transform(allowedMethod.begin(), allowedMethod.end(), allowedMethod.begin(), ::toupper);
 
-				std::cout << "Current allowedMethods string: " << *it_meth << std::endl;
-				std::cout << MAGENTA << "Checking method: " << RESET << allowedMethod << std::endl;
-				std::cout << "Request method: " << requestMethod << std::endl;
+				//std::cout << "Current allowedMethods string: " << *it_meth << std::endl;
+				//std::cout << MAGENTA << "Checking method: " << RESET << allowedMethod << std::endl;
+				//std::cout << "Request method: " << requestMethod << std::endl;
 
 				if (allowedMethod == requestMethod)
 				{
@@ -788,8 +1031,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		}
 		
 	}
-
-	if (!is_directory(serverConfig.RootDirectory))
+	else if (!is_directory(serverConfig.RootDirectory))
 	{
 		std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
@@ -969,7 +1211,24 @@ bool isDirectory(const std::string& path)
 
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
-	std::string fullPath = "resources/website" + requestMsg.path;
+	std::vector<int> ports = server.getPortList();
+	int listeningPort = ports[0];
+	conf_File_Info &serverConfig = server.getConfig(listeningPort);
+	
+
+	//std::string fullPath = "resources/website" + requestMsg.path;
+	std::string rootDirectory = serverConfig.RootDirectory;
+	if (!rootDirectory.empty() && rootDirectory[0] == '/') {
+		rootDirectory = rootDirectory.substr(1);
+	}
+	std::string fullPath = rootDirectory + requestMsg.path;
+	std::cout << "Full path: " << fullPath << std::endl;
+	std::cout << "requestMSG PATH: " << requestMsg.path << std::endl;
+	
+	char cwd[1024];
+	getcwd(cwd, sizeof(cwd));
+	std::string full_path2 = std::string(cwd) + fullPath;
+	std::cout << " @@@@@@ Full path: " << full_path2 << std::endl;
 
 	if (!fileExists(fullPath))
 	{
