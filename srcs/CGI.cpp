@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/08 11:17:07 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/11 15:15:57 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,18 +27,36 @@ CGI::CGI(HTTrequestMSG& requestMsg)
 
 void	CGI::ExtractPathInfo(std::string& buffer, conf_File_Info& info)
 {
-	if (buffer.find("/UploadScript.py") == std::string::npos)
-		throw NoScriptAllowed();
+	(void)buffer;
 
-	size_t	path_position = buffer.find("/UploadScript.py") + 16;
+	// MENSAGEM PARA O FUTURO:
 
-	while (buffer[path_position] != ' ')
-		this->Path_Info_ += buffer[path_position++];
+	// 	Tenho que modificar isto. O Path_info será o caminho para o script, mais alguma
+	// informação que o client queira mandar.
+
+	size_t	ScriptEndPos = this->requestMsg_.path.find(".py") + 3;
+
+	for (size_t i = 0; i != ScriptEndPos; i++)
+	{
+		this->Script_Path_ += this->requestMsg_.path[i];
+	}
+
+	std::cout << "PATH TO CGI SCRIPT: " << this->Script_Path_ << std::endl;
+
+	size_t	path_position = this->requestMsg_.path.find(this->Script_Path_) + this->Script_Path_.size();
+
+	for (size_t i = path_position; i != this->requestMsg_.path.size(); i++)
+		this->Path_Info_ += this->requestMsg_.path[i];
+
+	std::cout << "PATH WHERE CLIENT WANNA UPLOAD: " << this->Path_Info_ << std::endl;
+
+	//while (buffer[path_position] != ' ')
+	//	this->Path_Info_ += buffer[path_position++];
 
 	// 	Necessario verificar aqui se PATH_INFO está de acordo com o diretorio de uploads autorizado
 	// no ficheiro de configuração.
 
-	std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
+	//std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
 
 	if (info.fileUploadDirectory.find(this->Path_Info_) == std::string::npos)
 		throw NotAcceptedUploadPath();
@@ -138,13 +156,9 @@ void	CGI::CreateEnv()
 
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer, conf_File_Info& info)
 {
-	std::cout << "======CGI======\n\n";
-	std::cout << info.fileUploadDirectory << std::endl;
+	std::cout << "\n\n======CGI======\n\n";
 	std::cout << "PATH_: " << this->requestMsg_.path << std::endl;
 	std::cout << "\n\n======CGI======\n\n";
-
-	// if (info.fileUploadDirectory.empty())
-	// 	throw NoUploadPathConfigurated();
 
 	// DEVO FAZER UM NOVO METODO SÓ PARA VERIFICAR SE O REQUEST VEM TODO ALINHADO COM AS REGRAS DO .CONF?
 
@@ -227,6 +241,8 @@ void	CGI::Child_process()
 
 	python_args[0] = "/usr/bin/python3";
 	python_args[1] = "./cgi-bin/UploadScript.py";
+	//std::cout << "PATH SEND TO CGI: " << this->Script_Path_.c_str() << std::endl;
+	//python_args[1] = this->Script_Path_.c_str();
 	python_args[2] = NULL;
 
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());

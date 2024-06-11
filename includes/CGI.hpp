@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/06 15:49:13 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/11 12:28:47 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class CGI
 		std::string	FileContent_;
 		// PATH_INFO:
 		std::string	Path_Info_;
+		std::string	Script_Path_;
 
 		std::vector<std::string>	EnvStrings_;
 		std::vector<char*>			Env_;
