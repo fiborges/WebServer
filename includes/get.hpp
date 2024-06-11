@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/11 10:45:50 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/11 20:10:35 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ class ServerInfo
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
 
-		int bytesReadTotal;
+		//int bytesReadTotal;
 		size_t contentLength;
 
 		std::string RootDirectory;
@@ -136,7 +136,6 @@ class ServerInfo
 		void addConfig(int port, const conf_File_Info& config);
 		conf_File_Info& getConfig(int port);
 
-		
 			
 };
 

@@ -21,8 +21,10 @@ public:
     const std::string& fetchErrorPage(int errorNumber) const;
     bool confirmCGI() const;
     const std::string& accessCGIScript() const;
+    const std::string& fetchCGIExtension() const;
     bool verifyRedirection() const;
     const ForwardingURL& fetchRedirection() const;
+    const std::string& fetchUploadToDirectory() const;
     std::string matchPath(const std::string& searchPath) const;
     ParserConfig extractContext(const std::string& requestedPath) const;
     std::string determineLocation() const;

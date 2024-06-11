@@ -57,10 +57,12 @@ private:
     void checkAutoindex(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void verifyErrorPage(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void confirmCGISettings(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
+    void confirmCGIExtension(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
+    void confirmUploadDirectory(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
+    void confirmUploadToDirectory(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void confirmRedirect(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void ensureClientBodyCapacity(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
-    void confirmUploadDir(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
 
     // Fixing missing function declarations
     void startServerModule();
