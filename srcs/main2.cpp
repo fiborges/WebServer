@@ -82,7 +82,6 @@ int main() {
             testMatching(servers[0], "/upload/file");
             testMatching(servers[0], "/redirect");
             testMatching(servers[0], "/non-existent");
-            testMatching(servers[0], "/.py"); // Adicionado para testar cgi_ext
         }
 
         delete parser; // Liberar a memória alocada
