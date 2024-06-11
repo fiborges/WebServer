@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/09 11:38:06 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/11 10:45:50 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,6 +95,7 @@ class ServerInfo
 		std::string RootDirectory;
 
 		std::map<int, conf_File_Info> configs;
+		//std::map<std::string, conf_File_Info> locationConfigs;
 
 
 	public:

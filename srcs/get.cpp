@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/10 14:37:20 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/11 12:34:02 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -717,7 +717,8 @@ void printServerConfig(const conf_File_Info &serverConfig) {
 // }
 
 
-std::string getFirstDirectory(const std::string& path) {
+std::string getFirstDirectory(const std::string& path)
+{
     size_t pos = path.find('/');
     if (pos != std::string::npos) {
         // Retorne a substring até a primeira barra
@@ -806,167 +807,76 @@ std::string getNewPath(const std::string& root, const std::string& path) {
     return totalPath;
 }
 
-// // Função para dividir uma string em um vetor de substrings com base em um delimitador
-// std::vector<std::string> split(const std::string& str, char delimiter) {
-//     std::vector<std::string> tokens;
-//     std::string token;
-//     std::istringstream tokenStream(str);
-//     while (std::getline(tokenStream, token, delimiter)) {
-//         tokens.push_back(token);
-//     }
-//     return tokens;
-// }
+std::string getDirectoryPath(const std::string& fullPath) {
+    size_t found = fullPath.find_last_of("/\\");
+    return fullPath.substr(0,found);
+}
 
-// // Função para unir um vetor de substrings em uma string com base em um delimitador
-// std::string join(const std::vector<std::string>& tokens, char delimiter) {
-//     std::ostringstream joined;
-//     for (size_t i = 0; i < tokens.size(); ++i) {
-//         if (i != 0) {
-//             joined << delimiter;
-//         }
-//         joined << tokens[i];
-//     }
-//     return joined.str();
-// }
-
-// // Função para normalizar o caminho (remover ., processar ..)
-// std::string normalizePath(const std::vector<std::string>& pathComponents) {
-//     std::vector<std::string> stack;
-//     for (std::vector<std::string>::const_iterator it = pathComponents.begin(); it != pathComponents.end(); ++it) {
-//         const std::string& component = *it;
-//         if (component == "." || component.empty()) {
-//             // Ignorar "." e partes vazias
-//             continue;
-//         }
-//         if (component == "..") {
-//             if (!stack.empty()) {
-//                 stack.pop_back();
-//             }
-//         } else {
-//             stack.push_back(component);
-//         }
-//     }
-//     return "/" + join(stack, '/');
-// }
-
-// std::string getNewPath(const std::string& root, const std::string& path) {
-//     std::vector<std::string> rootComponents = split(root, '/');
-//     std::vector<std::string> pathComponents = split(path, '/');
-
-//     // Normaliza e junta os componentes do caminho raiz e do caminho relativo
-//     std::vector<std::string> fullPathComponents = rootComponents;
-//     fullPathComponents.insert(fullPathComponents.end(), pathComponents.begin(), pathComponents.end());
-
-//     // Normaliza o caminho final
-//     std::string normalizedPath = normalizePath(fullPathComponents);
-
-//     return normalizedPath;
-// }
-
-// bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
-// {
-//     std::vector<int> ports = server.getPortList();
-//     int listeningPort = ports[0];
-//     conf_File_Info &serverConfig = server.getConfig(listeningPort);
-
-//     bool methodAllowed = false;
-
-//     std::cout << ">>>>>requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
-
-//     if (serverConfig.LocationsMap.size() > 0)
-//     {
-//         for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
-//         {
-//             std::string newRootDirectory = "/" + getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
-//             std::cout << "** Novo caminho absoluto: " << newRootDirectory << std::endl;
-
-//             if (!is_directory(newRootDirectory)) // Presumindo que você tenha uma função is_directory
-//             {
-//                 std::cerr << "O diretório raiz não existe: " << newRootDirectory << std::endl;
-//                 server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-//                 requestMsg.path = newRootDirectory + " não encontrado";
-//                 requestMsg.version = "";
-//                 printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-//                 return false;
-//             }
-//             else
-//             {
-//                 serverConfig.RootDirectory = newRootDirectory;
-//                 std::cout << "Diretório existe: " << serverConfig.RootDirectory << std::endl;
-//             }
-
-//             std::string requestMethod = methodToString(requestMsg.method);
-//             std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);
-
-//             for (std::set<std::string>::const_iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth)
-//             {
-//                 std::string method = *it_meth;
-//                 std::transform(method.begin(), method.end(), method.begin(), ::toupper);
-
-//                 if (method == requestMethod)
-//                 {
-//                     methodAllowed = true;
-//                     break;
-//                 }
-//             }
-
-//             if (methodAllowed)
-//             {
-//                 return true;
-//             }
-//             else
-//             {
-//                 std::cerr << "Erro: Método proibido." << std::endl;
-//                 server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
-//                 requestMsg.path = "Forbidden";
-//                 requestMsg.version = "";
-//                 printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-//                 return false;
-//             }
-//         }
-//     }
-//     else if (!is_directory(serverConfig.RootDirectory)) // Presumindo que você tenha uma função is_directory
-//     {
-//         std::cerr << "O diretório raiz não existe: " << serverConfig.RootDirectory << std::endl;
-//         server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-//         requestMsg.path = serverConfig.RootDirectory + " não encontrado";
-//         requestMsg.version = "";
-//         printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-//         return false;
-//     }
-
-//     return true;
-// }
+bool isMethodAllowed(const std::set<std::string>& allowedMethods, const std::string& requestMethod)
+{
+	if (allowedMethods.empty()) {
+        return true; // Todos os métodos são permitidos se o conjunto de métodos permitidos estiver vazio
+    }
+	
+    std::string upperRequestMethod = requestMethod;
+    std::transform(upperRequestMethod.begin(), upperRequestMethod.end(), upperRequestMethod.begin(), ::toupper);
 
 
+    for (std::set<std::string>::const_iterator it_meth = allowedMethods.begin(); it_meth != allowedMethods.end(); ++it_meth)
+    {
+		std::string allowedMethods = *it_meth;
+		std::cout << MAGENTA << "Current allowedMethods string: " << RESET << *it_meth << std::endl;
+		std::cout << MAGENTA << "Checking method: " << RESET << allowedMethods << std::endl;
+		std::cout << MAGENTA << "Request method: " << RESET << requestMethod << std::endl;
+		
+        std::string allowedMethod = *it_meth;
+        std::transform(allowedMethod.begin(), allowedMethod.end(), allowedMethod.begin(), ::toupper);
+
+        if (allowedMethod == upperRequestMethod)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
 	std::vector<int> ports = server.getPortList();
 	int listeningPort = ports[0];
 	conf_File_Info &serverConfig = server.getConfig(listeningPort);
+	
+	
+	std::map<std::string, conf_File_Info> locationConfigs = serverConfig.LocationsMap;
+
+	// for (Locations::const_iterator it = locationConfigs.begin(); it != locationConfigs.end(); ++it)
+	// {
+	// 	std::cout << "LOCATION dentro : " << it->first << std::endl;
+	// 	std::cout << "Value (portListen): " << it->second.portListen << std::endl;	
+	// }
 
 	//printServerConfig(server.getConfig(listeningPort));
 
-	bool methodAllowed = false;
+	//bool methodAllowed = false;
+	std::cout << "[processRules]: "<< requestMsg.path << std::endl;
 	
 	std::cout << ">>>>>requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
 	if (serverConfig.LocationsMap.size() > 0)
 	{
-		
 		for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
 		{
 			// std::string newRootDirectory = "/" + getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
             // std::cout << "** Novo caminho absoluto: " << newRootDirectory << std::endl;
-
-
 			getFirstDirectory(serverConfig.RootDirectory);
 			std::cout << GREEN << "First directory: " << getFirstDirectory(serverConfig.RootDirectory) << RESET << std::endl;
 			std::cout << "** root original: " << serverConfig.RootDirectory << std::endl;
-			std::cout << "** it->second: " << it->second.RootDirectory << std::endl;
-			std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
-			std::cout << "** New path: " << fred << std::endl;
 			std::cout << "** it->first: " << it->first << std::endl;
+			std::cout << "** it->second: " << it->second.RootDirectory << std::endl;
+			std::cout << "** requestMsgPath: " << requestMsg.path << std::endl;
+			//std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+			//std::cout << "** New path: " << fred << std::endl;
+			
 			if (it->first == "" || it->first == "/")
 			{
 				if (serverConfig.RootDirectory != it->second.RootDirectory)
@@ -975,6 +885,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					serverConfig.RootDirectory = "/" + serverConfig.RootDirectory;
 					std::cout << " ## Root directory1 : " << serverConfig.RootDirectory << std::endl;
 					std::cout << " ## Root directory2 : " << it->second.RootDirectory << std::endl;
+					serverConfig.RootDirectory = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 					//serverConfig.RootDirectory = "/" + getFirstDirectory(serverConfig.RootDirectory) + it->second.RootDirectory;
 					std::cout << " ## Root directory changed to: " << serverConfig.RootDirectory << std::endl;
 					if (!is_directory(serverConfig.RootDirectory))
@@ -991,54 +902,69 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					}
 				}
 			}
-			else
+			else if (it->first == getDirectoryPath(requestMsg.path))
 			{
-				//serverConfig.RootDirectory = fred;
-				//std::cout << " ## Root FRED : " << serverConfig.RootDirectory << std::endl;
+				//std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+				std::cout << " [elseif] it->first: " << it->first << std::endl;
+				std::cout << " [elseif] requestMsg: " << requestMsg.path << std::endl;
+				serverConfig.RootDirectory  = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+				std::cout << " ## Root FRED : " << serverConfig.RootDirectory << std::endl;
+
+				std::string requestMethod = methodToString(requestMsg.method);
+				std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);//mudar para maiusculas
+				bool methodAllowed = isMethodAllowed(it->second.allowedMethods, requestMethod);
+				if (!methodAllowed)
+				{
+					std::cerr << "Error: Forbidden method." << std::endl;
+					server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
+					requestMsg.path = "Forbidden";
+					requestMsg.version = "";
+					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+					return false;
+				}
 			}
 			std::string requestMethod = methodToString(requestMsg.method);
-			std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);
-			
-			for (std::set<std::string>::iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth)
-			{
-				std::string allowedMethod = *it_meth;
-				std::transform(allowedMethod.begin(), allowedMethod.end(), allowedMethod.begin(), ::toupper);
+			std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper); // mudar para maiusculas
 
-				//std::cout << "Current allowedMethods string: " << *it_meth << std::endl;
-				//std::cout << MAGENTA << "Checking method: " << RESET << allowedMethod << std::endl;
-				//std::cout << "Request method: " << requestMethod << std::endl;
+			// for (std::set<std::string>::iterator it_meth = it->second.allowedMethods.begin(); it_meth != it->second.allowedMethods.end(); ++it_meth)
+			// {
+			// 	std::string allowedMethod = *it_meth;
+			// 	std::transform(allowedMethod.begin(), allowedMethod.end(), allowedMethod.begin(), ::toupper);
 
-				if (allowedMethod == requestMethod)
-				{
-					methodAllowed = true;
-					break;
-				}
-				if (methodAllowed)
-				{
-					return true;
-				}
-			}
+			// 	std::cout << MAGENTA << "Current allowedMethods string: " << RESET << *it_meth << std::endl;
+			// 	std::cout << MAGENTA << "Checking method: " << RESET << allowedMethod << std::endl;
+			// 	std::cout << MAGENTA << "Request method: " << RESET << requestMethod << std::endl;
+
+			// 	if (allowedMethod == requestMethod)
+			// 	{
+			// 		methodAllowed = true;
+			// 		break;
+			// 	}
+			// 	if (methodAllowed)
+			// 	{
+			// 		return true;
+			// 	}
+			// }
 			
-			if (!methodAllowed)
-			{
-				std::cerr << "Error: Forbidden method." << std::endl;
-				server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
-				requestMsg.path = "Forbidden";
-				requestMsg.version = "";
-				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				return false;
-			}
+			// if (!methodAllowed)
+			// {
+			// 	std::cerr << "Error: Forbidden method." << std::endl;
+			// 	server.setResponse("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nMethod is Forbidden\nERROR 403\n");
+			// 	requestMsg.path = "Forbidden";
+			// 	requestMsg.version = "";
+			// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+			// 	return false;
+			// }
 		}
 		
 	}
-	else if (!is_directory(serverConfig.RootDirectory))
+	else if (!is_directory("/" + serverConfig.RootDirectory))
 	{
 		std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 		requestMsg.path = serverConfig.RootDirectory + " is not found";
 		requestMsg.version = "";
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-
 		return false;
 	}
 
@@ -1209,6 +1135,11 @@ bool isDirectory(const std::string& path)
 	return false;
 }
 
+std::string getFileName(const std::string& fullPath) {
+	size_t found = fullPath.find_last_of("/\\");
+	return fullPath.substr(found+1);
+}
+
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
 	std::vector<int> ports = server.getPortList();
@@ -1221,14 +1152,19 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	if (!rootDirectory.empty() && rootDirectory[0] == '/') {
 		rootDirectory = rootDirectory.substr(1);
 	}
-	std::string fullPath = rootDirectory + requestMsg.path;
-	std::cout << "Full path: " << fullPath << std::endl;
-	std::cout << "requestMSG PATH: " << requestMsg.path << std::endl;
+
+	std::string requestMsgFile = getFileName(requestMsg.path);
+
+	
+	std::string fullPath = rootDirectory + "/" + requestMsgFile;
+	std::cout << "[handleGetRequest] rootDirectory PATH: " << rootDirectory << std::endl;
+	std::cout << "[handleGetRequest] requestMSG PATH: " << requestMsg.path << std::endl;
+	std::cout << "[handleGetRequest] Full path: " << fullPath << std::endl;
 	
 	char cwd[1024];
 	getcwd(cwd, sizeof(cwd));
-	std::string full_path2 = std::string(cwd) + fullPath;
-	std::cout << " @@@@@@ Full path: " << full_path2 << std::endl;
+	std::string full_path2 = std::string(cwd) + "/" + fullPath;
+	std::cout << "[handleGetRequest] @@ Full path: " << full_path2 << std::endl;
 
 	if (!fileExists(fullPath))
 	{
