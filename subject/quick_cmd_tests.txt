@@ -76,6 +76,10 @@ curl -X POST -H "Content-Type: text/plain" -T largefile.txt http://localhost:808
 curl -X POST -H "Content-Type: text/plain" -T subject/webserver.pdf http://localhost:8080/your_endpoint --output response.bin
 
 
+-> dd if=/dev/zero of=file.txt bs=1 count=10485860
+
+curl -I http://127.0.0.1:8082/redirect
+curl -L http://127.0.0.1:8082/redirect
 
 Evaluation Page
 curl -X POST -H "Content-Type: text/plain" --data "BODY IS HERE write something shorter or longer than body limit" http://localhost:8080/your-endpoint

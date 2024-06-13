@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/11 20:10:35 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/13 11:21:14 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,6 +97,9 @@ class ServerInfo
 		std::map<int, conf_File_Info> configs;
 		//std::map<std::string, conf_File_Info> locationConfigs;
 
+		//std::string root_path;
+		std::string complete_path;
+
 
 	public:
 		int	clientSocket;
@@ -126,8 +129,9 @@ class ServerInfo
 
 		std::vector<int>& getSockets();
 
-		//void handleRedirectRequest(ServerInfo &server, conf_File_Info &config);
-		void handleRedirectRequest(ServerInfo &server, const conf_File_Info &config);
+
+		void handleRedirectRequest(HTTrequestMSG& request, ServerInfo& server);
+		//void handleRedirectRequest(ServerInfo &server, const conf_File_Info &config);
 		void setRedirectResponse(const std::string &location, const conf_File_Info &config);
 		//void setRedirectResponse(const std::string &location, int statusCode);
 
@@ -136,6 +140,28 @@ class ServerInfo
 		void addConfig(int port, const conf_File_Info& config);
 		conf_File_Info& getConfig(int port);
 
+		//std::string getCompletePath(const std::string& path, const conf_File_Info& serverConfig);
+		std::string getCompletePath(const std::string& path);
+
+		void setCompletePath(const std::string& path)
+		{
+			std::string newPath = path;
+			std::size_t lastDotPos = newPath.find_last_of('.');
+			std::size_t lastSlashPos = newPath.find_last_of('/');
+
+			// Check if the last part of the path is a file
+			if (lastDotPos != std::string::npos && lastDotPos > lastSlashPos) {
+				// It's a file, remove trailing slash if it exists
+				if (!newPath.empty() && newPath[newPath.size() - 1] == '/') {
+					newPath.erase(newPath.size() - 1);
+				}
+			}
+
+			complete_path = newPath;
+		}
+		std::string getCompletePath2() const {
+			return complete_path;
+		}
 			
 };
 
@@ -171,5 +197,9 @@ std::string getContentType(const std::string& filePath);
 
 
 void setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory);
+
+
+std::string removeFirstDirectory(const std::string& fullPath);
+std::string removeTrailingSlash(const std::string& path);
 
 #endif
