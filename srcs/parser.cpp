@@ -3,6 +3,7 @@
 #include "../includes/parser.hpp"
 #include "../includes/parser_utils.hpp"
 #include "../includes/erros.hpp"
+#include "../includes/parserConfig.hpp"
 
 ParserClass::ParserClass(const std::string& file_path)
     : configFilePath(file_path), configurationFile(configFilePath.c_str()),
@@ -132,24 +133,6 @@ void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
     }
 }
 
-void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
-    if (pieces[0] == "}") {
-        currentState = "In";
-    } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
-        throw ConfigError(createErrorMsg("Error: Invalid directive '" + pieces[0] + "' within a location block. 'listen' and 'server_name' directives should be placed at the server block level, not within location blocks."));
-    } else if (validationMapKeys.count(pieces[0])) {
-        std::string locationPath = locationPrefix;
-        if (locationPath.empty()) {
-            locationPath = "/"; // Corrigir para path raiz
-        }
-
-        confFileHandler handler = validationMapKeys.at(pieces[0]);
-        (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
-    } else {
-        throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
-    }
-}
-
 /*void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
     if (pieces[0] == "}") {
         currentState = "In";
@@ -167,6 +150,40 @@ void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
         throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
     }
 }*/
+
+void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
+    //std::cout << "Parsing location module: " << pieces[0] << std::endl;
+
+    if (pieces[0] == "}") {
+        currentState = "In";
+    } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
+        throw ConfigError(createErrorMsg("Error: Invalid directive '" + pieces[0] + "' within a location block. 'listen' and 'server_name' directives should be placed at the server block level, not within location blocks."));
+    } else if (validationMapKeys.count(pieces[0])) {
+        std::string locationPath = locationPrefix;
+        if (locationPath.empty()) {
+            locationPath = "/";
+        }
+
+        // Suporte para wildcards (e.g., *.py, *.js, etc.)
+        confFileHandler handler = validationMapKeys.at(pieces[0]);
+        //std::cout << "Processing handler for: " << pieces[0] << " at location " << locationPath << std::endl;
+
+        if (locationPath.find('*') != std::string::npos) {
+            for (std::map<std::string, conf_File_Info>::iterator it = conFileInProgress->LocationsMap.begin();
+                 it != conFileInProgress->LocationsMap.end(); ++it) {
+                if (matchWildcard(locationPath, it->first)) {
+                    std::cout << "Wildcard handler match for: " << it->first << std::endl;
+                    (this->*handler)(pieces, &it->second);
+                }
+            }
+        } else {
+            //std::cout << "Exact handler match for: " << locationPath << std::endl;
+            (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
+        }
+    } else {
+        throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
+    }
+}
 
 inline void ParserClass::startLocationModule(const std::string& location) {
     std::string locationPath = ParserUtils::normalizePath(location);

@@ -4,6 +4,8 @@
 #include "librarie.hpp"
 #include "conf_info.hpp"
 
+bool matchWildcard(const std::string& pattern, const std::string& str);
+
 class ParserConfig {
 public:
     ParserConfig(conf_File_Info* configData, const std::string& path_location = "");

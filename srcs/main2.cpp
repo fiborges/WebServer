@@ -19,7 +19,7 @@ void printConfig(const conf_File_Info& config, const std::string& location = "")
     std::cout << BOLD << "std::string defaultFile: " << RESET << config.defaultFile << std::endl;
     std::cout << BOLD << "std::string RootDirectory: " << RESET << config.RootDirectory << std::endl;
     std::cout << BOLD << "std::string Path_CGI: " << RESET << config.Path_CGI << std::endl;
-    std::cout << BOLD << "std::string cgiExtension: " << RESET << config.cgiExtension << std::endl; // Adicionado
+    std::cout << BOLD << "std::string cgiExtension: " << RESET << config.cgiExtension << std::endl;
     std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (config.directoryListingEnabled ? "true" : "false") << std::endl;
 
     std::cout << BOLD << YELLOW << "std::map<int, std::string> errorMap: " << RESET << std::endl;
@@ -38,7 +38,7 @@ void printConfig(const conf_File_Info& config, const std::string& location = "")
 
     std::cout << BOLD << "int maxRequestSize: " << RESET << config.maxRequestSize << std::endl;
     std::cout << BOLD << "std::string fileUploadDirectory: " << RESET << config.fileUploadDirectory << std::endl;
-    std::cout << BOLD << "std::string uploadToDirectory: " << RESET << config.uploadToDirectory << std::endl; // Adicionado
+    std::cout << BOLD << "std::string uploadToDirectory: " << RESET << config.uploadToDirectory << std::endl;
 
     std::cout << BOLD << "\n Locations LocationsMap: " << RESET << std::endl;
     for (std::map<std::string, conf_File_Info>::const_iterator it = config.LocationsMap.begin(); it != config.LocationsMap.end(); ++it) {
@@ -53,8 +53,8 @@ void testMatching(const ParserConfig& parserConfig, const std::string& path) {
         ParserConfig context = parserConfig.extractContext(matchedPath);
         std::cout << GREEN << "Matched Path: " << matchedPath << RESET << std::endl;
         printConfig(*context.getServerConfigurations(), matchedPath);
-        std::cout << BOLD << "cgiExtension: " << RESET << context.fetchCGIExtension() << std::endl; // Adicionado
-        std::cout << BOLD << "uploadToDirectory: " << RESET << context.fetchUploadToDirectory() << std::endl; // Adicionado
+        std::cout << BOLD << "cgiExtension: " << RESET << context.fetchCGIExtension() << std::endl;
+        std::cout << BOLD << "uploadToDirectory: " << RESET << context.fetchUploadToDirectory() << std::endl;
     } catch (const std::exception& e) {
         std::cout << RED << "Error: " << e.what() << RESET << std::endl;
     }
@@ -73,15 +73,14 @@ int main() {
 
             printHeader("Server " + numberAsString + " Configuration");
             printConfig(*servers[i].getServerConfigurations());
-        }
-        
-        // Testing path matching
-        if (!servers.empty()) {
-            testMatching(servers[0], "/test/path");
-            testMatching(servers[0], "/cgi-bin/script");
-            testMatching(servers[0], "/upload/file");
-            testMatching(servers[0], "/redirect");
-            testMatching(servers[0], "/non-existent");
+
+            // Testing path matching for each server
+            printSubHeader("Path Matching Tests for Server " + numberAsString);
+            testMatching(servers[i], "/test/path.py"); // Testando localização *.py
+            testMatching(servers[i], "/cgi-bin/script");
+            testMatching(servers[i], "/upload/file");
+            testMatching(servers[i], "/redirect");
+            testMatching(servers[i], "/non-existent");
         }
 
         delete parser; // Liberar a memória alocada
