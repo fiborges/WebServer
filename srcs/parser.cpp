@@ -47,6 +47,10 @@ void ParserClass::readAndProcessConfig() {
         } else if (currentState == "In_Location") {
             parseLocationModule(pieces);
         }
+        // Verifica a presença de "autoindex" e define a flag
+        if (pieces[0] == "autoindex") {
+            conFileInProgress->autoindexPresent = true;
+        }
     }
     ensureAllModulesClosed();
     validateRequiredParameters();
@@ -132,24 +136,6 @@ void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
         conFileInProgress->LocationsMap[locationPrefix] = conf_File_Info();
     }
 }
-
-/*void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
-    if (pieces[0] == "}") {
-        currentState = "In";
-    } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
-        throw ConfigError(createErrorMsg("Error: Invalid directive '" + pieces[0] + "' within a location block. 'listen' and 'server_name' directives should be placed at the server block level, not within location blocks."));
-    } else if (validationMapKeys.count(pieces[0])) {
-        std::string locationPath = locationPrefix;
-        if (locationPath.empty()) {
-            locationPath = "/"; // Corrigir para path raiz
-        }
-
-        confFileHandler handler = validationMapKeys.at(pieces[0]);
-        (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
-    } else {
-        throw ConfigError(createErrorMsg("Error: Unknown directive '" + pieces[0] + "' encountered within a location block. This directive is either misspelled or not allowed in this context. Please check your configuration file for errors and consult the documentation for a list of valid directives within location blocks."));
-    }
-}*/
 
 void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
     //std::cout << "Parsing location module: " << pieces[0] << std::endl;
@@ -274,6 +260,7 @@ void ParserClass::checkAutoindex(const ParserUtils::Strings& commandParts, conf_
         throw ConfigError(createErrorMsg("Configuration Error: The 'autoindex' value '" + commandParts[1] + "' is invalid. Only 'on' or 'off' are accepted values. Please adjust your 'autoindex' setting to use one of these valid options."));
     }
     Keyword->directoryListingEnabled = (commandParts[1] == "on") ? true : false;
+    Keyword->autoindexPresent = true; // Definir flag aqui
 }
 
 void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)

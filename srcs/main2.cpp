@@ -21,6 +21,7 @@ void printConfig(const conf_File_Info& config, const std::string& location = "")
     std::cout << BOLD << "std::string Path_CGI: " << RESET << config.Path_CGI << std::endl;
     std::cout << BOLD << "std::string cgiExtension: " << RESET << config.cgiExtension << std::endl;
     std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (config.directoryListingEnabled ? "true" : "false") << std::endl;
+    std::cout << BOLD << "bool autoindexPresent: " << RESET << (config.autoindexPresent ? "true" : "false") << std::endl; // Verificação da flag autoindexPresent
 
     std::cout << BOLD << YELLOW << "std::map<int, std::string> errorMap: " << RESET << std::endl;
     for (std::map<int, std::string>::const_iterator it = config.errorMap.begin(); it != config.errorMap.end(); ++it) {
