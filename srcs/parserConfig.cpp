@@ -99,19 +99,25 @@ const std::string& ParserConfig::fetchUploadToDirectory() const
 }
 
 std::string ParserConfig::matchPath(const std::string& searchPath) const {
+   // std::cout << "Matching path: " << searchPath << std::endl;
+
     // Verificar correspondência exata primeiro
     for (Locations::const_iterator it = Server_configurations->LocationsMap.begin(); it != Server_configurations->LocationsMap.end(); ++it) {
+        //std::cout << "Checking exact match for: " << it->first << std::endl;
         if (searchPath == it->first) {
+            //std::cout << "Exact match found: " << it->first << std::endl;
             return it->first;
         }
     }
 
-    // Verificar correspondência de prefixo
+    // Verificar correspondência de prefixo e wildcard
     std::string matchedPath = "/";
     size_t maxLength = 0;
 
     for (Locations::const_iterator it = Server_configurations->LocationsMap.begin(); it != Server_configurations->LocationsMap.end(); ++it) {
-        if (searchPath.find(it->first) == 0 && it->first.length() > maxLength) {
+        //std::cout << "Checking prefix and wildcard match for: " << it->first << std::endl;
+        if ((searchPath.find(it->first) == 0 || matchWildcard(it->first, searchPath)) && it->first.length() > maxLength) {
+            std::cout << "Match found: " << it->first << std::endl;
             maxLength = it->first.length();
             matchedPath = it->first;
         }
@@ -123,6 +129,7 @@ std::string ParserConfig::matchPath(const std::string& searchPath) const {
 
     return matchedPath;
 }
+
 
 ParserConfig ParserConfig::extractContext(const std::string& requestedPath) const {
     conf_File_Info* environmentInfo;
@@ -185,4 +192,29 @@ bool ParserConfig::validateMethod(const std::string& httpMethod) const
 
 const conf_File_Info* ParserConfig::getServerConfigurations() const {
     return Server_configurations;
+}
+
+bool matchWildcard(const std::string& pattern, const std::string& str) {
+    size_t p = 0, s = 0, star = std::string::npos, match = 0;
+
+    while (s < str.size()) {
+        if (p < pattern.size() && (pattern[p] == '?' || pattern[p] == str[s])) {
+            ++p;
+            ++s;
+        } else if (p < pattern.size() && pattern[p] == '*') {
+            star = p++;
+            match = s;
+        } else if (star != std::string::npos) {
+            p = star + 1;
+            s = ++match;
+        } else {
+            return false;
+        }
+    }
+
+    while (p < pattern.size() && pattern[p] == '*') {
+        ++p;
+    }
+
+    return p == pattern.size();
 }

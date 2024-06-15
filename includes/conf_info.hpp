@@ -27,6 +27,7 @@ struct conf_File_Info
     std::map<int, std::string> errorMap;
     ForwardingURL redirectURL;
     std::set<std::string> allowedMethods;
+    bool autoindexPresent; // flag 
     int maxRequestSize;
     std::string fileUploadDirectory;
     Locations LocationsMap;

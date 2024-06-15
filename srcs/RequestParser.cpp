@@ -9,7 +9,7 @@ const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
     ServerErrorHandler errorHandler;
 
-    std::cout << "Starting parseRequest" << std::endl;
+    //std::cout << "Starting parseRequest" << std::endl;
 
     if (!parseHeader(raw, msg)) {
         msg.error = errorHandler.generateErrorPage(400);
@@ -17,10 +17,10 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         return false;
     }
 
-    std::cout << "Header parsed successfully" << std::endl;
+    //std::cout << "Header parsed successfully" << std::endl;
     setContentLength(msg);
 
-    std::cout << "Content-Length set to " << msg.content_length << std::endl;
+    //std::cout << "Content-Length set to " << msg.content_length << std::endl;
 
     if (static_cast<size_t>(msg.content_length) > raw.size()) {
         printf("msg content lenght: %d , raw size: %lu ", msg.content_length , raw.size());
