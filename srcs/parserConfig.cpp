@@ -99,25 +99,19 @@ const std::string& ParserConfig::fetchUploadToDirectory() const
 }
 
 std::string ParserConfig::matchPath(const std::string& searchPath) const {
-   // std::cout << "Matching path: " << searchPath << std::endl;
-
     // Verificar correspondência exata primeiro
     for (Locations::const_iterator it = Server_configurations->LocationsMap.begin(); it != Server_configurations->LocationsMap.end(); ++it) {
-        //std::cout << "Checking exact match for: " << it->first << std::endl;
         if (searchPath == it->first) {
-            //std::cout << "Exact match found: " << it->first << std::endl;
             return it->first;
         }
     }
 
-    // Verificar correspondência de prefixo e wildcard
+    // Verificar correspondência de prefixo
     std::string matchedPath = "/";
     size_t maxLength = 0;
 
     for (Locations::const_iterator it = Server_configurations->LocationsMap.begin(); it != Server_configurations->LocationsMap.end(); ++it) {
-        //std::cout << "Checking prefix and wildcard match for: " << it->first << std::endl;
-        if ((searchPath.find(it->first) == 0 || matchWildcard(it->first, searchPath)) && it->first.length() > maxLength) {
-            std::cout << "Match found: " << it->first << std::endl;
+        if (searchPath.find(it->first) == 0 && it->first.length() > maxLength) {
             maxLength = it->first.length();
             matchedPath = it->first;
         }
@@ -129,7 +123,6 @@ std::string ParserConfig::matchPath(const std::string& searchPath) const {
 
     return matchedPath;
 }
-
 
 ParserConfig ParserConfig::extractContext(const std::string& requestedPath) const {
     conf_File_Info* environmentInfo;

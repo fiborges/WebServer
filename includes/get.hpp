@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/15 10:19:37 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/17 18:03:52 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,8 @@
 # include "parser.hpp"
 # include "CGI.hpp"
 
+extern std::vector<int> global_sockets;
+
 class ServerInfo
 {
 	private:
@@ -99,6 +101,8 @@ class ServerInfo
 
 		//std::string root_path;
 		std::string complete_path;
+
+		
 
 
 	public:
@@ -162,6 +166,8 @@ class ServerInfo
 		std::string getCompletePath2() const {
 			return complete_path;
 		}
+
+		void closeSocket(fd_set* read_fds);
 			
 };
 

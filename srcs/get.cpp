@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/15 14:18:25 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/17 19:25:01 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,15 @@
 
 ServerInfo::ServerInfo()
 {
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
-	{
-		handleError("Error opening socket.");
-		exit(-1);
-	}
+	std::cout << "ServerInfo criado\n";
+	// sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	// if (sockfd < 0)
+	// {
+	// 	handleError("Error opening socket.");
+	// 	exit(-1);
+	// }
+	this->sockfd = -1;
+	//global_sockets.push_back(sockfd);
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	this->clientSocket = -1;
 	this->rootUrl = "resources";
@@ -37,6 +40,37 @@ ServerInfo::ServerInfo()
 
 ServerInfo::~ServerInfo()
 {
+	// std::cout << "DESTRUCTOR : Closing socket: " << sockfd << std::endl;
+	//         if (sockfd != -1) {
+    //         shutdown(sockfd, SHUT_RDWR);
+    //         close(sockfd);
+    //     }
+
+	// if (sockfd != -1) {
+	// // Shutdown for read and write (similar to SHUT_RDWR in C++11)
+	// shutdown(sockfd, SHUT_RDWR);
+	// // Close the socket
+	// close(sockfd);
+	// }
+
+	//Iterate through client sockets
+	// for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it) {
+	// int clientSocket = *it;
+	// if (clientSocket != -1) {
+	// 	// Shutdown for read and write
+	// 	shutdown(clientSocket, SHUT_RDWR);
+	// 	// Close the socket
+	// 	close(clientSocket);
+	// }
+	// }
+
+
+
+	
+	clientSockets.clear();  // Ou clientSockets = std::vector<int>();
+	portListen.clear();     // Ou portListen = std::vector<int>();
+	cli_addrs.clear(); 
+	std::cout << "ServerInfo destruído\n";
 }
 
 void	ServerInfo::setSocketFD(int socket)
@@ -273,6 +307,8 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		perror("Error on socket creation");
 		exit(EXIT_FAILURE);
 	}
+	// Add the socket to the global_sockets vector
+    global_sockets.push_back(sockfd);
 	server.addSocketToList(sockfd);
 	server.setSocketFD(sockfd);
 	sockaddr_in serv_addr;
@@ -323,7 +359,7 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 	
 	if(serverRoot[serverRoot.size() - 1] != '/')
 		serverRoot += "/";
-	std::cout << " +++++ Server Root: " << serverRoot << std::endl;
+	//std::cout << " +++++ Server Root: " << serverRoot << std::endl;
 }
 
 
@@ -354,6 +390,10 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			break;
 	}
 
+
+
+	
+
 	// Read the Body
 	HTTPParser parser;
 	size_t contentLength = parser.getContentLength(request);
@@ -363,6 +403,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	
 	size_t actualDataSize = request.size();
 	size_t headerSize = request.find("\r\n\r\n") + 4;
+	//std::cout << "headerSize: " << headerSize << std::endl;
 	//std::cout << "  DataSize: " << actualDataSize << std::endl; 
 	//std::cout << "  Raw: " <<  << std::endl; 
 
@@ -403,6 +444,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		}
 	}
 	//std::cout << "Request received: \n" << request << std::endl; // Print the request
+
 	return request;
 }
 
@@ -415,7 +457,7 @@ void printServerConfig(const conf_File_Info &serverConfig) // PARA APAGAR DEPOIS
 	std::cout << BOLD << "std::string ServerName: " << RESET << serverConfig.ServerName << std::endl;
 	std::cout << BOLD << "std::string defaultFile: " << RESET << serverConfig.defaultFile << std::endl;
 	std::cout << BOLD << "std::string RootDirectory: " << RESET << serverConfig.RootDirectory << std::endl;
-	std::cout << BOLD << "bool autoindexPresent: " << RESET << (serverConfig.autoindexPresent ? "true" : "false") << std::endl; // Verificação da flag autoindexPresent
+	//std::cout << BOLD << "bool autoindexPresent: " << RESET << (serverConfig.autoindexPresent ? "true" : "false") << std::endl; // Verificação da flag autoindexPresent
 	std::cout << BOLD << "std::string Path_CGI: " << RESET << serverConfig.Path_CGI << std::endl;
 	std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (serverConfig.directoryListingEnabled ? "true" : "false") << std::endl;
 	std::cout << BOLD << "std::map<int, std::string> errorMap: " << RESET << std::endl;
@@ -465,19 +507,22 @@ std::vector<std::string> tokenize(const std::string& str, char delimiter)
 	std::string token;
 	std::istringstream tokenStream(str);
 
-	while (std::getline(tokenStream, token, delimiter)) {
-		if (!token.empty()) {
+	while (std::getline(tokenStream, token, delimiter))
+	{
+		if (!token.empty())
+		{
 			tokens.push_back(token);
 		}
 	}
 
-	std::cout << std::endl;
+	//std::cout << std::endl;
 	return tokens;
 }
 
 // Make a new relative path from the root and the path of locations
 std::string getNewPath(const std::string& root, const std::string& path)
 {
+
 	std::vector<std::string> rootTokens = tokenize(root, '/');
 	std::vector<std::string> pathTokens = tokenize(path, '/');
 
@@ -485,7 +530,7 @@ std::string getNewPath(const std::string& root, const std::string& path)
 	std::string initialPath;
 	size_t i = 0, j = 0;
 	bool hasMatched = false;
-
+	
 	// Find common part
 	while (i < rootTokens.size() && j < pathTokens.size()) {
 		//std::cout << "==> Comparing rootTokens[" << i << "]: " << rootTokens[i] << " with pathTokens[" << j << "]: " << pathTokens[j] << std::endl;
@@ -521,11 +566,11 @@ std::string getDirectoryPath(const std::string& fullPath)
 // Checks if the method is allowed
 bool isMethodAllowed(const std::set<std::string>& allowedMethods, const std::string& requestMethod)
 {
+
 	if (allowedMethods.empty())
 		return true; // Todos os métodos são permitidos se o conjunto de métodos permitidos estiver vazio
 	
 	std::string upperRequestMethod = requestMethod;
-	std::transform(upperRequestMethod.begin(), upperRequestMethod.end(), upperRequestMethod.begin(), ::toupper);
 
 	for (std::set<std::string>::const_iterator it_meth = allowedMethods.begin(); it_meth != allowedMethods.end(); ++it_meth)
 	{
@@ -687,14 +732,15 @@ bool handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& request
 // Principal Function to deal with rules from .conf file
 bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
+
 	std::vector<int> ports = server.getPortList();
 	int listeningPort = ports[0];
 	conf_File_Info &serverConfig = server.getConfig(listeningPort);
 	
 	//std::map<std::string, conf_File_Info> locationConfigs = serverConfig.LocationsMap;
 
-	std::string broserRelativePath = removeLastSlash(requestMsg.path);
-	//std::cout << "$$ >>>>> requestMsg.path: " << broserRelativePath << std::endl;
+	std::string browserRelativePath = removeLastSlash(requestMsg.path);
+	//std::cout << "$$ >>>>> requestMsg.path: " << browserRelativePath << std::endl;
 	//std::cout << "$$ >>>>> requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
 
 	if (serverConfig.LocationsMap.size() > 0)
@@ -702,17 +748,16 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
 		{
 			//std::cout << "$ >>>>> it->first: " << it->first << std::endl;	
-			if (it->first == broserRelativePath)
+			if (it->first == browserRelativePath)
 			{
 				if(it->first == "/")
 				{
 					//std::cout << "ENTREI no /"	<< std::endl;
 					//std::cout << "[processRules]: "<< requestMsg.path << std::endl;
-
 					std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 					std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
-					if(requestMsg.path == "/")
-						requestMsg.path = "";	
+					// if(requestMsg.path == "/")
+					// 	requestMsg.path = "";	
 					std::string completeFullPath = completeNewMixedPath + requestMsg.path;
 					//std::cout << YELLOW << completeFullPath << RESET << std::endl;
 
@@ -734,7 +779,6 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					}
 					return true;
 				}
-				
 				//std::cout << "it antes redirect: " << it->first << std::endl;
 				if(it->first == "/redirect")
 				{
@@ -772,10 +816,10 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				// if(requestMsg.path == "/")
 				// 	requestMsg.path = "";	
 				std::string completeFullPath = completeNewMixedPath + requestMsg.path;
-				std::cout << "MMM: "<<MAGENTA << completeFullPath << RESET << std::endl;
+				//std::cout << "MMM: "<<MAGENTA << completeFullPath << RESET << std::endl;
 				serverConfig.RootDirectory = newMixedPath;
 				server.setCompletePath(completeFullPath);
-				std::cout << "OLA\n";
+				//std::cout << "OLA\n";
 				if (is_directory(completeFullPath))
 				{
 					std::cout << "ENTREI Na directoria (IF)" << std::endl;
@@ -786,7 +830,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					{
 						if ((it->second.directoryListingEnabled == true) && (!fileExistsInDirectory(completeFullPath, serverConfig.defaultFile)))
 						{
-							std::cout << "MMM 1: " <<it->second.directoryListingEnabled << std::endl;
+							//std::cout << "MMM 1: " <<it->second.directoryListingEnabled << std::endl;
 							if (handleDirectoryListing(serverConfig, requestMsg, server))
 								return true;
 						}
@@ -797,66 +841,13 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 						{
 							if (serverConfig.directoryListingEnabled == true)
 							{
-								std::cout << "MMM 2: " <<it->second.directoryListingEnabled << std::endl;
+								//std::cout << "MMM 2: " <<it->second.directoryListingEnabled << std::endl;
 								if (handleDirectoryListing(serverConfig, requestMsg, server))
 									return true;
 							}
 						}
 					}
 
-
-
-
-
-
-
-					
-					// if (serverConfig.directoryListingEnabled == true)
-					// {
-					// 	std::cout << "IF it->second.directoryListingEnabled :" << it->second.directoryListingEnabled << std::endl;
-					// 	std::cout << "IF it->second.autoindexPresent : " << it->second.autoindexPresent << std::endl;
-					// 	if ((it->second.directoryListingEnabled == false) && (!fileExistsInDirectory(completeFullPath, serverConfig.defaultFile)))//(serverConfig.directoryListingEnabled == true)
-					// 	{
-					// 		std::cout << "MMM 1: " <<it->second.directoryListingEnabled << std::endl;
-					// 		if (handleDirectoryListing(serverConfig, requestMsg, server))
-					// 			return true;
-
-					// 	}
-					// 	else if ((it->second.directoryListingEnabled == true) && (it->second.autoindexPresent == false) && (!fileExistsInDirectory(completeFullPath, serverConfig.defaultFile)))//(serverConfig.directoryListingEnabled == true)
-					// 	{
-					// 		std::cout << "MMM 2: " <<it->second.directoryListingEnabled << std::endl;
-					// 		if (handleDirectoryListing(serverConfig, requestMsg, server))
-					// 			return true;
-					// 	}
-					// }
-					// else
-					// {
-					// 	std::cout << "ELSE it->second.directoryListingEnabled :" << it->second.directoryListingEnabled << std::endl;
-					// 	std::cout << "ELSE it->second.autoindexPresent : " << it->second.autoindexPresent << std::endl;
-					// 	if ((it->second.directoryListingEnabled == false) && (it->second.autoindexPresent == true) && (!fileExistsInDirectory(completeFullPath, serverConfig.defaultFile)))//(serverConfig.directoryListingEnabled == true)
-					// 	{
-					// 		//std::cout << "MMM 2: " << it->second.directoryListingEnabled << std::endl;
-					// 		if (handleDirectoryListing(serverConfig, requestMsg, server))
-					// 			return true;
-					// 		//std::cout << "SAI NO IF" << std::endl;
-					// 	}
-					// }
-					
-					// {
-					// 	if ((serverConfig.directoryListingEnabled == true) && (!fileExistsInDirectory(xxx, serverConfig.defaultFile)))
-					// 	{
-					// 		if((handleDirectoryListing(serverConfig, requestMsg, server)))
-					// 		{
-					// 			// std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
-					// 			// server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-					// 			// requestMsg.path = serverConfig.RootDirectory + " is not found";
-					// 			// requestMsg.version = "";
-					// 			//printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-					// 			return true;
-					// 		}
-					// 		std::cout << "SAI NO IF" << std::endl;
-					// 	}
-					// }
 				}
 			}
 			else if (it->first == getDirectoryPath(requestMsg.path))
@@ -866,22 +857,25 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				// std::string aaa = server.getCompletePath(fred);
 				// aaa = aaa + requestMsg.path;
 				// std::cout << GREEN <<  aaa << RESET << std::endl;
-
+				std::cout << "getDirectoryPath(requestMsg.path): " << getDirectoryPath(requestMsg.path) << std::endl;
+				std::cout << "serverConfig.RootDirectory: " << serverConfig.RootDirectory << std::endl;
+				std::cout << "it->second.RootDirectory: " << it->second.RootDirectory << std::endl;
 				std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
+				std::cout << "fred: " << fred << std::endl;
 				std::string bbb = server.getCompletePath(fred);	
 				std::string aaa = bbb + requestMsg.path;
 				std::cout << GREEN <<  aaa << RESET << std::endl;
 
-				serverConfig.RootDirectory = aaa;
+				//serverConfig.RootDirectory = aaa;
 				std::cout << " ## Root directory changed to: " << serverConfig.RootDirectory << std::endl;
 				server.setCompletePath(aaa);
 				std::cout << " ## CompletePath: " << server.getCompletePath2() << std::endl;
 			
 				int bodySizeBytes = server.getContentLength();
-				//std::cout << "  Content-Length : " << bodySizeBytes << std::endl;
+				std::cout << "  Content-Length : " << bodySizeBytes << std::endl;
 				bodySizeBytes -= 200;
-				//std::cout << "  Content-Length ALTERADO: " << bodySizeBytes << std::endl;
-				//std::cout << "  static cast: " << serverConfig.maxRequestSize << std::endl;
+				std::cout << "  Content-Length ALTERADO: " << bodySizeBytes << std::endl;
+				std::cout << "  Server Max Limit: " << serverConfig.maxRequestSize << std::endl;
 				if(bodySizeBytes > serverConfig.maxRequestSize)
 				{
 					std::cerr << "Error: Request size exceeds the maximum allowed size." << std::endl;
@@ -896,7 +890,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				std::cout << "    ## Root FRED : " << serverConfig.RootDirectory << std::endl;
 
 				std::string requestMethod = methodToString(requestMsg.method);
-				//std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);//mudar para maiusculas
+				std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper);//mudar para maiusculas
 				bool methodAllowed = isMethodAllowed(it->second.allowedMethods, requestMethod);
 				if (!methodAllowed)
 				{
@@ -910,17 +904,12 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 				return true;
 			}
-			else
-			{
-				//implmentar /dfsf/index.hlml que devera dar erro
-			}
-			std::string requestMethod = methodToString(requestMsg.method);
-			std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper); // mudar para maiusculas
+			//std::string requestMethod = methodToString(requestMsg.method);
+			//std::transform(requestMethod.begin(), requestMethod.end(), requestMethod.begin(), ::toupper); // mudar para maiusculas
 		}
 		
 		
 	}
-
 
 
 	//std::cout << " ## Root directory END**: " << serverConfig.RootDirectory << std::endl;
@@ -937,10 +926,10 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	//std::cout << " ## is_directory?: " << !is_directory(aaa) << std::endl;
 	if (!is_directory(aaa) && methodToString(requestMsg.method) != "POST")
 	{
-		std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
+		//std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
 		server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
 		requestMsg.path = serverConfig.RootDirectory + " is not found";
-		requestMsg.version = "";
+		requestMsg.version = "TESTE-FRED";
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		return false;
 	}
@@ -1027,6 +1016,7 @@ bool fileExists(const std::string& filePath)
 // Function to handle the request from the HTTP method
 void handleRequest(HTTrequestMSG& request, ServerInfo& server)
 {
+
 	// int port = server.getPortList()[0];
 	// std::string filePath = server.getConfig(port).RootDirectory + request.path;
 	// std::cout << "Port HANDLE REQUEST : " << port << std::endl;
@@ -1241,121 +1231,10 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 			}
 			else
 			{
-				// if(!(handleDirectoryListing(serverConfig, requestMsg, server)))
-
-				//std::cout << "ENTREI\n\\n";
-
-				// if((handleDirectoryListing(serverConfig, requestMsg, server)) == true)
-				// {
-				// 	// std::cerr << "Root directory does not exist: " << serverConfig.RootDirectory << std::endl;
-				// 	// server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-				// 	// requestMsg.path = serverConfig.RootDirectory + " is not found";
-				// 	// requestMsg.version = "";
-				// 	server.getResponse();
-				// 	//std::cout << "FFFFFFF: " << response << std::endl; 
-				// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				// 	return;
-				// }
-
-				
-				// if(serverConfig.directoryListingEnabled == true)
-				// {
-				// 	//std::string fullPath = "resources/website" + requestMsg.path;
-				// 	std::string rootDirectory = serverConfig.RootDirectory;
-				// 	if (!rootDirectory.empty() && rootDirectory[0] == '/')
-				// 	{
-				// 		rootDirectory = rootDirectory.substr(1);
-				// 	}
-					
-				// 	//std::string requestMsgFile = removeTrailingSlash(requestMsg.path);
-				// 	//std::string requestMsgFile2 = removeFirstDirectory(requestMsgFile);
-					
-				// 	std::string fullPath = rootDirectory + requestMsg.path;
-				// 	std::cout << "[AUTOINDEX] rootDirectory PATH: " << rootDirectory << std::endl;
-				// 	std::cout << "[AUTOINDEX] requestMSG PATH original: " << requestMsg.path << std::endl;
-				// 	// std::cout << "[AUTOINDEX] requestMSG PATH1: " << requestMsgFile << std::endl;
-				// 	// std::cout << "[AUTOINDEX] requestMSG PATH2: " << requestMsgFile2 << std::endl;
-				// 	std::cout << "[AUTOINDEX] Full path: " << fullPath << std::endl;
-
-				// 	std::string full_path1 = "/" + fullPath;;
-				// 	std::string full_path2;
-				// 	if (full_path1.substr(0, 5) == "/home")
-				// 	{
-				// 		full_path2 = full_path1;
-				// 	}
-				// 	else
-				// 	{
-				// 		char cwd[1024];
-				// 		getcwd(cwd, sizeof(cwd));
-				// 		full_path2 = std::string(cwd) + full_path1;
-				// 	}
-
-				// 	// char cwd[1024];
-				// 	// getcwd(cwd, sizeof(cwd));
-				// 	// std::string full_path2 = std::string(cwd) + "/" + fullPath;
-					
-				// 	//struct stat path_stat;
-				// 	//stat(full_path2.c_str(), &path_stat);
-				// 	struct stat path_stat;
-				// 	if(stat(full_path2.c_str(), &path_stat) != 0) {
-				// 		std::cerr << "Error accessing " << full_path2 << ": " << strerror(errno) << std::endl;
-				// 		server.setResponse("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-				// 		return;
-				// 	}
-				// 	bool is_directory = S_ISDIR(path_stat.st_mode);
-					
-				// 	std::string response;
-				// 	if (is_directory)
-				// 	{
-				// 		DIR *dir;
-				// 		struct dirent *ent;
-				// 		if ((dir = opendir (full_path2.c_str())) != NULL)
-				// 		{
-				// 			response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
-				// 			response += "<html><head><style>body { background: #ADD8E6; }</style></head><body>";
-				// 			while ((ent = readdir (dir)) != NULL)
-				// 			{
-				// 				response += ent->d_name;
-				// 				response += "<br>";
-				// 				//std::cout << ent->d_name << std::endl;
-				// 			}
-				// 			response += "<button onclick=\"location.href='index.html'\" type=\"button\">Go Home</button>";
-				// 			response += "</body></html>\n";
-				// 			closedir (dir);
-				// 		}
-				// 		else
-				// 		{
-				// 			perror ("");
-				// 			response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-				// 		}
-				// 	}
-				// 	else
-				// 	{
-				// 		//The path is a file, not a directory.
-				// 		//Try to open the file and send it as the response.
-				// 		std::ifstream file(full_path2.c_str());
-				// 		if (file.is_open())
-				// 		{
-				// 			response = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-				// 			server.setResponse(response);
-				// 		}
-				// 		else
-				// 		{
-				// 			server.setResponse("HTTP/1.1 404 Not Found AUTOINDEX\r\n\r\n");
-				// 		}
-				// 	}
-				// 	std::cout << "AUTOINDEX response: " << response << std::endl;	 
-				// 	server.setResponse(response);
-				// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-				// 	return;
-				//}
-				//else
-				//{					
-					std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
-					server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
-					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-					return;
-				//}	
+				std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
+				server.setResponse("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found\nERROR 404\n");
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+				return;
 			}
 		}
 	}
@@ -1552,6 +1431,13 @@ void ServerInfo::handlePostRequest(HTTrequestMSG& request, ServerInfo &server)
 	printLog(methodToString(request.method), request.path, request.version, server.getResponse(), server);
 }
 
+void ServerInfo::closeSocket(fd_set* read_fds) {
+    FD_CLR(sockfd, read_fds);
+    if (sockfd != -1) {
+        shutdown(sockfd, SHUT_RDWR);
+        close(sockfd);
+    }
+}
 
 void runServer(std::vector<ServerInfo>& servers)
 {
@@ -1566,6 +1452,7 @@ void runServer(std::vector<ServerInfo>& servers)
 		FD_SET(sockfd, &read_fds);
 		if (sockfd > max_fd)
 			max_fd = sockfd;
+		//it->closeSocket(&read_fds);
 	}
 
 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
@@ -1619,6 +1506,7 @@ void runServer(std::vector<ServerInfo>& servers)
 				FD_SET(newsockfd, &write_fds);
 				if (newsockfd > max_fd)
 					max_fd = newsockfd;
+
 			}
 
 			if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
@@ -1630,12 +1518,78 @@ void runServer(std::vector<ServerInfo>& servers)
 				// Remove client socket from read_fds and write_fds
 				FD_CLR(clientSocket, &read_fds);
 				FD_CLR(clientSocket, &write_fds);
+				//it->closeSocket(&read_fds);
 				close(clientSocket);
 				it->clientSocket = -1; // Set clientSocket to -1 after closing it
 			}
 		}
 	}
 }
+
+
+// void runServer(std::vector<ServerInfo>& servers) {
+//   fd_set read_fds, write_fds;
+// 	//const uint16_t DEFAULT_PORT = 8080;
+//   while (true) {
+//     FD_ZERO(&read_fds);
+//     FD_ZERO(&write_fds);
+
+//     int max_fd = -1;
+//   for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it) {
+//     int sockfd = it->getSocketFD();
+//     if (sockfd != -1) {
+//       // Declare server_addr here
+//       struct sockaddr_in server_addr;
+//       server_addr.sin_family = AF_INET;
+//       server_addr.sin_addr.s_addr = INADDR_ANY;
+//       server_addr.sin_port = htons(it->getPortList()[0]); // Assuming 'getPort' returns the port number
+
+//       int bind_result = bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+//       if (bind_result == -1) {
+//         perror("Error on bind");
+//         // Handle error (e.g., close socket, continue to next server)
+//       } else {
+//         // ... (rest of your code for listen, etc.)
+//       }
+//     }
+//   }
+
+//     std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
+//               << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
+//     int select_result = select(max_fd + 1, &read_fds, &write_fds, NULL, NULL);
+//     if (select_result < 0) {
+//       perror("Error on select");
+//       // Handle critical error (e.g., break out of loop)
+//       break;
+//     }
+
+//     for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it) {
+//       int sockfd = it->getSocketFD();
+//       if (FD_ISSET(sockfd, &read_fds)) {
+//         sockaddr_in cli_addr;
+//         socklen_t clilen = sizeof(cli_addr);
+//         int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+//         if (newsockfd < 0) {
+//           perror("Error on accept");
+//           continue; // Continue to next server in the loop
+//         }
+
+//         std::string request = readRequest(newsockfd, *it); // Replace with your function to read client request
+//         it->clientSocket = newsockfd;
+//         processRequest(request, *it); // Replace with your function to process the request
+
+//         // ... (Replace with your actual code for handling client request)
+//         // (e.g., parse request, generate response, send response)
+//         // ...
+
+//         // Close client socket after processing (assuming response is already sent)
+//         close(newsockfd);
+//         it->clientSocket = -1;
+//       }
+//     }
+//   }
+// }
 
 
 bool ends_with(const std::string& value, const std::string& ending)

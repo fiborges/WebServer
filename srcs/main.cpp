@@ -50,19 +50,6 @@
 
 
 
-// Variável global para armazenar o caminho do diretório
-const char *global_path = NULL;
-
-//Manipulador de sinal
-void handle_sigint(int sig)
-{
-	(void)sig;
-	if(global_path != NULL)
-		remove_directory(global_path);
-	std::cout << std::endl;
-	exit(0);
-}
-
 // void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, const conf_File_Info** config)
 // {
 //     ParserClass parser(configFileName);
@@ -112,6 +99,47 @@ void handle_sigint(int sig)
 // }
 
 
+// Variável global para armazenar o caminho do diretório
+//const char *global_path = NULL;
+std::vector<int> global_sockets;
+std::vector<ServerInfo> servers;
+std::vector<const conf_File_Info*> configs;
+
+
+
+//Manipulador de sinal
+//Manipulador de sinal
+void handle_sigint(int sig)
+{
+    (void)sig;
+    // if(global_path != NULL)
+    //     remove_directory(global_path);
+    
+    // Close the sockets
+    for(std::vector<int>::iterator it = global_sockets.begin(); it != global_sockets.end(); ++it)
+    {
+        shutdown(*it, SHUT_RDWR);
+        close(*it);
+    }
+    global_sockets.clear();	
+
+    // Free the memory for the ServerInfo and conf_File_Info objects
+    // for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    // {
+    //     it->freeMemory(); // You'll need to implement this method in the ServerInfo class
+    // }
+    servers.clear();
+
+    // for (std::vector<const conf_File_Info*>::iterator it = configs.begin(); it != configs.end(); ++it)
+    // {
+    //     delete *it;
+    // }
+    configs.clear();
+    
+    std::cout << std::endl;
+    exit(0);
+}
+
 
 void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, std::vector<const conf_File_Info*>* configs)
 {
@@ -126,6 +154,7 @@ void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, 
 		ServerInfo server;
 		setupServer(server, *config);
 		servers.push_back(server);
+		global_sockets.push_back(server.getSocketFD());
 	}
 }
 
@@ -133,8 +162,8 @@ void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, 
 int main(int argc, char **argv)
 {
 	// Configurar o manipulador de sinal
-		signal(SIGINT, handle_sigint);
-		global_path = "resources/";
+	signal(SIGINT, handle_sigint);
+	//global_path = "resources/";
 
 	if (argc != 2)
 	{
@@ -153,7 +182,8 @@ int main(int argc, char **argv)
 			runServer(servers);
 	
 		servers.clear();
-		remove_directory(global_path);
+
+		//remove_directory(global_path);
 
 		std::cout << GREEN << "\nConfig file parsed successfully\n" << RESET;
 	}

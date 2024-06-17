@@ -55,6 +55,9 @@ large:
 	@wget -O resources/FILES/webserver.pdf "https://cdn.intra.42.fr/pdf/pdf/125778/en.subject.pdf" > /dev/null 2>&1
 	@echo " ${GREEN}webserver.pdf${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
 
+leaks:  fclean all
+	@valgrind --leak-check=full --show-leak-kinds=all --trace-children=yes --track-fds=yes  --log-file=output.log ./webserver 4server2.conf
+
 clean:
 	@$(RM) $(BUILD)
 	@$(RM) -r $(DIR_BUILD)
@@ -69,6 +72,7 @@ clean:
 	@test -f resources/FILES/webserver.pdf && rm resources/FILES/video.mp4 > /dev/null 2>&1 || true
 	@test -d DATA && rm -rf DATA > /dev/null 2>&1 || true
 	@test -d resources/FILES && rm -rf resources/FILES > /dev/null 2>&1 || true
+	@test -f output.log && rm output.log > /dev/null 2>&1 || true
 	
 fclean:	clean
 	@$(RM) $(NAME)
