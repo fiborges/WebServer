@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/17 19:25:01 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/18 12:44:59 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ ServerInfo::~ServerInfo()
 	clientSockets.clear();  // Ou clientSockets = std::vector<int>();
 	portListen.clear();     // Ou portListen = std::vector<int>();
 	cli_addrs.clear(); 
-	std::cout << "ServerInfo destruído\n";
+	//std::cout << "ServerInfo destruído\n";
 }
 
 void	ServerInfo::setSocketFD(int socket)
@@ -308,7 +308,7 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		exit(EXIT_FAILURE);
 	}
 	// Add the socket to the global_sockets vector
-    global_sockets.push_back(sockfd);
+    //global_sockets.push_back(sockfd);
 	server.addSocketToList(sockfd);
 	server.setSocketFD(sockfd);
 	sockaddr_in serv_addr;
@@ -729,6 +729,7 @@ bool handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& request
 	return true;
 }
 
+
 // Principal Function to deal with rules from .conf file
 bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 {
@@ -742,6 +743,35 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	std::string browserRelativePath = removeLastSlash(requestMsg.path);
 	//std::cout << "$$ >>>>> requestMsg.path: " << browserRelativePath << std::endl;
 	//std::cout << "$$ >>>>> requestMsg.method: " << methodToString(requestMsg.method) << std::endl;
+
+
+	std::map<int, std::string> errorMap;
+	for (std::map<int, std::string>::const_iterator it = serverConfig.errorMap.begin(); it != serverConfig.errorMap.end(); ++it) {
+		if (it != serverConfig.errorMap.end())
+			errorMap[it->first] = it->second;
+		std::cout << "  " << it->first << " -> " << it->second << std::endl;
+
+		// Se a diretiva error_page estiver presente e o código de erro for 404, crie o arquivo 404.html
+		if (it->first == 404) {
+			std::string path = "bbf/var/www/html/404.html";
+			std::ofstream file(path.c_str());
+			if (file) {
+				file << "<html>\n"
+					<< "<head><title>404 Not Found</title></head>\n"
+					<< "<body>\n"
+					<< "<h1>404 Not Found</h1>\n"
+					<< "<p>The requested URL was not found on this server.</p>\n"
+					<< "</body>\n"
+					<< "</html>\n";
+				file.close();
+				std::cout << "  404.html file created at " << path << std::endl;
+			} else {
+				std::cerr << "  Error: Could not create 404.html file at " << path << std::endl;
+			}
+		}
+	}
+
+	
 
 	if (serverConfig.LocationsMap.size() > 0)
 	{
@@ -1439,92 +1469,183 @@ void ServerInfo::closeSocket(fd_set* read_fds) {
     }
 }
 
-void runServer(std::vector<ServerInfo>& servers)
+
+void setupRunServer(std::vector<ServerInfo>& servers, fd_set& read_fds, fd_set& write_fds, int& max_fd)
 {
-	fd_set read_fds, write_fds;
-	FD_ZERO(&read_fds);
-	FD_ZERO(&write_fds);
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
 
-	int max_fd = -1;
-	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
-	{
-		int sockfd = it->getSocketFD();
-		FD_SET(sockfd, &read_fds);
-		if (sockfd > max_fd)
-			max_fd = sockfd;
-		//it->closeSocket(&read_fds);
-	}
+    max_fd = -1;
+    for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    {
+        int sockfd = it->getSocketFD();
+        FD_SET(sockfd, &read_fds);
+        if (sockfd > max_fd)
+            max_fd = sockfd;
+    }
 
-	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
-	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+    std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
+    << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
-	time_t now = time(NULL);
-	char timestamp[100];
-	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+    time_t now = time(NULL);
+    char timestamp[100];
+    strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
 
-	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
-	{
-		std::vector<int> ports = it->getPortList();
-		for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
-			std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
-		std::cout << std::endl;
-	}
-
-	 while (1)
-	{
-		fd_set temp_read_fds = read_fds;
-		fd_set temp_write_fds = write_fds;
-		if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
-		{
-			perror("Error on select");
-			exit(EXIT_FAILURE);
-		}
-
-		for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
-		{
-			int sockfd = it->getSocketFD();
-			if (FD_ISSET(sockfd, &temp_read_fds))
-			{
-				sockaddr_in cli_addr;
-				socklen_t clilen = sizeof(cli_addr);
-				int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-				if (newsockfd < 0)
-				{
-					perror("Error on accept");
-					exit(EXIT_FAILURE);
-				}
-
-				std::string request = readRequest(newsockfd, *it);
-				//std::cout << "Request no RUNSERVER: " << request << std::endl;
-				it->clientSocket = newsockfd;
-				processRequest(request, *it);
-				
-				// verificar map de configuração //	criar nova funcao
-				//processRulesRequest(request, *it);
-
-				// Add new socket to write_fds
-				FD_SET(newsockfd, &write_fds);
-				if (newsockfd > max_fd)
-					max_fd = newsockfd;
-
-			}
-
-			if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
-			{
-				// Write response to the client
-				int clientSocket = it->clientSocket;
-
-				write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
-				// Remove client socket from read_fds and write_fds
-				FD_CLR(clientSocket, &read_fds);
-				FD_CLR(clientSocket, &write_fds);
-				//it->closeSocket(&read_fds);
-				close(clientSocket);
-				it->clientSocket = -1; // Set clientSocket to -1 after closing it
-			}
-		}
-	}
+    for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    {
+        std::vector<int> ports = it->getPortList();
+        for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+            std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
+        std::cout << std::endl;
+    }
 }
+
+void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_fds, int max_fd)
+{
+    while (!flag)
+    {
+        fd_set temp_read_fds = read_fds;
+        fd_set temp_write_fds = write_fds;
+        if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
+        {
+            if (errno == EINTR)
+            {
+                continue; // Continue o loop se a chamada select() foi interrompida por um sinal
+            }
+            perror("Error on select");
+            exit(EXIT_FAILURE);
+        }
+
+        for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+        {
+            int sockfd = it->getSocketFD();
+            if (FD_ISSET(sockfd, &temp_read_fds))
+            {
+                sockaddr_in cli_addr;
+                socklen_t clilen = sizeof(cli_addr);
+                int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+                if (newsockfd < 0)
+                {
+                    perror("Error on accept");
+                    exit(EXIT_FAILURE);
+                }
+
+                std::string request = readRequest(newsockfd, *it);
+                it->clientSocket = newsockfd;
+                processRequest(request, *it);
+
+                // Add new socket to write_fds
+                FD_SET(newsockfd, &write_fds);
+                if (newsockfd > max_fd)
+                    max_fd = newsockfd;
+            }
+
+            if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
+            {
+                // Write response to the client
+                int clientSocket = it->clientSocket;
+
+                write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
+                // Remove client socket from read_fds and write_fds
+                FD_CLR(clientSocket, &read_fds);
+                FD_CLR(clientSocket, &write_fds);
+                close(clientSocket);
+                it->clientSocket = -1; // Set clientSocket to -1 after closing it
+            }
+        }
+    }
+}
+
+// void runServer(std::vector<ServerInfo>& servers)
+// {
+// 	fd_set read_fds, write_fds;
+// 	FD_ZERO(&read_fds);
+// 	FD_ZERO(&write_fds);
+
+// 	int max_fd = -1;
+// 	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 	{
+// 		int sockfd = it->getSocketFD();
+// 		FD_SET(sockfd, &read_fds);
+// 		if (sockfd > max_fd)
+// 			max_fd = sockfd;
+// 		//it->closeSocket(&read_fds);
+// 	}
+
+// 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client "
+// 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
+
+// 	time_t now = time(NULL);
+// 	char timestamp[100];
+// 	strftime(timestamp, sizeof(timestamp), "[%d/%b/%Y %T]", localtime(&now));
+
+// 	for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 	{
+// 		std::vector<int> ports = it->getPortList();
+// 		for (std::vector<int>::iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+// 			std::cout << BG_CYAN_BLACK << timestamp << RESET << " Listening on http://127.0.0.1:" << CYAN << *portIt << RESET;
+// 		std::cout << std::endl;
+// 	}
+
+// 	while (!flag)
+// 	{
+// 		fd_set temp_read_fds = read_fds;
+// 		fd_set temp_write_fds = write_fds;
+// 		if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
+// 		{
+// 			if (errno == EINTR)
+// 			{
+// 				continue; // Continue o loop se a chamada select() foi interrompida por um sinal
+// 			}
+// 			perror("Error on select");
+// 			exit(EXIT_FAILURE);
+// 		}
+
+// 		for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 		{
+// 			int sockfd = it->getSocketFD();
+// 			if (FD_ISSET(sockfd, &temp_read_fds))
+// 			{
+// 				sockaddr_in cli_addr;
+// 				socklen_t clilen = sizeof(cli_addr);
+// 				int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+// 				if (newsockfd < 0)
+// 				{
+// 					perror("Error on accept");
+// 					exit(EXIT_FAILURE);
+// 				}
+
+// 				std::string request = readRequest(newsockfd, *it);
+// 				//std::cout << "Request no RUNSERVER: " << request << std::endl;
+// 				it->clientSocket = newsockfd;
+// 				processRequest(request, *it);
+				
+// 				// verificar map de configuração //	criar nova funcao
+// 				//processRulesRequest(request, *it);
+
+// 				// Add new socket to write_fds
+// 				FD_SET(newsockfd, &write_fds);
+// 				if (newsockfd > max_fd)
+// 					max_fd = newsockfd;
+
+// 			}
+
+// 			if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
+// 			{
+// 				// Write response to the client
+// 				int clientSocket = it->clientSocket;
+
+// 				write(clientSocket, it->getResponse().c_str(), it->getResponse().length());
+// 				// Remove client socket from read_fds and write_fds
+// 				FD_CLR(clientSocket, &read_fds);
+// 				FD_CLR(clientSocket, &write_fds);
+// 				//it->closeSocket(&read_fds);
+// 				close(clientSocket);
+// 				it->clientSocket = -1; // Set clientSocket to -1 after closing it
+// 			}
+// 		}
+// 	}
+// }
 
 
 // void runServer(std::vector<ServerInfo>& servers) {

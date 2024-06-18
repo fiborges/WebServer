@@ -101,43 +101,44 @@
 
 // Variável global para armazenar o caminho do diretório
 //const char *global_path = NULL;
-std::vector<int> global_sockets;
-std::vector<ServerInfo> servers;
-std::vector<const conf_File_Info*> configs;
+// std::vector<int> global_sockets;
+// std::vector<ServerInfo> servers;
+// std::vector<const conf_File_Info*> configs;
 
-
+volatile sig_atomic_t flag = 0;
 
 //Manipulador de sinal
 //Manipulador de sinal
 void handle_sigint(int sig)
 {
     (void)sig;
+	flag = 1; 
     // if(global_path != NULL)
     //     remove_directory(global_path);
     
     // Close the sockets
-    for(std::vector<int>::iterator it = global_sockets.begin(); it != global_sockets.end(); ++it)
-    {
-        shutdown(*it, SHUT_RDWR);
-        close(*it);
-    }
-    global_sockets.clear();	
-
-    // Free the memory for the ServerInfo and conf_File_Info objects
-    // for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    // for(std::vector<int>::iterator it = global_sockets.begin(); it != global_sockets.end(); ++it)
     // {
-    //     it->freeMemory(); // You'll need to implement this method in the ServerInfo class
+    //     shutdown(*it, SHUT_RDWR);
+    //     close(*it);
     // }
-    servers.clear();
+    // global_sockets.clear();	
 
-    // for (std::vector<const conf_File_Info*>::iterator it = configs.begin(); it != configs.end(); ++it)
-    // {
-    //     delete *it;
-    // }
-    configs.clear();
+    // // Free the memory for the ServerInfo and conf_File_Info objects
+    // // for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    // // {
+    // //     it->freeMemory(); // You'll need to implement this method in the ServerInfo class
+    // // }
+    // servers.clear();
+
+    // // for (std::vector<const conf_File_Info*>::iterator it = configs.begin(); it != configs.end(); ++it)
+    // // {
+    // //     delete *it;
+    // // }
+    // configs.clear();
     
-    std::cout << std::endl;
-    exit(0);
+    // std::cout << std::endl;
+    //exit(0);
 }
 
 
@@ -154,7 +155,7 @@ void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, 
 		ServerInfo server;
 		setupServer(server, *config);
 		servers.push_back(server);
-		global_sockets.push_back(server.getSocketFD());
+		//global_sockets.push_back(server.getSocketFD());
 	}
 }
 
@@ -178,8 +179,14 @@ int main(int argc, char **argv)
 		std::vector<ServerInfo> servers;
 		std::vector<const conf_File_Info*> configs;
 		setupServers(argv[1], servers, &configs);
-		for (size_t i = 0; i < configs.size(); ++i)
-			runServer(servers);
+		//for (size_t i = 0; i < configs.size(); ++i)
+		//	runServer(servers);
+		fd_set read_fds, write_fds;
+        int max_fd;
+        setupRunServer(servers, read_fds, write_fds, max_fd);
+
+        for (size_t i = 0; i < configs.size(); ++i)
+            runServer(servers, read_fds, write_fds, max_fd);
 	
 		servers.clear();
 

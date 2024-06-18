@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/17 18:03:52 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/18 12:13:34 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,8 @@
 # include "parser.hpp"
 # include "CGI.hpp"
 
-extern std::vector<int> global_sockets;
+//extern std::vector<int> global_sockets;
+extern volatile sig_atomic_t flag;
 
 class ServerInfo
 {
@@ -194,7 +195,8 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server);
 
 std::string readFileContent(const std::string& filePath);
 
-void runServer(std::vector<ServerInfo>& servers);
+void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_fds, int max_fd);
+//void runServer(std::vector<ServerInfo>& servers);
 
 std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
 
@@ -210,5 +212,8 @@ std::string removeTrailingSlash(const std::string& path);
 
 
 bool fileExistsInDirectory(const std::string& directory, const std::string& filename);
+
+void setupRunServer(std::vector<ServerInfo>& servers, fd_set& read_fds, fd_set& write_fds, int& max_fd);
+
 
 #endif
