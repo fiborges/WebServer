@@ -7,6 +7,7 @@
 #include "conf_info.hpp"
 #include "get.hpp"
 #include "CGI.hpp"
+#include "erros.hpp"
 
 class ParserClass;
 typedef std::vector<ParserConfig> ConfiguredServers;

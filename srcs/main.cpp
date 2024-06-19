@@ -106,38 +106,22 @@
 // std::vector<const conf_File_Info*> configs;
 
 volatile sig_atomic_t flag = 0;
+std::vector<std::string> createdFiles;
 
-//Manipulador de sinal
+
 //Manipulador de sinal
 void handle_sigint(int sig)
 {
     (void)sig;
-	flag = 1; 
-    // if(global_path != NULL)
-    //     remove_directory(global_path);
-    
-    // Close the sockets
-    // for(std::vector<int>::iterator it = global_sockets.begin(); it != global_sockets.end(); ++it)
-    // {
-    //     shutdown(*it, SHUT_RDWR);
-    //     close(*it);
-    // }
-    // global_sockets.clear();	
 
-    // // Free the memory for the ServerInfo and conf_File_Info objects
-    // // for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
-    // // {
-    // //     it->freeMemory(); // You'll need to implement this method in the ServerInfo class
-    // // }
-    // servers.clear();
+    for (std::vector<std::string>::iterator it = createdFiles.begin(); it != createdFiles.end(); ++it)
+    {
+        std::remove(it->c_str());
+    }
 
-    // // for (std::vector<const conf_File_Info*>::iterator it = configs.begin(); it != configs.end(); ++it)
-    // // {
-    // //     delete *it;
-    // // }
-    // configs.clear();
-    
-    // std::cout << std::endl;
+	std::cout << "\n\n" << RED << " ==> WebServer shutting down gracefully..." << RESET << std::endl;
+	flag = 1;
+
     //exit(0);
 }
 
@@ -192,7 +176,7 @@ int main(int argc, char **argv)
 
 		//remove_directory(global_path);
 
-		std::cout << GREEN << "\nConfig file parsed successfully\n" << RESET;
+		std::cout << GREEN << SBLINK << "\n ==> WebServer exit successfully!\n" << RESET;
 	}
 	catch(const std::exception &e)
 	{

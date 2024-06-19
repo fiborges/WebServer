@@ -5,11 +5,14 @@
 #include "RequestParser.hpp"
 #include "parser.hpp"
 #include "parserConfig.hpp"
+#include "get.hpp"
 
-class ServerErrorHandler {
+class ServerErrorHandler
+{
 public:
     ServerErrorHandler();
     std::string generateErrorPage(int errorCode);
+    std::string getErrorMessage(int errorCode);
 private:
     std::map<int, std::string> errorMessages;
     std::string generateErrorPage(int errorCode, const std::string& errorMessage);

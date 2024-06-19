@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/18 12:13:34 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/19 16:51:36 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,9 +73,12 @@
 # include "RequestParser.hpp"
 # include "parser.hpp"
 # include "CGI.hpp"
+//# include "erros.hpp"
 
 //extern std::vector<int> global_sockets;
 extern volatile sig_atomic_t flag;
+extern std::vector<std::string> createdFiles;
+
 
 class ServerInfo
 {
@@ -95,7 +98,7 @@ class ServerInfo
 		//int bytesReadTotal;
 		size_t contentLength;
 
-		std::string RootDirectory;
+		std::string rootOriginalDirectory;
 
 		std::map<int, conf_File_Info> configs;
 		//std::map<std::string, conf_File_Info> locationConfigs;
@@ -122,12 +125,14 @@ class ServerInfo
 		std::string	getRootUrl() const;
 		void		addSocketToList(int sockfd);
 
-		void		handleUnknownRequest(HTTrequestMSG& request, ServerInfo &server);
+		void handleUnknownRequest(HTTrequestMSG& requestMsg, ServerInfo &server, conf_File_Info &serverConfig);
+		//void		handleUnknownRequest(HTTrequestMSG& request, ServerInfo &server);
 		//void		handleGetRequest(const std::string& path, ServerInfo& server);
-		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server);
-		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server);
+		void		handleGetRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info &serverConfig);
+		void		handlePostRequest(HTTrequestMSG& request, ServerInfo &server, conf_File_Info &serverConfig);
 		//void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server, const conf_File_Info& config);
-		void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
+		void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server, conf_File_Info &serverConfig);
+		//void handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
 
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
@@ -169,6 +174,14 @@ class ServerInfo
 		}
 
 		void closeSocket(fd_set* read_fds);
+
+		std::string getRootOriginalDirectory() const {
+			return rootOriginalDirectory;
+		}
+
+		void setRootOriginalDirectory(const std::string& dir) {
+			rootOriginalDirectory = dir;
+		}
 			
 };
 
@@ -191,7 +204,7 @@ void		processRequest(const std::string& request, ServerInfo& server);
 
 bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
 
-void handleRequest(HTTrequestMSG& request, ServerInfo& server);
+void handleRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info &serverConfig);
 
 std::string readFileContent(const std::string& filePath);
 
@@ -214,6 +227,7 @@ std::string removeTrailingSlash(const std::string& path);
 bool fileExistsInDirectory(const std::string& directory, const std::string& filename);
 
 void setupRunServer(std::vector<ServerInfo>& servers, fd_set& read_fds, fd_set& write_fds, int& max_fd);
-
+void handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfig, const HTTrequestMSG& requestMsg);
+void processErrorPage(std::string second, int errorCode, const std::string& rootDirectory);
 
 #endif
