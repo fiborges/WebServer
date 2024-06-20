@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/19 16:51:36 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/20 14:00:20 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@
 //# include "erros.hpp"
 
 //extern std::vector<int> global_sockets;
+
 extern volatile sig_atomic_t flag;
 extern std::vector<std::string> createdFiles;
 
@@ -106,14 +107,14 @@ class ServerInfo
 		//std::string root_path;
 		std::string complete_path;
 
-		
+		//int newsockfdCount;
 
 
 	public:
-		int	clientSocket;
-	
 		ServerInfo();
 		~ServerInfo();
+	
+		int	clientSocket;
 
 		void		setSocketFD(int socket);
 		int			getSocketFD() const;
@@ -183,13 +184,26 @@ class ServerInfo
 			rootOriginalDirectory = dir;
 		}
 			
+		void handleError(const std::string& errorMessage);
+
+		// void setNewsockfdCount(int count) {
+		// 	newsockfdCount = count;
+		// }
+
+		// int getNewsockfdCount() {
+		// 	return newsockfdCount;
+		// }
+
+		void cleanup1();
+		void cleanup2();
+
 };
 
 std::string extractFileNameFromURL(const std::string& url);
 
 std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
-void		handleError(const std::string& errorMessage); //, int errorCode);
+//void		handleError(const std::string& errorMessage); //, int errorCode);
 bool		is_directory(const std::string &path);
 void setupDirectory(ServerInfo& server, const conf_File_Info& config);
 

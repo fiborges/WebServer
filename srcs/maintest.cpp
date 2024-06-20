@@ -1,5 +1,6 @@
 #include "../includes/librarie.hpp"
 #include "../includes/RequestParser.hpp"
+#include "../includes/get.hpp"
 
 void printHttpRequest(const HTTrequestMSG& msg) {
     std::cout << "Method: " << HTTPParser::methodToString(msg.method) << "\n";
@@ -111,7 +112,7 @@ int main() {
         printHttpRequest(msg);
         if (msg.is_cgi) {
             std::cout << BLUE << "CGI Environment Variables:\n" << RESET;
-            for (int i = 0; i < msg.cgi_env.size(); ++i) {
+            for (std::map<std::string, std::string>::size_type i = 0; i < msg.cgi_env.size(); ++i) {
                 std::map<std::string, std::string>::const_iterator it = msg.cgi_env.begin();
                 std::advance(it, i);
                 std::cout << "  " << it->first << ": " << it->second << "\n";

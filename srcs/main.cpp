@@ -108,6 +108,23 @@
 volatile sig_atomic_t flag = 0;
 std::vector<std::string> createdFiles;
 
+// class GlobalFile {
+// public:
+//     std::ifstream file;
+
+//     GlobalFile(const std::string& filename) {
+//         file.open(filename.c_str());
+//         if (!file) {
+//             throw std::runtime_error("Failed to open file");
+//         }
+//     }
+
+//     ~GlobalFile() {
+//         if (file.is_open()) {
+//             file.close();
+//         }
+//     }
+// };
 
 //Manipulador de sinal
 void handle_sigint(int sig)
@@ -139,13 +156,17 @@ void setupServers(const char* configFileName, std::vector<ServerInfo>& servers, 
 		ServerInfo server;
 		setupServer(server, *config);
 		servers.push_back(server);
+		//close(sockfd); 
 		//global_sockets.push_back(server.getSocketFD());
+	
 	}
+
 }
 
 
 int main(int argc, char **argv)
 {
+	//GlobalFile globalFile(argv[1]);
 	// Configurar o manipulador de sinal
 	signal(SIGINT, handle_sigint);
 	//global_path = "resources/";
@@ -171,9 +192,13 @@ int main(int argc, char **argv)
 
         for (size_t i = 0; i < configs.size(); ++i)
             runServer(servers, read_fds, write_fds, max_fd);
+
+		for(size_t i = 0; i < servers.size(); ++i)
+		{
+			close(servers[i].getSocketFD());
+		}
 	
 		servers.clear();
-
 		//remove_directory(global_path);
 
 		std::cout << GREEN << SBLINK << "\n ==> WebServer exit successfully!\n" << RESET;

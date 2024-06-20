@@ -6,15 +6,18 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/19 16:51:30 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/20 14:06:16 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/get.hpp"
 
+//std::vector<std::string> createdFiles;
+//volatile sig_atomic_t flag = 0;
+
 ServerInfo::ServerInfo()
 {
-	//std::cout << "ServerInfo criado\n";
+	std::cout << "ServerInfo criado\n";
 	// sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	// if (sockfd < 0)
 	// {
@@ -40,37 +43,22 @@ ServerInfo::ServerInfo()
 
 ServerInfo::~ServerInfo()
 {
-	// std::cout << "DESTRUCTOR : Closing socket: " << sockfd << std::endl;
-	//         if (sockfd != -1) {
-    //         shutdown(sockfd, SHUT_RDWR);
-    //         close(sockfd);
-    //     }
 
 	// if (sockfd != -1) {
-	// // Shutdown for read and write (similar to SHUT_RDWR in C++11)
-	// shutdown(sockfd, SHUT_RDWR);
-	// // Close the socket
-	// close(sockfd);
-	// }
-
-	//Iterate through client sockets
-	// for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it) {
-	// int clientSocket = *it;
-	// if (clientSocket != -1) {
-	// 	// Shutdown for read and write
-	// 	shutdown(clientSocket, SHUT_RDWR);
-	// 	// Close the socket
-	// 	close(clientSocket);
-	// }
-	// }
-
-
-
+    //     close(sockfd);
+    // }
+	
+    // for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it) {
+    //     if (*it != -1) {
+    //         close(*it);
+    //     }
+    // }
 	
 	clientSockets.clear();  // Ou clientSockets = std::vector<int>();
 	portListen.clear();     // Ou portListen = std::vector<int>();
 	cli_addrs.clear(); 
-	//std::cout << "ServerInfo destruído\n";
+    configs.clear();
+	std::cout << "destructor==" << std::endl;
 }
 
 void	ServerInfo::setSocketFD(int socket)
@@ -82,6 +70,7 @@ int	ServerInfo::getSocketFD() const
 {
 	return (sockfd);
 }
+
 
 void ServerInfo::setAddress(const sockaddr_in& address)
 {
@@ -144,6 +133,51 @@ conf_File_Info& ServerInfo::getConfig(int port)
 	return configs[port];
 }
 
+void ServerInfo::cleanup1()
+{
+    // Fecha todos os sockets de clientes
+    for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it) {
+        if (*it != -1) {
+            close(*it);
+        }
+    }
+    clientSockets.clear();
+
+    // Fecha o socket principal
+    if (sockfd != -1) {
+        close(sockfd);
+        sockfd = -1; // Evita uso futuro do socket fechado
+    }
+
+    // Limpa outras estruturas
+    portListen.clear();
+    cli_addrs.clear();
+    configs.clear();
+}
+
+
+void ServerInfo::cleanup2() {
+    // Close all open sockets
+    for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it) {
+        close(*it);
+    }
+    clientSockets.clear();
+
+    // Close the server socket
+    if (sockfd != -1) {
+        close(sockfd);
+        sockfd = -1;
+    }
+
+    // Clean up any other allocated resources here
+    cli_addrs.clear();
+    response.clear();
+    rootUrl.clear();
+    portListen.clear();
+    rootOriginalDirectory.clear();
+    configs.clear();
+    complete_path.clear();
+}
 
 // ================================================================================================= //
 // ======================================= HELPER FUNCTIONS ======================================== //
@@ -205,10 +239,12 @@ void printLog(const std::string& method, const std::string& path, const std::str
 	<< BLUE << "Connection ended successfully" << RESET << std::endl;
 }
 
+
 // Function to handle errors without exiting the program
-void handleError(const std::string& errorMessage) //, int errorCode)
+void ServerInfo::handleError(const std::string& errorMessage) //, int errorCode)
 {
 	std::cerr << RED1 << "\n" << errorMessage << RESET << std::endl;
+	cleanup2();
 	//exit(-1);
 }
 
@@ -243,97 +279,172 @@ bool is_directory(const std::string &path)
 }
 
 
-std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
-{
-	DIR* dir;
-	struct dirent* ent;
-	std::vector<std::string> files;
+// std::vector<std::string> readDirectoryContent(const std::string& directoryPath)
+// {
+// 	DIR* dir;
+// 	struct dirent* ent;
+// 	std::vector<std::string> files;
 
-	if ((dir = opendir(directoryPath.c_str())) != NULL)
-	{
-		// Add all the files and directories within directory to the files vector
-		while ((ent = readdir(dir)) != NULL)
-		{
-			std::string filename = ent->d_name;
-			if (filename != "." && filename != "..") // Skip the current directory and parent directory
-				files.push_back(filename);
-		}
-		closedir(dir);
-	}
-	else
-	{
-		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
-		return files;
-	}
+// 	if ((dir = opendir(directoryPath.c_str())) != NULL)
+// 	{
+// 		// Add all the files and directories within directory to the files vector
+// 		while ((ent = readdir(dir)) != NULL)
+// 		{
+// 			std::string filename = ent->d_name;
+// 			if (filename != "." && filename != "..") // Skip the current directory and parent directory
+// 				files.push_back(filename);
+// 		}
+// 		closedir(dir);
+// 	}
+// 	else
+// 	{
+// 		std::cerr << "Could not open directory: " << directoryPath << std::endl; // Could not open directory
+// 		return files;
+// 	}
 
-	std::sort(files.begin(), files.end()); // Sort the files vector
+// 	std::sort(files.begin(), files.end()); // Sort the files vector
 
-	return files;
-}
+// 	return files;
+// }
+
+// ==> checkar o HOST antes de criar server
+
 
 // Setup the server
 void setupServer(ServerInfo& server, const conf_File_Info& config)
 {
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
-	{
-		perror("Error on socket creation");
-		exit(EXIT_FAILURE);
-	}
-	// Add the socket to the global_sockets vector
-    //global_sockets.push_back(sockfd);
-	server.addSocketToList(sockfd);
-	server.setSocketFD(sockfd);
-	sockaddr_in serv_addr;
-	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(config.portListen);
-	server.setAddress(serv_addr);
-	// setupDirectory(server, config);
-	// std::string serverRoot = config.RootDirectory;
-	// std::string fileUploadDirectory = config.fileUploadDirectory;
-	// setupUploadDirectory(serverRoot, fileUploadDirectory);
+    int sockfd = -1;
+    try {
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0)
+        {
+            throw std::runtime_error("Error on socket creation");
+        }
+        // Add the socket to the global_sockets vector
+        //global_sockets.push_back(sockfd);
+        server.addSocketToList(sockfd);
+        server.setSocketFD(sockfd); // Set the socket descriptor here
+        sockaddr_in serv_addr;
+        memset(&serv_addr, 0, sizeof(serv_addr));
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_addr.s_addr = INADDR_ANY;
+        serv_addr.sin_port = htons(config.portListen);
+        server.setAddress(serv_addr);
+        // setupDirectory(server, config);
+        // std::string serverRoot = config.RootDirectory;
+        // std::string fileUploadDirectory = config.fileUploadDirectory;
+        // setupUploadDirectory(serverRoot, fileUploadDirectory);
 
-	int opt = 1;
-	if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	{
-		perror("setsockopt");
-		handleError("Error on setsockopt.");
-		exit(EXIT_FAILURE);
-	}
-	server.setSocketFD(sockfd);
-	if (bind(server.getSocketFD(), (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		perror("Error on binding");
-		handleError("Error on binding.");
-		exit(EXIT_FAILURE);
-	}
-	if (listen(server.getSocketFD(), 128) < 0)
-	{
-		perror("Error on listen");
-		exit(EXIT_FAILURE);
-	}
-	
-	server.addPortToList(config.portListen);
-	server.addConfig(config.portListen, config);
-	
-	std::string actualRoot = config.RootDirectory;
-	conf_File_Info configForFirstPort = server.getConfig(server.getPortList()[0]);
-	std::string serverRoot = configForFirstPort.RootDirectory;
+        int opt = 1;
+        if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        {
+            throw std::runtime_error("Error on setsockopt");
+        }
+        // server.setSocketFD(sockfd); // This line is not needed
+        if (bind(server.getSocketFD(), (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+        {
+            throw std::runtime_error("Error on binding");
+        }
+        if (listen(server.getSocketFD(), 128) < 0)
+        {
+            throw std::runtime_error("Error on listen");
+        }
+        
+        server.addPortToList(config.portListen);
+        server.addConfig(config.portListen, config);
+        
+        std::string actualRoot = config.RootDirectory;
+        conf_File_Info configForFirstPort = server.getConfig(server.getPortList()[0]);
+        std::string serverRoot = configForFirstPort.RootDirectory;
 
-	//std::cout << "Actual Root: " << actualRoot << std::endl;
-	//std::cout << "Server Root: " << serverRoot << std::endl;
+        //std::cout << "Actual Root: " << actualRoot << std::endl;
+        //std::cout << "Server Root: " << serverRoot << std::endl;
 
-	if (serverRoot != actualRoot)
+        if (serverRoot != actualRoot)
+        {
+            throw std::runtime_error("404 Not Found: The requested server root does not match the actual server root.");
+        }
+        
+        if(serverRoot[serverRoot.size() - 1] != '/')
+            serverRoot += "/";
+        //std::cout << " +++++ Server Root: " << serverRoot << std::endl;
+    }
+    catch (const std::runtime_error& e)
 	{
-		throw std::runtime_error("404 Not Found: The requested server root does not match the actual server root.");
-	}
-	
-	if(serverRoot[serverRoot.size() - 1] != '/')
-		serverRoot += "/";
-	//std::cout << " +++++ Server Root: " << serverRoot << std::endl;
+        if (sockfd != -1)
+		{
+            close(sockfd);
+        }
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
 }
+
+
+// Setup the server
+// void setupServer(ServerInfo& server, const conf_File_Info& config)
+// {
+// 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+// 	if (sockfd < 0)
+// 	{
+// 		perror("Error on socket creation");
+// 		exit(EXIT_FAILURE);
+// 	}
+// 	// Add the socket to the global_sockets vector
+//     //global_sockets.push_back(sockfd);
+// 	server.addSocketToList(sockfd);
+// 	server.setSocketFD(sockfd);
+// 	sockaddr_in serv_addr;
+// 	memset(&serv_addr, 0, sizeof(serv_addr));
+// 	serv_addr.sin_family = AF_INET;
+// 	serv_addr.sin_addr.s_addr = INADDR_ANY;
+// 	serv_addr.sin_port = htons(config.portListen);
+// 	server.setAddress(serv_addr);
+// 	// setupDirectory(server, config);
+// 	// std::string serverRoot = config.RootDirectory;
+// 	// std::string fileUploadDirectory = config.fileUploadDirectory;
+// 	// setupUploadDirectory(serverRoot, fileUploadDirectory);
+
+// 	int opt = 1;
+// 	if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+// 	{
+// 		perror("setsockopt");
+// 		server.handleError("Error on setsockopt.");
+// 		exit(EXIT_FAILURE);
+// 	}
+// 	server.setSocketFD(sockfd);
+// 	if (bind(server.getSocketFD(), (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+// 	{
+// 		perror("Error on binding");
+// 		server.handleError("Error on binding.");
+// 		exit(EXIT_FAILURE);
+// 	}
+// 	if (listen(server.getSocketFD(), 128) < 0)
+// 	{
+// 		perror("Error on listen");
+// 		exit(EXIT_FAILURE);
+// 	}
+	
+// 	server.addPortToList(config.portListen);
+// 	server.addConfig(config.portListen, config);
+	
+// 	std::string actualRoot = config.RootDirectory;
+// 	conf_File_Info configForFirstPort = server.getConfig(server.getPortList()[0]);
+// 	std::string serverRoot = configForFirstPort.RootDirectory;
+
+// 	//std::cout << "Actual Root: " << actualRoot << std::endl;
+// 	//std::cout << "Server Root: " << serverRoot << std::endl;
+
+// 	if (serverRoot != actualRoot)
+// 	{
+// 		throw std::runtime_error("404 Not Found: The requested server root does not match the actual server root.");
+// 	}
+	
+// 	if(serverRoot[serverRoot.size() - 1] != '/')
+// 		serverRoot += "/";
+// 	//std::cout << " +++++ Server Root: " << serverRoot << std::endl;
+// }
 
 
 //Read the request from the client and return it as a string
@@ -350,7 +461,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		if (bytesRead < 0)
 		{
 			perror("recv");
-			handleError("Error reading from socket.");
+			server.handleError("Error reading from socket.");
 			exit(-1);
 		}
 		else if (bytesRead == 0)
@@ -362,10 +473,6 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		if (request.find("\r\n\r\n") != std::string::npos)
 			break;
 	}
-
-
-
-	
 
 	// Read the Body
 	HTTPParser parser;
@@ -393,7 +500,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			
 			if (bytesRead < 0)
 			{
-				handleError("Error reading from socket2.");
+				server.handleError("Error reading from socket2.");
 				exit(-1);
 			}
 			else if (bytesRead == 0)
@@ -1603,8 +1710,12 @@ void setupRunServer(std::vector<ServerInfo>& servers, fd_set& read_fds, fd_set& 
     }
 }
 
+#include <list>
+
+
 void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_fds, int max_fd)
 {
+	std::list<int> socketsToClose;
     while (!flag)
     {
         fd_set temp_read_fds = read_fds;
@@ -1632,7 +1743,8 @@ void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_f
                     perror("Error on accept");
                     exit(EXIT_FAILURE);
                 }
-
+				//it->setNewsockfdCount(newsockfd);
+				std::cout << "portas abertas: " << newsockfd << std::endl;
                 std::string request = readRequest(newsockfd, *it);
                 it->clientSocket = newsockfd;
                 processRequest(request, *it);
@@ -1641,6 +1753,7 @@ void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_f
                 FD_SET(newsockfd, &write_fds);
                 if (newsockfd > max_fd)
                     max_fd = newsockfd;
+	
             }
 
             if (it != servers.end() && it->clientSocket >= 0 && FD_ISSET(it->clientSocket, &temp_write_fds))
@@ -1652,10 +1765,38 @@ void runServer(std::vector<ServerInfo>& servers, fd_set read_fds, fd_set write_f
                 // Remove client socket from read_fds and write_fds
                 FD_CLR(clientSocket, &read_fds);
                 FD_CLR(clientSocket, &write_fds);
-                close(clientSocket);
-                it->clientSocket = -1; // Set clientSocket to -1 after closing it
-            }
+                socketsToClose.push_back(clientSocket);
+				it->clientSocket = -1;
+
+				//socketsToClose.push_back(it->getNewsockfdCount());
+			    //it->setNewsockfdCount(-1);  // Set clientSocket to -1 after closing it
+			}
+			
         }
+        for (std::list<int>::iterator it = socketsToClose.begin(); it != socketsToClose.end(); ++it)
+        {
+            close(*it);
+        }
+        socketsToClose.clear();
+    }
+	// Cleanup section
+    for (std::vector<ServerInfo>::iterator it = servers.begin(); it != servers.end(); ++it)
+    {
+		std::cout << "portas abertas par alimpar: " << it->clientSocket << std::endl;
+        if (it->clientSocket >= 0)
+        {
+            FD_CLR(it->clientSocket, &read_fds);
+            FD_CLR(it->clientSocket, &write_fds);
+            close(it->clientSocket);
+            it->clientSocket = -1;
+        }
+
+        // if (it->getNewsockfdCount() >= 0)
+        // {
+        //     FD_CLR(it->getNewsockfdCount(), &write_fds);
+        //     close(it->getNewsockfdCount());
+        //     it->setNewsockfdCount(-1);
+        // }
     }
 }
 
