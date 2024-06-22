@@ -40,6 +40,8 @@ download:
 	@wget https://cdn.intra.42.fr/document/document/24737/cgi_tester > /dev/null 2>&1
 	@wget https://cdn.intra.42.fr/document/document/24738/ubuntu_tester > /dev/null 2>&1
 	@echo "\n[${WHITE}${GREEN}WebServer mandatory project testers$(RESET)${WHITE}] ${GREEN}--> $(SBLINK)Downloaded and Ready${RESET}\n"
+	@chmod +x ubuntu_cgi_tester
+	@chmod +x ubuntu_tester
 
 large:
 	@mkdir -p resources/FILES
