@@ -46,6 +46,7 @@ private:
     void parseLocationModule(const ParserUtils::Strings& pieces);
     void ensureAllModulesClosed();
     void checkAndConfirmValidMap();
+    void handleHost(const ParserUtils::Strings& tokens, conf_File_Info* config);
     std::string createErrorMsg(const std::string& erro_msg);
     void ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition);
 

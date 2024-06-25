@@ -53,6 +53,10 @@ const std::string ParserConfig::acquireRoot() const
     return Server_configurations->RootDirectory + "/";
 }
 
+const std::string& ParserConfig::retrieveHost() const {
+    return Server_configurations->host;
+}
+
 bool ParserConfig::checkAutoIndex() const
 {
     return Server_configurations->directoryListingEnabled;

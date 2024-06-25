@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/22 06:44:43 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/25 11:09:08 by filipa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/get.hpp"
 
-//std::vector<std::string> createdFiles;
-//volatile sig_atomic_t flag = 0;
+std::vector<std::string> createdFiles;
+volatile sig_atomic_t flag = 0;
 
 ServerInfo::ServerInfo()
 {

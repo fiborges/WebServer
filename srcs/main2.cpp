@@ -16,6 +16,7 @@ void printConfig(const conf_File_Info& config, const std::string& location = "")
 
     std::cout << BOLD << "int portListen: " << RESET << config.portListen << std::endl;
     std::cout << BOLD << "std::string ServerName: " << RESET << config.ServerName << std::endl;
+    std::cout << BOLD << "std::string host: " << RESET << config.host << std::endl;  // Exibir variável host
     std::cout << BOLD << "std::string defaultFile: " << RESET << config.defaultFile << std::endl;
     std::cout << BOLD << "std::string RootDirectory: " << RESET << config.RootDirectory << std::endl;
     std::cout << BOLD << "std::string Path_CGI: " << RESET << config.Path_CGI << std::endl;
@@ -82,6 +83,9 @@ int main() {
             testMatching(servers[i], "/upload/file");
             testMatching(servers[i], "/redirect");
             testMatching(servers[i], "/non-existent");
+
+            // Exibir a variável host para cada servidor
+            std::cout << BOLD << "Host: " << RESET << servers[i].retrieveHost() << std::endl;
         }
 
         delete parser; // Liberar a memória alocada
