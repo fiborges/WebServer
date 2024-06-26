@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 11:29:14 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/26 17:29:03 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,11 @@ CGI::CGI()
 CGI::~CGI()
 {
 	std::cout << "CGI Destructor\n";
+}
+
+CGI::CGI(HTTrequestMSG Request)
+{
+	this->Request_ = Request;
 }
 
 void	CGI::FindFinalBoundary(std::string& buffer)
@@ -107,6 +112,26 @@ void	CGI::CreateEnv()
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	this->ClientSocket_ = ClientSocket;
+
+	// std::cout << "\n\nRECEIVED REQUEST ON CGI\n\n";
+	// std::cout << "|-|" <<buffer << "|-|" << "\n\nFINISH\n\n";
+
+	std::cout << this->Request_.method << std::endl;
+	std::cout << this->Request_.state << std::endl;
+	std::cout << this->Request_.path << std::endl;
+	std::cout << this->Request_.version << std::endl;
+	std::cout << this->Request_.query << std::endl;
+	for (std::map<std::string, std::string>::iterator it = this->Request_.headers.begin(); it != this->Request_.headers.end(); it++)
+		std::cout << it->first << " | " << it->second << std::endl;
+	std::cout << this->Request_.body << std::endl;
+	std::cout << this->Request_.content_length << std::endl;
+	std::cout << this->Request_.process_bytes << std::endl;
+	std::cout << this->Request_.error << std::endl;
+	std::cout << this->Request_.boundary << std::endl;
+	std::cout << this->Request_.is_cgi << std::endl;
+	for (std::map<std::string, std::string>::iterator it = this->Request_.cgi_env.begin(); it != this->Request_.cgi_env.end(); it++)
+		std::cout << it->first << " | " << it->second << std::endl;
+	std::cout << this->Request_.temp_file_path << std::endl;
 
 	/*
 		FindFinalBoundary will find the boundary Header and had two '-' characters
@@ -203,7 +228,7 @@ void	CGI::Parent_process()
 
 	wait(NULL);
 
-	std::cout << "CILD FINISH\n\n";
+	std::cout << "CHILD FINISH\n\n";
 
 	char		line[1024];
 	std::string	response;

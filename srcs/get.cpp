@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/05/28 12:24:14 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/26 17:32:04 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -288,7 +288,7 @@ std::string readRequest(int sockfd)
 		// Send 100 Continue response here
 		std::string response = "HTTP/1.1 100 Continue\r\n\r\n";
 		send(sockfd, response.c_str(), response.size(), 0);
-	
+
 
 		// Read the body
 		HTTPParser parser;
@@ -331,7 +331,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 		//std::cout << "Received empty request, ignoring." << std::endl;
 		return;
 	}
-	
+
 	//std::string method;
 	//std::string path;
 	//std::string body;
@@ -342,7 +342,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	size_t maxSize = 100000; // Aumentar o tamanho máximo para 10MB
 	if(maxSize > requestCopy.size())
 		maxSize = requestCopy.size();
-	//std::cout << "Max size: " << maxSize << std::endl;	
+	//std::cout << "Max size: " << maxSize << std::endl;
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		// 	// *DEBUG*
@@ -371,10 +371,10 @@ void processRequest(const std::string& request, ServerInfo& server)
 			handleRequest(requestMsg, server);
 		else
 		{
-			CGI cgi;
+			CGI cgi(requestMsg);
 			//std::cout << server.getSockets << "\n\n";
 			cgi.PerformCGI(server.clientSocket , ParaCGI);
-			
+
 			//std::cout << MAGENTA << "\t\t\t==> BRUNO Implementa 😁😁😁" << RESET << std::endl;
 			printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		}
@@ -589,7 +589,7 @@ void	runServer(std::vector<ServerInfo>& servers)
 		if (sockfd > max_fd)
 			max_fd = sockfd;
 	}
-	
+
 	std::cout << "\n<" << GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << " Waiting for client " \
 	<< GREEN << "=+=+=+=+=+=+=+=+=+=" << RESET << ">\n" << std::endl;
 
@@ -629,7 +629,7 @@ void	runServer(std::vector<ServerInfo>& servers)
 				}
 
 				std::string request = readRequest(newsockfd);
-				
+
 				//=================
 				it->clientSocket = newsockfd;
 				//=================

@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/05/28 10:30:32 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/06/26 17:21:18 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CGI_HPP
 #define CGI_HPP
+
+#include "RequestParser.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -39,6 +41,8 @@ class CGI
 		int	C_FD[2];
 		int	pid;
 
+		HTTrequestMSG	Request_;
+
 		std::string	FinalBoundary_;
 		std::string	Body_;
 		std::string	FileName_;
@@ -65,6 +69,8 @@ class CGI
 		//CGI(const CGI& other);
 		//const CGI&	operator=(const CGI& other);
 		~CGI();
+
+		CGI(HTTrequestMSG Request);
 
 		// Public Method
 		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
