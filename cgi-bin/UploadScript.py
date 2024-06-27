@@ -1,12 +1,12 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    U_File_test4.py                                    :+:      :+:    :+:    #
+#    UploadScript.py                                    :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/05/28 15:04:28 by brolivei         ###   ########.fr        #
+#    Updated: 2024/06/27 15:36:06 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,16 +30,16 @@ if __name__ == '__main__':
 			print("Usage: python script.py folder_name")
 			sys.exit(1)
 
-		path_info = os.environ.get('PATH_INFO', '')
+		upload_dir = os.environ.get('UPLOAD_DIR', '')
 
-		if not path_info:
+		if not upload_dir:
 			print("Status: 400 Bad Request")
 			print("Content-Type: text/plain")
 			print()
 			print("Error: PATH_INFO not set")
 			sys.exit(1)
 
-		folder_name = path_info.lstrip('/')
+		folder_name = upload_dir.lstrip('/')
 
 		file_name = os.environ.get("FILE_NAME", "uploaded_file")
 		#file_content = sys.argv[3].encode('utf-8')

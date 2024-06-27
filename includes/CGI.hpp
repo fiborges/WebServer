@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/05 15:19:20 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/27 13:48:57 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/stat.h>
 
 #include "../includes/conf_info.hpp"
+#include "../includes/RequestParser.hpp"
 //#include "LOG_CLASS.hpp"
 
 class CGI
@@ -40,12 +42,16 @@ class CGI
 		int	C_FD[2];
 		int	pid;
 
+		conf_File_Info	Info_;
+		HTTrequestMSG	Request_;
+
 		std::string	FinalBoundary_;
 		std::string	Body_;
 		std::string	FileName_;
 		std::string	FileContent_;
 		// PATH_INFO:
 		std::string	Path_Info_;
+		std::string	ScriptURI_;
 
 		std::vector<std::string>	EnvStrings_;
 		std::vector<char*>			Env_;
@@ -53,6 +59,7 @@ class CGI
 		void	Child_process();
 		void	Parent_process();
 
+		void	CreateScriptURI();
 		void	ExtractPathInfo(std::string& buffer, conf_File_Info& info);
 		void	FindFinalBoundary(std::string& buffer);
 		void	ExtractBody(std::string& buffer);
@@ -63,6 +70,8 @@ class CGI
 
 		void	CreateEnv();
 
+		bool	FileExists(const std::string& path);
+
 	public:
 		// Orthodox
 		CGI();
@@ -70,8 +79,10 @@ class CGI
 		//const CGI&	operator=(const CGI& other);
 		~CGI();
 
+		CGI(conf_File_Info info, HTTrequestMSG request);
+
 		// Public Method
-		void	PerformCGI(const int ClientSocket, std::string& buffer_in, conf_File_Info& info);
+		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
 
 		class	NoScriptAllowed : public std::exception
 		{
@@ -86,6 +97,12 @@ class CGI
 		};
 
 		class	NoUploadPathConfigurated : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class	NonexistentScript : public std::exception
 		{
 			public:
 				virtual const char* what() const throw();

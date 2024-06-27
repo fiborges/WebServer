@@ -9,7 +9,7 @@ RM			=	rm -rf
 CFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -g #-fsanitize=address
 DIR_SRCS	=	srcs
 DIR_BUILD	=	build
-SRCS		=	$(DIR_SRCS)/main2.cpp $(DIR_SRCS)/parser.cpp\
+SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp\
 				$(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp\
 				$(DIR_SRCS)/RequestParser.cpp $(DIR_SRCS)/erros.cpp\
 				$(DIR_SRCS)/get.cpp $(DIR_SRCS)/CGI.cpp
@@ -24,7 +24,7 @@ $(NAME): $(BUILD)
 	@echo "   \ \/  \/ / _ \ '_ \/ __|/ _ \ '__\ \ / / _ \ '__|";
 	@echo "    \  /\  /  __/ |_| \__ \  __/ |   \ V /  __/ |   ";
 	@echo "     \/  \/ \___|_.__/|___/\___|_|    \_/ \___|_|   ";
-	@echo "                                            		   ";                                          
+	@echo "                                            		   ";
 	@-$(CC) $(CFLAGS) $(BUILD) -o $(NAME)
 
 $(DIR_BUILD)/%.o	:	$(DIR_SRCS)/%.cpp
@@ -75,7 +75,7 @@ clean:
 	@test -d DATA && rm -rf DATA > /dev/null 2>&1 || true
 	@test -d resources/FILES && rm -rf resources/FILES > /dev/null 2>&1 || true
 	@test -f output.log && rm output.log > /dev/null 2>&1 || true
-	
+
 fclean:	clean
 	@$(RM) $(NAME)
 	@$(RM) $(BUILD)
