@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/27 15:27:47 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/28 14:57:42 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,11 +41,13 @@ void	CGI::CreateScriptURI()
 		for (size_t i = 0; i != pyPosition + 3; i++)
 			this->ScriptURI_ += this->Request_.path[i];
 	}
+	else
+		throw NoScriptAllowed();
 
 	std::cout << "SCRIPT_URI CREATED:\n\n";
 	std::cout << this->ScriptURI_ << "\n\n";
 
-	if (this->Info_.Path_CGI.substr(0, this->Info_.Path_CGI.size()) != this->Info_.Path_CGI)
+	if (this->ScriptURI_.substr(0, this->Info_.Path_CGI.size()) != this->Info_.Path_CGI)
 		throw NotAcceptedUploadPath();
 	this->ScriptURI_.insert(0, ".");
 
@@ -161,16 +163,28 @@ void	CGI::CreateEnv()
 	std::cout << "UPLOAD_DIR: " << this->Info_.fileUploadDirectory << std::endl;
 
 	key = "CONTENT_LENGTH=";
-	value = this->FileContent_.size();
-
-	std::cout << "We are putting on CONTENT_LENGTH=" << this->FileContent_.size() << std::endl;
-	std::cout << "The content length coming from the request: " << this->Request_.CONTENT_LENGTH << std::endl;
+	value = this->Request_.content_length;
 
 	this->EnvStrings_.push_back(key + value);
 
 	key = "FILE_NAME=";
 
 	this->EnvStrings_.push_back(key + this->FileName_);
+
+	key = "GATEWAY_INTERFACE=";
+	value = "CGI/1.1";
+
+	this->EnvStrings_.push_back(key + value);
+
+	key = "QUERY_STRING=";
+	value = this->Request_.query;
+
+	this->EnvStrings_.push_back(key + value);
+
+	key = "REQUEST_METHOD=";
+	value = this->Request_.cgi_env["REQUEST_METHOD"];
+
+	this->EnvStrings_.push_back(key + value);
 
 	for (size_t	i = 0; i < this->EnvStrings_.size(); i++)
 		this->Env_.push_back(const_cast<char*>(this->EnvStrings_[i].c_str()));
@@ -182,58 +196,71 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	if (this->Info_.fileUploadDirectory.empty())
 		throw NoUploadPathConfigurated();
 
-	std::cout << "SERVER_INFO:\n\n";
+	if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
+	{
+		std::cout << "Dealing with get request\n";
+		this->ClientSocket_ = ClientSocket;
 
-	std::cout << this->Info_.defaultFile << std::endl;
-	std::cout << this->Info_.RootDirectory << std::endl;
-	std::cout << "PATH_CGI: " << this->Info_.Path_CGI << std::endl;
-	std::cout << this->Info_.fileUploadDirectory << std::endl << std::endl;
+		CreateScriptURI();
+		CreateEnv();
+		return ;
+	}
 
-	std::cout << "REQUEST_INFO:\n\n";
+	else
+	{
+		// std::cout << "SERVER_INFO:\n\n";
 
-	std::cout << this->Request_.method << std::endl;
-	std::cout << this->Request_.path << std::endl;
-	std::cout << this->Request_.query << std::endl;
-	std::cout << this->Request_.content_length << std::endl;
+		// std::cout << this->Info_.defaultFile << std::endl;
+		// std::cout << this->Info_.RootDirectory << std::endl;
+		// std::cout << "PATH_CGI: " << this->Info_.Path_CGI << std::endl;
+		// std::cout << this->Info_.fileUploadDirectory << std::endl << std::endl;
 
-	for (std::map<std::string, std::string>::iterator it = this->Request_.cgi_env.begin(); it != this->Request_.cgi_env.end(); it++)
-		std::cout << it->first << " | " << it->second << std::endl;
+		// std::cout << "REQUEST_INFO:\n\n";
 
-	this->ClientSocket_ = ClientSocket;
+		// std::cout << this->Request_.method << std::endl;
+		// std::cout << this->Request_.path << std::endl;
+		// std::cout << this->Request_.query << std::endl;
+		// std::cout << this->Request_.content_length << std::endl;
 
-	CreateScriptURI();
+		// for (std::map<std::string, std::string>::iterator it = this->Request_.cgi_env.begin(); it != this->Request_.cgi_env.end(); it++)
+		// 	std::cout << it->first << " | " << it->second << std::endl;
 
-	ExtractPathInfo(buffer, this->Info_);
+		this->ClientSocket_ = ClientSocket;
 
-	/*
-		FindFinalBoundary will find the boundary Header and had two '-' characters
-	in the beginning and two of them in the end. That will give us the Final boundary
-	since this is the rule of that boundary.
+		CreateScriptURI();
 
-	*/
+		//ExtractPathInfo(buffer, this->Info_);
 
-	FindFinalBoundary(buffer);
+		/*
+			FindFinalBoundary will find the boundary Header and had two '-' characters
+		in the beginning and two of them in the end. That will give us the Final boundary
+		since this is the rule of that boundary.
 
-	/*
-		ExtractBody, making use of the rule, after the headers, the sequence "\r\n\r\n"
-	is allways there, it extract all the body of the request, from the starting boundary
-	until the end boundary.
+		*/
 
-	*/
+		FindFinalBoundary(buffer);
 
-	ExtractBody(buffer);
+		/*
+			ExtractBody, making use of the rule, after the headers, the sequence "\r\n\r\n"
+		is allways there, it extract all the body of the request, from the starting boundary
+		until the end boundary.
 
-	/*
-		ExtractFileName just gets the filename header in the body of the request to be
-	given to the script.
+		*/
 
-	*/
+		ExtractBody(buffer);
 
-	ExtractFileName();
+		/*
+			ExtractFileName just gets the filename header in the body of the request to be
+		given to the script.
 
-	ExtractFileContent();
+		*/
 
-	CreateEnv();
+		ExtractFileName();
+
+		ExtractFileContent();
+
+		CreateEnv();
+	}
 
 	// LOG_CLASS::CreateLog("FinalBoundary", this->FinalBoundary_);
 
@@ -282,15 +309,17 @@ void	CGI::Child_process()
 	tmp.insert(0, ".");
 
 	if (chdir(tmp.c_str()) != 0)
-		std::cout << "Did not change the directory\n";
+	{
+		std::cout << "Could not change to CGI directory\n";
+		return ;
+	}
 
-	std::string	tmp2;
+	std::string	tmp2; // Becouse we change the directory we need to re-new the Script_URI
 
 	size_t	script_place = this->ScriptURI_.find(tmp);
 	for (size_t i = script_place + tmp.size(); i != this->ScriptURI_.size(); i++)
 		tmp2 += this->ScriptURI_[i];
 	tmp2.insert(0, ".");
-
 
 	python_args[0] = "/usr/bin/python3";
 	//python_args[1] = "./cgi-bin/UploadScript.py";
@@ -299,7 +328,7 @@ void	CGI::Child_process()
 	python_args[2] = NULL;
 
 	std::cout << "PATH where the script is running: " << tmp << std::endl;
-	std::cout << "SCRIPT_URI: " << tmp2 << std::endl;
+	std::cout << "SCRIPT_URI FROM CGI DIRECTORY: " << tmp2 << std::endl;
 
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
@@ -313,7 +342,8 @@ void	CGI::Parent_process()
 	close(this->P_FD[0]);
 	dup2(this->C_FD[0], STDIN_FILENO);
 
-	SendContentToScript();
+	if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST")
+		SendContentToScript();
 
 	wait(NULL);
 

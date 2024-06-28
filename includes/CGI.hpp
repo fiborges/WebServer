@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/27 13:48:57 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/06/28 14:10:55 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,8 @@ class CGI
 		int	P_FD[2];
 		int	C_FD[2];
 		int	pid;
+
+		std::map<std::string, std::string>::iterator it_;
 
 		conf_File_Info	Info_;
 		HTTrequestMSG	Request_;
