@@ -8,8 +8,8 @@ std::vector<std::string> createdFiles;
 //Manipulador de sinal
 void handle_sigint(int sig)
 {
-    (void)sig;
-    for (std::vector<std::string>::iterator it = createdFiles.begin(); it != createdFiles.end(); ++it)
+	(void)sig;
+	for (std::vector<std::string>::iterator it = createdFiles.begin(); it != createdFiles.end(); ++it)
 	{
 		std::remove(it->c_str());
 	}
@@ -19,18 +19,18 @@ void handle_sigint(int sig)
 
 void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
 {
-    ParserClass parser(configFileName);
-    ConfiguredServers configuredServers = parser.fetchSpecifications();
+	ParserClass parser(configFileName);
+	ConfiguredServers configuredServers = parser.fetchSpecifications();
 
-    for (size_t i = 0; i < configuredServers.size(); ++i)
-    {
-        ParserConfig parserConfig = configuredServers[i];
-        const conf_File_Info* config = parserConfig.getServerConfigurations();
-        configs->push_back(config);
-        ServerInfo* server = new ServerInfo();
+	for (size_t i = 0; i < configuredServers.size(); ++i)
+	{
+		ParserConfig parserConfig = configuredServers[i];
+		const conf_File_Info* config = parserConfig.getServerConfigurations();
+		configs->push_back(config);
+		ServerInfo* server = new ServerInfo();
 		setupServer(*server, *config);
 		servers.push_back(server);
-    }
+	}
 }
 
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 		//for (size_t i = 0; i < configs.size(); ++i)
 		//	runServer(servers);
 		fd_set read_fds, write_fds;
-        int max_fd;
+		int max_fd;
 
 		int sair2 = 0;
 		for(size_t i = 0; i < servers.size(); ++i)
@@ -84,9 +84,6 @@ int main(int argc, char **argv)
 			delete servers[i];
 		}
 		servers.clear();
-	
-	
-		//remove_directory(global_path);
 
 	}
 	catch(const std::exception &e)

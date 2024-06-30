@@ -109,3 +109,38 @@ Por favor, note que esses são apenas alguns dos possíveis códigos de status H
 
 mudar caminho da root manual de resorses para o caminho vindo da perser da filipa
 Postman
+
+
+
+Quando o Nginx encontra múltiplos blocos `server` com a mesma diretiva `listen`
+(ou seja, ouvindo na mesma porta), ele usa a diretiva `server_name` para diferenciar as
+requisições e determinar qual bloco `server` deve ser usado para tratar a requisição.
+O procedimento é o seguinte:
+
+1. **Análise da Porta**: Nginx verifica a porta na qual a requisição foi recebida. No caso,
+ambas as configurações estão ouvindo na porta `8080`.
+
+2. **Seleção do Server Name**: Nginx olha para o cabeçalho `Host` da requisição HTTP para
+determinar o `server_name` correspondente. Se o valor do cabeçalho `Host` corresponder ao
+`server_name` de um dos blocos `server`, esse bloco será usado para processar a requisição.
+
+    - Se a requisição vier com o cabeçalho `Host` definido como `example.com`, o bloco
+      `server` com `server_name maria` será selecionado.
+    - Se a requisição vier com o cabeçalho `Host` definido como `localhost`, o bloco
+      `server` com `server_name fred` será selecionado.
+
+3. **Processamento da Requisição**: Uma vez selecionado o bloco `server` correto, Nginx
+processa a requisição de acordo com as diretivas definidas dentro desse bloco.
+
+4. **Caso de Falha na Correspondência**: Se nenhuma correspondência for encontrada
+(por exemplo, se o cabeçalho `Host` da requisição não corresponder a nenhum `server_name`
+configurado), Nginx usará o primeiro bloco `server` para a porta especificada como padrão.
+
+5. **Diretivas Específicas**: Dentro de cada bloco `server`, as diretivas definem como
+tratar diferentes caminhos de URL (`location`), como lidar com erros (`error_page`),
+limitações de tamanho de corpo de requisição (`client_body_size`), entre outras configurações.
+
+Portanto, a primeira etapa na determinação de qual bloco `server` será usado é baseada
+na combinação da porta e do `server_name` através do cabeçalho `Host` da requisição.
+Isso permite que múltiplos sites sejam hospedados no mesmo servidor físico, diferenciando-os
+por nome de domínio ou subdomínio.

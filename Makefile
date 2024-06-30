@@ -58,7 +58,7 @@ large:
 	@echo " ${GREEN}webserver.pdf${WHITE} ${}--> $(SBLINK)Created and Ready${RESET}\n"
 
 leaks:  fclean all
-	@valgrind --leak-check=full --show-leak-kinds=all --trace-children=yes --track-fds=yes  --log-file=output.log ./webserver 4server2.conf
+	@valgrind --leak-check=full --show-leak-kinds=all --trace-children=yes --track-fds=yes  --log-file=output.log ./webserver 8server2.conf
 
 clean:
 	@$(RM) $(BUILD)
