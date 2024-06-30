@@ -23,6 +23,7 @@ struct conf_File_Info
     std::string defaultFile;
     std::string RootDirectory;
     std::string Path_CGI;
+    std::string host;
     bool directoryListingEnabled;
     std::map<int, std::string> errorMap;
     ForwardingURL redirectURL;

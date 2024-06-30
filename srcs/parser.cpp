@@ -209,6 +209,7 @@ void ParserClass::checkAndConfirmValidMap() {
     validationMapKeys["cgi_ext"] = &ParserClass::confirmCGIExtension; // Adicionado
     validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDirectory;
     validationMapKeys["upload_to"] = &ParserClass::confirmUploadToDirectory; // Adicionado
+    validationMapKeys["host"] = &ParserClass::handleHost; // Adicionado
 }
 
 std::string ParserClass::createErrorMsg(const std::string& erro_msg)
@@ -393,6 +394,13 @@ void ParserClass::endCurrentModule()
 {
     contextHistory.pop();
     conFileInProgress = contextHistory.top();
+}
+
+void ParserClass::handleHost(const ParserUtils::Strings& tokens, conf_File_Info* config) {
+    if (tokens.size() != 2) {
+        throw std::runtime_error("Invalid host configuration");
+    }
+    config->host = tokens[1];
 }
 
 ParserClass::ConfigError::ConfigError(const std::string& err)

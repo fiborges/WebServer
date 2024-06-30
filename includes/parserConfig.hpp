@@ -18,6 +18,7 @@ public:
     const std::string& retrieveServerName() const;
     const std::string& fetchIndex() const;
     const std::string acquireRoot() const;
+    const std::string& retrieveHost() const;
     bool checkAutoIndex() const;
     bool validateErrorPage(int errorNumber) const;
     const std::string& fetchErrorPage(int errorNumber) const;

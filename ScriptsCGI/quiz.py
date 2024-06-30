@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import cgi
 import cgitb
+
 cgitb.enable()  # Enable debugging
 
 print("Content-Type: text/html\n")
