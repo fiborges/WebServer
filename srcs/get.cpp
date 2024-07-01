@@ -6,9 +6,10 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 11:12:55 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/01 15:10:16 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "../includes/get.hpp"
 
@@ -315,7 +316,75 @@ bool is_directory(const std::string &path)
 
 
 // ==> checkar o HOST antes de criar server para ver nome do servidor
+void checkDoors(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg)
+{
+    (void)requestMsg;
+	(void)server;
 
+    int portNumber = serverConfig.portListen;
+    std::string serverName = serverConfig.ServerName;
+    std::cout << "[B] Port Number: " << portNumber << std::endl;
+    std::cout << "[B] Server Name: " << serverName << std::endl;
+    //std::cout << "Adicionando ao portServerMap em checkDoors." << std::endl;
+    //server.setServerMapName(portNumber, serverName); // Esta função precisa ser atualizada
+
+    //std::map<int, std::vector<std::string> > portServerMap = server.getPortServerMap();
+
+    // for (std::map<int, std::vector<std::string> >::const_iterator it = portServerMap.begin(); it != portServerMap.end(); ++it) {
+    //     for (std::vector<std::string>::const_iterator vecIt = it->second.begin(); vecIt != it->second.end(); ++vecIt) {
+    //         std::cout << "[B] Port Number: " << it->first << " [B] Server Name: " << *vecIt << std::endl;
+    //     }
+    // }
+}
+
+
+//const conf_File_Info& checkDoors2(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg) {
+// bool checkDoors2(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg)
+// {
+// 	(void)serverConfig;
+//     (void)requestMsg; // Continua ignorando requestMsg se não for usado
+//     //std::map<int, std::string> portServerMap = server.getPortServerMap();
+
+
+// 	for (std::map<int, std::string>::iterator it = portServerMap.begin(); it != portServerMap.end(); ++it) {
+// 		std::cout << "!! [DOOR2] Porta: " << it->first << ", Host: " << it->second << std::endl;
+// 		}
+
+// 	std::string host = "fred";
+//     // Convertendo o mapa para um vetor para facilitar o acesso por índice
+//     std::vector<std::pair<int, std::string> > portServerVec(portServerMap.begin(), portServerMap.end());
+// 	std::cout << "Tamanho de portServerVec: " << portServerVec.size() << std::endl;
+// 	for (size_t i = 0; i < portServerVec.size(); ++i)
+// 	{
+// 		std::cout << "[1]" << std::endl;
+// 		std::cout << "[i]: " << i << std::endl;
+// 		for (size_t j = i + 1; j < portServerVec.size(); ++j)
+// 		{
+// 			std::cout << "[2]" << std::endl;
+// 			std::cout << "[j]: " << j << std::endl;
+// 			// Adicionando prints para verificar os hosts antes da comparação
+// 			std::cout << "Comparando porta " << portServerVec[i].first << " (host: " << portServerVec[i].second << ") com porta " << portServerVec[j].first << " (host: " << portServerVec[j].second << ")" << std::endl;
+// 			//if (portServerVec[i].second == portServerVec[j].second)
+// 			//{
+// 			//	std::cout << "[3]" << std::endl;
+// 				std::cout << "Porta " << portServerVec[i].first << " e Porta " << portServerVec[j].first << " estão associadas ao mesmo host: " << portServerVec[i].second << std::endl;
+// 				if (portServerVec[i].second == host)
+// 				{
+// 					std::cout << "  [C] ## HOST if: " << host << " associado à porta " << portServerVec[i].first << std::endl;
+// 					return true; // Retorna serverConfig quando o host correspondente é encontrado
+// 					// Não é necessário o break após o return
+// 				}
+// 				else
+// 				{
+// 					std::cout << "  [C] ## HOST else: " << host << " não associado à porta " << portServerVec[i].first << std::endl;
+// 					// O continue é desnecessário aqui, pois é o último comando do loop
+// 				}
+// 			//}
+// 		}
+// 	}
+
+//     return false;
+// }
 
 // Setup the server
 void setupServer(ServerInfo& server, const conf_File_Info& config)
