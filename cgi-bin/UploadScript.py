@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/06/28 13:29:14 by brolivei         ###   ########.fr        #
+#    Updated: 2024/07/01 10:56:31 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,8 +47,34 @@ if __name__ == '__main__':
 		#save_file(folder_name, file_name, file_content)
 		save_file(upload_dir, file_name)
 
-		print("Status: 200 OK")
-		print("Content-Type: text/plain")
-		print()
-		print("File saved successfully!")
+		print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
+		print(f"""
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    		<title>File Upload</title>
+
+			<style>
+
+				/* Body of the page */
+				body {{
+					font-family: Arial, sans-serif;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					height: 70vh;
+					margin: 0;
+					background-color: #01012b;
+				}}
+			</style>
+
+			<body>
+				<div class="container">
+					<h1>CGI RESPONSE</h1>
+					<a href="/index.html"><b>Home</b></button></a>
+				</div>
+			</body>
+		""")
 

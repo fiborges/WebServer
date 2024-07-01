@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/28 14:57:42 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/01 14:58:41 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,10 @@ void	CGI::ExtractPathInfo(std::string& buffer, conf_File_Info& info)
 
 void	CGI::FindFinalBoundary(std::string& buffer)
 {
-	ssize_t	boundPosition = buffer.find("boundary=");
+	size_t	boundPosition = buffer.find("boundary=");
+
+	if (boundPosition == std::string::npos)
+		return ;
 
 	while (std::isalnum(buffer[boundPosition + 9]) || buffer[boundPosition + 9] == '-')
 	{
@@ -145,6 +148,28 @@ void	CGI::SendContentToScript()
 	close(this->P_FD[1]);
 }
 
+void	CGI::SendAllRequestToScript()
+{
+	size_t	contentLength = this->TotalRequest_.size();
+	size_t	bytesWritten = 0;
+
+	std::cout << "TOTAL_REQUEST:\n\n" << this->TotalRequest_ << "\n\n";
+
+	while (bytesWritten < contentLength)
+	{
+		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
+		ssize_t	bytes = write(this->P_FD[1], this->TotalRequest_.data() + bytesWritten, chunkSize);
+
+		if (bytes < 0)
+		{
+			std::cerr << "Error writtting to pipe\n";
+			break;
+		}
+		bytesWritten += bytes;
+	}
+	close(this->P_FD[1]);
+}
+
 void	CGI::CreateEnv()
 {
 	std::string	key;
@@ -193,9 +218,7 @@ void	CGI::CreateEnv()
 
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
-	if (this->Info_.fileUploadDirectory.empty())
-		throw NoUploadPathConfigurated();
-
+	this->TotalRequest_ = buffer;
 	if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
 	{
 		std::cout << "Dealing with get request\n";
@@ -203,11 +226,13 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 		CreateScriptURI();
 		CreateEnv();
-		return ;
+		//return ;
 	}
 
 	else
 	{
+		if (this->Info_.fileUploadDirectory.empty())
+			throw NoUploadPathConfigurated();
 		// std::cout << "SERVER_INFO:\n\n";
 
 		// std::cout << this->Info_.defaultFile << std::endl;
@@ -237,28 +262,29 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		since this is the rule of that boundary.
 
 		*/
+			FindFinalBoundary(buffer);
+		if (this->FinalBoundary_.empty() == false)
+		{
 
-		FindFinalBoundary(buffer);
+			/*
+				ExtractBody, making use of the rule, after the headers, the sequence "\r\n\r\n"
+			is allways there, it extract all the body of the request, from the starting boundary
+			until the end boundary.
 
-		/*
-			ExtractBody, making use of the rule, after the headers, the sequence "\r\n\r\n"
-		is allways there, it extract all the body of the request, from the starting boundary
-		until the end boundary.
+			*/
 
-		*/
+			ExtractBody(buffer);
 
-		ExtractBody(buffer);
+			/*
+				ExtractFileName just gets the filename header in the body of the request to be
+			given to the script.
 
-		/*
-			ExtractFileName just gets the filename header in the body of the request to be
-		given to the script.
+			*/
 
-		*/
+			ExtractFileName();
 
-		ExtractFileName();
-
-		ExtractFileContent();
-
+			ExtractFileContent();
+		}
 		CreateEnv();
 	}
 
@@ -310,7 +336,7 @@ void	CGI::Child_process()
 
 	if (chdir(tmp.c_str()) != 0)
 	{
-		std::cout << "Could not change to CGI directory\n";
+		std::cerr << "Could not change to CGI directory\n";
 		return ;
 	}
 
@@ -327,13 +353,25 @@ void	CGI::Child_process()
 	python_args[1] = tmp2.c_str();
 	python_args[2] = NULL;
 
-	std::cout << "PATH where the script is running: " << tmp << std::endl;
-	std::cout << "SCRIPT_URI FROM CGI DIRECTORY: " << tmp2 << std::endl;
-
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
 	std::cerr << "Error in execve\n";
 	exit(EXIT_FAILURE);
+}
+
+void	CGI::WaitFiveSeconds()
+{
+	clock_t	start;
+	clock_t end;
+
+	start = clock();
+	end = clock();
+	while ((double(end - start) / CLOCKS_PER_SEC) < 5)
+	{
+		if (waitpid(this->pid, NULL, WNOHANG) != 0)
+			break;
+		end = clock();
+	}
 }
 
 void	CGI::Parent_process()
@@ -342,19 +380,30 @@ void	CGI::Parent_process()
 	close(this->P_FD[0]);
 	dup2(this->C_FD[0], STDIN_FILENO);
 
-	if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST")
+	if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST"  && this->FileContent_.empty() == false)
 		SendContentToScript();
-
-	wait(NULL);
+	//if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
+	else
+	{
+		std::cout << "ENTER HERE\n\n";
+		SendAllRequestToScript();
+	}
 
 	char		line[1024];
 	std::string	response;
 
-	response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+	WaitFiveSeconds();
+
+	if (waitpid(this->pid, NULL, WNOHANG) == 0)
+	{
+		kill(this->pid, SIGKILL);
+		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nBAD SCRIPT RESPONSE HAS TO BE HERE";
+	}
+	//wait(NULL);
 
 	while (1)
 	{
-		memset(line, 0, 1024);
+		//memset(line, 0, 1024);
 		ssize_t	bytesRead = read(this->C_FD[0], line, 1023);
 
 		if (bytesRead < 0)
@@ -370,6 +419,10 @@ void	CGI::Parent_process()
 	}
 	close(this->C_FD[0]);
 	std::cout << "Response: " << response << std::endl;
+	if (response.empty() == true)
+	{
+		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nBAD REQUEST RESPONSE HAS TO BE HERE";
+	}
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 }
 
