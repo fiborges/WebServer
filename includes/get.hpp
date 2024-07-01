@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/06/22 15:09:32 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/01 09:29:58 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,6 +174,10 @@ bool		isDirectory(const std::string& path);
 
 void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory);
 void createHtmlFiles(const std::string& rootDirectory);
+
+
+void checkDoors(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg);
+
 
 void		setupRunServer(std::vector<ServerInfo*>& servers, fd_set& read_fds, fd_set& write_fds, int& max_fd);
 void		runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_fds, int max_fd);
