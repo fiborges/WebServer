@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/06/28 14:10:55 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/01 14:56:27 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ class CGI
 		// PATH_INFO:
 		std::string	Path_Info_;
 		std::string	ScriptURI_;
+		std::string	TotalRequest_;
 
 		std::vector<std::string>	EnvStrings_;
 		std::vector<char*>			Env_;
@@ -69,10 +70,13 @@ class CGI
 		void	ExtractFileContent();
 
 		void	SendContentToScript();
+		void	SendAllRequestToScript();
 
 		void	CreateEnv();
 
 		bool	FileExists(const std::string& path);
+
+		void	WaitFiveSeconds();
 
 	public:
 		// Orthodox
