@@ -5,10 +5,12 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 21:30:49 by filipa           ###   ########.fr       */
+/*   Created: Invalid date        by                   #+#    #+#             */
+/*   Updated: 2024/07/02 10:44:49 by filipa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
 
 
 #include "../includes/get.hpp"
@@ -45,7 +47,8 @@ ServerInfo::~ServerInfo()
 	clientSockets.clear();
 
 	// Close the server socket
-	if (sockfd != -1) {
+	if (sockfd >= 0)
+	{
 		close(sockfd);
 		sockfd = -1;
 	}
@@ -315,77 +318,6 @@ bool is_directory(const std::string &path)
 }
 
 
-// ==> checkar o HOST antes de criar server para ver nome do servidor
-void checkDoors(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg)
-{
-    (void)requestMsg;
-	(void)server;
-
-    int portNumber = serverConfig.portListen;
-    std::string serverName = serverConfig.ServerName;
-    std::cout << "[B] Port Number: " << portNumber << std::endl;
-    std::cout << "[B] Server Name: " << serverName << std::endl;
-    //std::cout << "Adicionando ao portServerMap em checkDoors." << std::endl;
-    //server.setServerMapName(portNumber, serverName); // Esta função precisa ser atualizada
-
-    //std::map<int, std::vector<std::string> > portServerMap = server.getPortServerMap();
-
-    // for (std::map<int, std::vector<std::string> >::const_iterator it = portServerMap.begin(); it != portServerMap.end(); ++it) {
-    //     for (std::vector<std::string>::const_iterator vecIt = it->second.begin(); vecIt != it->second.end(); ++vecIt) {
-    //         std::cout << "[B] Port Number: " << it->first << " [B] Server Name: " << *vecIt << std::endl;
-    //     }
-    // }
-}
-
-
-//const conf_File_Info& checkDoors2(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg) {
-// bool checkDoors2(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg)
-// {
-// 	(void)serverConfig;
-//     (void)requestMsg; // Continua ignorando requestMsg se não for usado
-//     //std::map<int, std::string> portServerMap = server.getPortServerMap();
-
-
-// 	for (std::map<int, std::string>::iterator it = portServerMap.begin(); it != portServerMap.end(); ++it) {
-// 		std::cout << "!! [DOOR2] Porta: " << it->first << ", Host: " << it->second << std::endl;
-// 		}
-
-// 	std::string host = "fred";
-//     // Convertendo o mapa para um vetor para facilitar o acesso por índice
-//     std::vector<std::pair<int, std::string> > portServerVec(portServerMap.begin(), portServerMap.end());
-// 	std::cout << "Tamanho de portServerVec: " << portServerVec.size() << std::endl;
-// 	for (size_t i = 0; i < portServerVec.size(); ++i)
-// 	{
-// 		std::cout << "[1]" << std::endl;
-// 		std::cout << "[i]: " << i << std::endl;
-// 		for (size_t j = i + 1; j < portServerVec.size(); ++j)
-// 		{
-// 			std::cout << "[2]" << std::endl;
-// 			std::cout << "[j]: " << j << std::endl;
-// 			// Adicionando prints para verificar os hosts antes da comparação
-// 			std::cout << "Comparando porta " << portServerVec[i].first << " (host: " << portServerVec[i].second << ") com porta " << portServerVec[j].first << " (host: " << portServerVec[j].second << ")" << std::endl;
-// 			//if (portServerVec[i].second == portServerVec[j].second)
-// 			//{
-// 			//	std::cout << "[3]" << std::endl;
-// 				std::cout << "Porta " << portServerVec[i].first << " e Porta " << portServerVec[j].first << " estão associadas ao mesmo host: " << portServerVec[i].second << std::endl;
-// 				if (portServerVec[i].second == host)
-// 				{
-// 					std::cout << "  [C] ## HOST if: " << host << " associado à porta " << portServerVec[i].first << std::endl;
-// 					return true; // Retorna serverConfig quando o host correspondente é encontrado
-// 					// Não é necessário o break após o return
-// 				}
-// 				else
-// 				{
-// 					std::cout << "  [C] ## HOST else: " << host << " não associado à porta " << portServerVec[i].first << std::endl;
-// 					// O continue é desnecessário aqui, pois é o último comando do loop
-// 				}
-// 			//}
-// 		}
-// 	}
-
-//     return false;
-// }
-
 // Setup the server
 void setupServer(ServerInfo& server, const conf_File_Info& config)
 {
@@ -478,6 +410,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			server.handleError("Error reading from socket.");
 			server.sair = 1;
 			return request;
+			close(sockfd);//acrescimo evolution sheet
 			//exit(-1);
 		}
 		else if (bytesRead == 0)
@@ -516,13 +449,15 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 			if (bytesRead < 0)
 			{
-				server.handleError("Error reading from socket2.");
-				exit(-1);
+				server.handleError("Error reading from socket.");
+				break ;
+				//exit(-1);
 			}
 			else if (bytesRead == 0)
 			{
-				std::cerr << "Socket has been closed by the other end." << std::endl;
-				break;
+				server.handleError("Socket has been closed by the other end.");
+				// std::cerr << "Socket has been closed by the other end." << std::endl;
+				break ;
 			}
 			else
 			{
@@ -1744,6 +1679,126 @@ void setupRunServer(std::vector<ServerInfo*>& servers, fd_set& read_fds, fd_set&
 	}
 }
 
+
+
+// void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_fds, int max_fd)
+// {
+// 	int newsockfd = -1;
+// 	std::list<int> socketsToClose;
+// 	bool cleanupAndExit = false;
+
+// 	while (!flag && !cleanupAndExit)
+// 	{
+// 		fd_set temp_read_fds = read_fds;
+// 		fd_set temp_write_fds = write_fds;
+// 		if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
+// 		{
+// 			if (errno == EINTR)
+// 				continue;
+// 			perror("Error on select");
+// 			servers[0]->sair = 1;
+// 			return;
+// 		}
+
+// 		for (std::vector<ServerInfo*>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 		{
+// 			int sockfd = (*it)->getSocketFD();
+// 			if (FD_ISSET(sockfd, &temp_read_fds))
+// 			{
+// 				sockaddr_in cli_addr;
+// 				socklen_t clilen = sizeof(cli_addr);
+// 				newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+// 				if (newsockfd < 0)
+// 				{
+// 					perror("Error on accept");
+// 					for (std::vector<ServerInfo*>::iterator server = servers.begin(); server != servers.end(); ++server)
+// 					{
+// 						if ((*server)->clientSocket >= 0)
+// 						{
+// 							FD_CLR((*server)->clientSocket, &read_fds);
+// 							FD_CLR((*server)->clientSocket, &write_fds);
+// 							close((*server)->clientSocket);
+// 							(*server)->clientSocket = -1;
+// 						}
+// 					}
+// 					(*it)->sair = 1;
+// 					return;
+// 				}
+// 				std::string request = readRequest(newsockfd, **it);
+// 				(*it)->clientSocket = newsockfd;
+// 				processRequest(request, **it);
+
+// 				FD_SET(newsockfd, &write_fds);
+// 				if (newsockfd > max_fd)
+// 				{
+// 					max_fd = newsockfd;
+// 				}
+// 			}
+
+// 			if ((*it)->clientSocket >= 0 && FD_ISSET((*it)->clientSocket, &temp_write_fds))
+// 			{
+// 				int clientSocket = (*it)->clientSocket;
+// 				if (write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length()) < 0)
+// 					std::cerr << "Error writing to socket" << std::endl;
+// 				FD_CLR(clientSocket, &read_fds);
+// 				FD_CLR(clientSocket, &write_fds);
+// 				socketsToClose.push_back(clientSocket);
+// 				clientSocket = -1;
+// 			}
+// 		}
+
+// 		for (std::list<int>::iterator it = socketsToClose.begin(); it != socketsToClose.end(); ++it)
+// 			close(*it);
+// 		socketsToClose.clear();
+// 	}
+
+// 	// Cleanup section
+// 	for (std::vector<ServerInfo*>::iterator it = servers.begin(); it != servers.end(); ++it)
+// 	{
+// 		if ((*it)->clientSocket >= 0) 
+// 		{
+// 			FD_CLR((*it)->clientSocket, &read_fds);
+// 			FD_CLR((*it)->clientSocket, &write_fds);
+// 			close((*it)->clientSocket);
+// 			(*it)->clientSocket = -1;
+// 		}
+// 		if (newsockfd != -1)
+// 			close(newsockfd);
+
+// 		int sockfd = (*it)->getSocketFD();
+// 		FD_CLR(sockfd, &read_fds);
+// 		FD_CLR(sockfd, &write_fds);
+// 		close(sockfd);
+// 	}
+// 	if (newsockfd != -1)
+// 	{
+// 		close(newsockfd);
+// 		newsockfd = -1;
+// 	}
+// }
+
+
+bool ends_with(const std::string& value, const std::string& ending)
+{
+	if (ending.size() > value.size()) return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+std::string getContentType(const std::string& filePath)
+{
+	std::string contentType;
+	if (ends_with(filePath, ".html"))
+		contentType = "text/html";
+	else if (ends_with(filePath, ".css"))
+		contentType = "text/css";
+	else if (ends_with(filePath, ".js"))
+		contentType = "application/javascript";
+	else // Default to text/plain for unknown file types
+		contentType = "text/plain";
+	return contentType;
+}
+
+
 void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_fds, int max_fd)
 {
 	int newsockfd = -1;
@@ -1835,24 +1890,4 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 		FD_CLR(sockfd, &write_fds);
 		close(sockfd);
 	}
-}
-
-bool ends_with(const std::string& value, const std::string& ending)
-{
-	if (ending.size() > value.size()) return false;
-	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
-
-std::string getContentType(const std::string& filePath)
-{
-	std::string contentType;
-	if (ends_with(filePath, ".html"))
-		contentType = "text/html";
-	else if (ends_with(filePath, ".css"))
-		contentType = "text/css";
-	else if (ends_with(filePath, ".js"))
-		contentType = "application/javascript";
-	else // Default to text/plain for unknown file types
-		contentType = "text/plain";
-	return contentType;
 }

@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 09:29:58 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/01 16:35:21 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,7 +146,7 @@ void		setupDirectory(ServerInfo& server, const conf_File_Info& config);
 int			remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 int			remove_directory(const char *path); //to use in main() to remove the temp directory
 void		setupServer(ServerInfo& server, const conf_File_Info& config);
-std::string	readRequest(int sockfd);
+
 std::string	readRequest(int sockfd, ServerInfo& server);
 void		processRequest(const std::string& request, ServerInfo& server);
 bool		processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
