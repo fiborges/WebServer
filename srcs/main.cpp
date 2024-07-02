@@ -22,8 +22,9 @@ void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers,
 	ConfiguredServers configuredServers = parser.fetchSpecifications();
 	std::set<int> addedPorts;
 	std::map<int, std::vector<ParserConfig> > serversByPort;
-	//HTTrequestMSG httpRequestMsg;
-	std::string host = "rodrigo1"; //httpRequestMsg.getHostName();
+	HTTrequestMSG httpRequestMsg;
+	std::string host = httpRequestMsg.hostname;
+	std::cout << "====> Hostname: " << httpRequestMsg.hostname << std::endl;
 
 	// Organize servers by port
 	for (size_t i = 0; i < configuredServers.size(); ++i)
@@ -87,6 +88,7 @@ int main(int argc, char **argv)
 		std::vector<ServerInfo*> servers;
 		std::vector<const conf_File_Info*> configs;
 		setupServers(argv[1], servers, &configs);
+		HTTrequestMSG httpRequestMsg;
 		//for (size_t i = 0; i < configs.size(); ++i)
 		//	runServer(servers);
 		fd_set read_fds, write_fds;
@@ -105,9 +107,12 @@ int main(int argc, char **argv)
 		if (sair2 == 0)
 		{
 			setupRunServer(servers, read_fds, write_fds, max_fd);
+			std::cout << "[hostname] main: "<< httpRequestMsg.hostname << std::endl;
 
 			for (size_t i = 0; i < configs.size(); ++i)
+			{
 				runServer(servers, read_fds, write_fds, max_fd);
+			}
 			std::cout << GREEN << SBLINK << "\n ==> WebServer exit successfully!\n\n" << RESET;
 		}
 

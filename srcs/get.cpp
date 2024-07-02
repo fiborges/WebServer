@@ -3,20 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: Invalid date        by                   #+#    #+#             */
-/*   Updated: 2024/07/02 10:44:49 by filipa           ###   ########.fr       */
+/*   Created: Invalid Date        by                   #+#    #+#             */
+/*   Updated: 2024/07/02 13:12:34 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
-
-
 #include "../includes/get.hpp"
 
-std::vector<std::string> createdFiles;
-volatile sig_atomic_t flag = 0;
+//std::vector<std::string> createdFiles;
+//volatile sig_atomic_t flag = 0;
 
 ServerInfo::ServerInfo()
 {
@@ -425,7 +423,9 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 	// Read the Body
 	HTTPParser parser;
+	HTTrequestMSG aaa;//NOVO
 	size_t contentLength = parser.getContentLength(request);
+	std::cout << "hostname: " << aaa.hostname << std::endl;
 	// int raw = parser.get
 	server.setContentLength(contentLength);
 	//std::cout << "  Content-Length1: " << contentLength << std::endl;
@@ -474,7 +474,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			//std::cout << "Bytes read total: " << bytesReadTotal << std::endl; // Print the number of bytes read
 		}
 	}
-	//std::cout << "Request received: \n" << request << std::endl; // Print the request
+	std::cout << "Request received: \n" << request << std::endl; // Print the request
 
 	return request;
 }
@@ -1115,6 +1115,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		std::vector<int> ports = server.getPortList();
+		std::cout << "[processRequest] Hostname: " << requestMsg.hostname << std::endl;	
 
 		if (ports.empty())
 		{
