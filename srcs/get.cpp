@@ -3,18 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 15:10:16 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/01 21:30:49 by filipa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include "../includes/get.hpp"
 
-//std::vector<std::string> createdFiles;
-//volatile sig_atomic_t flag = 0;
+std::vector<std::string> createdFiles;
+volatile sig_atomic_t flag = 0;
 
 ServerInfo::ServerInfo()
 {
