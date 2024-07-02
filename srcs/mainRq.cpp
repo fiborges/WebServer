@@ -8,6 +8,7 @@ void printHttpRequest(const HTTrequestMSG& msg) {
     for (std::map<std::string, std::string>::const_iterator it = msg.headers.begin(); it != msg.headers.end(); ++it) {
         std::cout << "  " << it->first << YELLOW << "-----------> " << RESET << it->second << "\n";
     }
+
     // Impressão das variáveis de ambiente CGI
     if (msg.is_cgi) {
         std::cout << BLUE << "\n\nCGI Environment Variables:\n\n" << RESET;
@@ -15,6 +16,23 @@ void printHttpRequest(const HTTrequestMSG& msg) {
             std::cout << "  " << it->first << ": " << it->second << "\n";
         }
     }
+
+    // Impressão das outras variáveis
+    std::cout << GREEN << "\n\nOther Variables:\n\n" << RESET;
+    std::cout << "Method: " << (msg.method == HTTrequestMSG::GET ? "GET" : 
+                                  msg.method == HTTrequestMSG::POST ? "POST" : 
+                                  msg.method == HTTrequestMSG::DELETE ? "DELETE" : "UNKNOWN") << "\n";
+    std::cout << "State: " << msg.state << "\n";
+    std::cout << "Path: " << msg.path << "\n";
+    std::cout << "Version: " << msg.version << "\n";
+    std::cout << "Query: " << msg.query << "\n";
+    std::cout << "Body: " << msg.body << "\n";
+    std::cout << "Content Length: " << msg.content_length << "\n";
+    std::cout << "Processed Bytes: " << msg.process_bytes << "\n";
+    std::cout << "Error: " << msg.error << "\n";
+    std::cout << "Boundary: " << msg.boundary << "\n";
+    std::cout << "Temp File Path: " << msg.temp_file_path << "\n";
+    std::cout << "Hostname: " << msg.hostname << "\n";
     std::cout << "\n";
 }
 

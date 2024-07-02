@@ -5,11 +5,10 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/04/26 15:10:07 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 23:11:36 by fde-carv         ###   ########.fr       */
+/*   Created: Invalid Date        by                   #+#    #+#             */
+/*   Updated: 2024/07/02 13:12:34 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 
 #include "../includes/get.hpp"
@@ -424,7 +423,9 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 	// Read the Body
 	HTTPParser parser;
+	HTTrequestMSG aaa;//NOVO
 	size_t contentLength = parser.getContentLength(request);
+	std::cout << "hostname: " << aaa.hostname << std::endl;
 	// int raw = parser.get
 	server.setContentLength(contentLength);
 	//std::cout << "  Content-Length1: " << contentLength << std::endl;
@@ -473,7 +474,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 			//std::cout << "Bytes read total: " << bytesReadTotal << std::endl; // Print the number of bytes read
 		}
 	}
-	//std::cout << "Request received: \n" << request << std::endl; // Print the request
+	std::cout << "Request received: \n" << request << std::endl; // Print the request
 
 	return request;
 }
@@ -1114,6 +1115,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		std::vector<int> ports = server.getPortList();
+		std::cout << "[processRequest] Hostname: " << requestMsg.hostname << std::endl;	
 
 		if (ports.empty())
 		{

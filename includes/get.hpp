@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/01 16:35:21 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/02 12:00:39 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,7 @@ class ServerInfo
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
 		std::vector<int>& getSockets();
-		void		handleRedirectRequest(HTTrequestMSG& request, ServerInfo& server);
+		//void		handleRedirectRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		setRedirectResponse(const std::string &location, const conf_File_Info &config);
 		void		setContentLength(size_t length);
 		size_t		getContentLength() const;

@@ -184,9 +184,46 @@ bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
         msg.error = errorHandler.generateErrorPage(400);
         return false;
     }
+
+    // Extrair hostname do cabeçalho Host
+    std::string hostHeader = msg.headers["Host"];
+    size_t colonPos = hostHeader.find(":");
+    msg.hostname = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
    
     return true;
 }
+
+
+/*bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
+    ServerErrorHandler errorHandler;
+    size_t pos = raw.find("\r\n");
+    if (pos == std::string::npos) {
+        msg.error = errorHandler.generateErrorPage(400);
+        return false;
+    }
+    std::string requestLine = raw.substr(0, pos);
+    raw.erase(0, pos + 2);
+    std::istringstream requestLineStream(requestLine);
+    if (!readRequestLine2(requestLineStream, msg)) {
+        msg.error = errorHandler.generateErrorPage(400);
+        return false;
+    }
+    
+    pos = raw.find("\r\n\r\n");
+    if (pos == std::string::npos) {
+        msg.error = errorHandler.generateErrorPage(400);
+        return false;
+    }
+    std::string headers = raw.substr(0, pos);
+    raw.erase(0, pos + 4);
+    std::istringstream headersStream(headers);
+    if (!readHeaders2(headersStream, msg)) {
+        msg.error = errorHandler.generateErrorPage(400);
+        return false;
+    }
+   
+    return true;
+}*/
 
 bool HTTPParser::readRequestLine2(std::istringstream& stream, HTTrequestMSG& msg) {
     std::string method, path, version;

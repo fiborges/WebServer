@@ -144,3 +144,5 @@ Portanto, a primeira etapa na determinação de qual bloco `server` será usado 
 na combinação da porta e do `server_name` através do cabeçalho `Host` da requisição.
 Isso permite que múltiplos sites sejam hospedados no mesmo servidor físico, diferenciando-os
 por nome de domínio ou subdomínio.
+
+curl --resolve fred.com:8082:127.0.0.1 http://fred.com:8082

@@ -31,6 +31,7 @@ public:
     bool is_cgi;
     std::map<std::string, std::string> cgi_env;
     std::string temp_file_path;
+    std::string hostname;
 
     HTTrequestMSG() : method(UNKNOWN), state(HEADERS), content_length(0), process_bytes(0), is_cgi(false) {}
 };
