@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/01 14:58:41 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/02 14:41:22 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,27 +32,35 @@ bool	CGI::FileExists(const std::string& path)
 	return (stat(path.c_str(), &buffer) == 0);
 }
 
+bool	CGI::DirExists(const std::string& path)
+{
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0)
+		return false;
+	else if (buffer.st_mode & S_IFDIR)
+		return true;
+
+	return false;
+}
+
 void	CGI::CreateScriptURI()
 {
 	size_t	pyPosition = this->Request_.path.find(".py");
 
 	if (pyPosition != std::string::npos)
-	{
 		for (size_t i = 0; i != pyPosition + 3; i++)
 			this->ScriptURI_ += this->Request_.path[i];
-	}
+
 	else
 		throw NoScriptAllowed();
 
-	std::cout << "SCRIPT_URI CREATED:\n\n";
-	std::cout << this->ScriptURI_ << "\n\n";
+	std::cout << "SCRIPT_URI CREATED:" << this->ScriptURI_ << std::endl;
 
 	if (this->ScriptURI_.substr(0, this->Info_.Path_CGI.size()) != this->Info_.Path_CGI)
-		throw NotAcceptedUploadPath();
+		throw WrongCGIPath();
 	this->ScriptURI_.insert(0, ".");
 
-	std::cout << "SCRIPT_URI AFTER INSERTION:\n\n";
-	std::cout << this->ScriptURI_ << "\n\n";
+	std::cout << "SCRIPT_URI AFTER INSERTION:" << this->ScriptURI_ << std::endl;
 
 	if (!FileExists(this->ScriptURI_))
 		throw NonexistentScript();
@@ -170,6 +178,32 @@ void	CGI::SendAllRequestToScript()
 	close(this->P_FD[1]);
 }
 
+std::string	CGI::GetUploadDir(const std::string& path)
+{
+	std::cout << "UPLOAD_PATH_RECIEVED:" << path << std::endl;
+	if (path[0] == '/')
+	{
+		if (DirExists(path))
+			return path; // É absoluto
+		throw NoUploadPathConfigurated();
+	}
+	if (path[0] == '.')
+	{
+		std::string	tmp;
+
+		tmp = path;
+		tmp.erase(0, 1);
+		tmp.insert(0, this->Info_.Path_CGI);
+		tmp.insert(0, ".");
+		std::cout << "PATH_TOTAL:" << tmp << std::endl;
+		if (DirExists(tmp))
+			return path; // É relativo e está verificado se correto.
+		else
+			throw NoUploadPathConfigurated();
+	}
+	return "./" + path; // É relativo e vamos verificar se correto.
+}
+
 void	CGI::CreateEnv()
 {
 	std::string	key;
@@ -181,7 +215,8 @@ void	CGI::CreateEnv()
 	this->EnvStrings_.push_back(key + value);
 
 	key = "UPLOAD_DIR=";
-	value = this->Info_.fileUploadDirectory;
+	//value = this->Info_.fileUploadDirectory;
+	value = GetUploadDir(this->Info_.fileUploadDirectory);
 
 	this->EnvStrings_.push_back(key + value);
 
@@ -262,7 +297,7 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		since this is the rule of that boundary.
 
 		*/
-			FindFinalBoundary(buffer);
+		FindFinalBoundary(buffer);
 		if (this->FinalBoundary_.empty() == false)
 		{
 
@@ -339,7 +374,6 @@ void	CGI::Child_process()
 		std::cerr << "Could not change to CGI directory\n";
 		return ;
 	}
-
 	std::string	tmp2; // Becouse we change the directory we need to re-new the Script_URI
 
 	size_t	script_place = this->ScriptURI_.find(tmp);
@@ -426,8 +460,6 @@ void	CGI::Parent_process()
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 }
 
-
-
 // ===========================Exceptions
 
 const char*	CGI::NoScriptAllowed::what() const throw()
@@ -447,7 +479,12 @@ const char* CGI::NoUploadPathConfigurated::what() const throw()
 
 const char* CGI::NonexistentScript::what() const throw()
 {
-	return ("ALERT: CGI Nonexistent Script");
+	return ("ALERT: CGI Nonexistent Script\n");
+}
+
+const char* CGI::WrongCGIPath::what() const throw()
+{
+	return ("ALERT: CGI Wrong path to cgi script\n");
 }
 
 

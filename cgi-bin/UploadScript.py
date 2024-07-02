@@ -6,7 +6,7 @@
 #    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/07/01 10:56:31 by brolivei         ###   ########.fr        #
+#    Updated: 2024/07/02 13:55:47 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -72,7 +72,8 @@ if __name__ == '__main__':
 
 			<body>
 				<div class="container">
-					<h1>CGI RESPONSE</h1>
+					<h1>CGI RESPONSE\n</h1>
+					<h2>The file was saved at {upload_dir} \n</h2>
 					<a href="/index.html"><b>Home</b></button></a>
 				</div>
 			</body>

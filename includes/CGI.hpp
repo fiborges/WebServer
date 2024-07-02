@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/01 14:56:27 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/02 14:01:49 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,8 +75,11 @@ class CGI
 		void	CreateEnv();
 
 		bool	FileExists(const std::string& path);
+		bool	DirExists(const std::string& path);
 
 		void	WaitFiveSeconds();
+
+		std::string	GetUploadDir(const std::string& path);
 
 	public:
 		// Orthodox
@@ -109,6 +112,12 @@ class CGI
 		};
 
 		class	NonexistentScript : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
+
+		class	WrongCGIPath : public std::exception
 		{
 			public:
 				virtual const char* what() const throw();
