@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: Invalid Date        by                   #+#    #+#             */
-/*   Updated: 2024/07/02 13:12:34 by fde-carv         ###   ########.fr       */
+/*   Created: Invalid date        by                   #+#    #+#             */
+/*   Updated: 2024/07/03 11:18:15 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1115,7 +1115,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		std::vector<int> ports = server.getPortList();
-		std::cout << "[processRequest] Hostname: " << requestMsg.hostname << std::endl;	
+		std::cout << "[processRequest] Hostname: " << requestMsg.hostname << std::endl;
 
 		if (ports.empty())
 		{
@@ -1150,8 +1150,14 @@ void processRequest(const std::string& request, ServerInfo& server)
 					CGI cgi(serverConfig, requestMsg);
 					cgi.PerformCGI(server.clientSocket , ParaCGI);
 				}
-				catch(const std::exception& e)
+				// catch(const std::exception& e)
+				// {
+				// 	std::cerr << e.what() << '\n';
+				// }
+				catch(const CGI::CGI_ExceptionClass& e)
 				{
+					int	error = e.GetErrorCode();
+					handleError2(error, server, serverConfig, requestMsg);
 					std::cerr << e.what() << '\n';
 				}
 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
@@ -1756,7 +1762,7 @@ void setupRunServer(std::vector<ServerInfo*>& servers, fd_set& read_fds, fd_set&
 // 	// Cleanup section
 // 	for (std::vector<ServerInfo*>::iterator it = servers.begin(); it != servers.end(); ++it)
 // 	{
-// 		if ((*it)->clientSocket >= 0) 
+// 		if ((*it)->clientSocket >= 0)
 // 		{
 // 			FD_CLR((*it)->clientSocket, &read_fds);
 // 			FD_CLR((*it)->clientSocket, &write_fds);

@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/02 14:41:22 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/03 11:38:06 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,24 +52,24 @@ void	CGI::CreateScriptURI()
 			this->ScriptURI_ += this->Request_.path[i];
 
 	else
-		throw NoScriptAllowed();
+		throw CGI_ExceptionClass(415); // erro 415: Unsupported Media Type
 
 	std::cout << "SCRIPT_URI CREATED:" << this->ScriptURI_ << std::endl;
 
 	if (this->ScriptURI_.substr(0, this->Info_.Path_CGI.size()) != this->Info_.Path_CGI)
-		throw WrongCGIPath();
+		throw CGI_ExceptionClass(404); // Not found the CGI resource
 	this->ScriptURI_.insert(0, ".");
 
 	std::cout << "SCRIPT_URI AFTER INSERTION:" << this->ScriptURI_ << std::endl;
 
 	if (!FileExists(this->ScriptURI_))
-		throw NonexistentScript();
+		throw CGI_ExceptionClass(404); // The Script does not exist
 }
 
 void	CGI::ExtractPathInfo(std::string& buffer, conf_File_Info& info)
 {
 	if (buffer.find("/UploadScript.py") == std::string::npos)
-		throw NoScriptAllowed();
+		throw CGI_ExceptionClass(415);
 
 	size_t	path_position = buffer.find("/UploadScript.py") + 16;
 
@@ -185,7 +185,7 @@ std::string	CGI::GetUploadDir(const std::string& path)
 	{
 		if (DirExists(path))
 			return path; // É absoluto
-		throw NoUploadPathConfigurated();
+		throw CGI_ExceptionClass(500); // The directory to upload is not created
 	}
 	if (path[0] == '.')
 	{
@@ -199,7 +199,7 @@ std::string	CGI::GetUploadDir(const std::string& path)
 		if (DirExists(tmp))
 			return path; // É relativo e está verificado se correto.
 		else
-			throw NoUploadPathConfigurated();
+			throw CGI_ExceptionClass(500); // The directory to upload is not created
 	}
 	return "./" + path; // É relativo e vamos verificar se correto.
 }
@@ -267,7 +267,7 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	else
 	{
 		if (this->Info_.fileUploadDirectory.empty())
-			throw NoUploadPathConfigurated();
+			throw CGI_ExceptionClass(500); // The upload path is not configurated in .conf
 		// std::cout << "SERVER_INFO:\n\n";
 
 		// std::cout << this->Info_.defaultFile << std::endl;
@@ -431,7 +431,7 @@ void	CGI::Parent_process()
 	if (waitpid(this->pid, NULL, WNOHANG) == 0)
 	{
 		kill(this->pid, SIGKILL);
-		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nBAD SCRIPT RESPONSE HAS TO BE HERE";
+		throw CGI_ExceptionClass(504); // Gateway Timeout
 	}
 	//wait(NULL);
 
@@ -455,7 +455,7 @@ void	CGI::Parent_process()
 	std::cout << "Response: " << response << std::endl;
 	if (response.empty() == true)
 	{
-		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nBAD REQUEST RESPONSE HAS TO BE HERE";
+		throw CGI_ExceptionClass(500); // Internal error.
 	}
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 }
@@ -485,6 +485,13 @@ const char* CGI::NonexistentScript::what() const throw()
 const char* CGI::WrongCGIPath::what() const throw()
 {
 	return ("ALERT: CGI Wrong path to cgi script\n");
+}
+
+const char* CGI::CGI_ExceptionClass::what() const throw()
+{
+	std::string	response = "ALERT: CGI DETECTED ERROR -> " + GetErrorCode() + '\n';
+
+	return (response.c_str());
 }
 
 

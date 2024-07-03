@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/02 14:01:49 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/03 11:15:04 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,9 +93,23 @@ class CGI
 		// Public Method
 		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
 
+		class	CGI_ExceptionClass : public std::exception
+		{
+			private:
+				int	ErrorCode_;
+			public:
+				CGI_ExceptionClass(int ErrorCode) : ErrorCode_(ErrorCode) {}
+				int	GetErrorCode() const { return (this->ErrorCode_); }
+				virtual const char* what() const throw();
+		};
+
 		class	NoScriptAllowed : public std::exception
 		{
+			private:
+				int	ErrorCode_;
 			public:
+				NoScriptAllowed(int ErrorCode) : ErrorCode_(ErrorCode) {}
+				int	GetErrorCode() const { return (this->ErrorCode_); }
 				virtual const char* what() const throw();
 		};
 
