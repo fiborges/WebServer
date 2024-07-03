@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/02 12:00:39 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/03 19:23:04 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,9 @@
 
 extern volatile sig_atomic_t flag;
 extern std::vector<std::string> createdFiles;
+
+//extern std::map<int, std::map<std::string, std::vector<conf_File_Info> > > serversByPortAndHost;
+extern std::map<int, std::map<std::string, std::vector<ParserConfig> > > serversByPortAndHost;
 
 class ServerInfo
 {

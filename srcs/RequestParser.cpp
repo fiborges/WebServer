@@ -186,9 +186,12 @@ bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
     }
 
     // Extrair hostname do cabeçalho Host
+    // std::string hostHeader = msg.headers["Host"];
+    // size_t colonPos = hostHeader.find(":");
+    // msg.hostname = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+
     std::string hostHeader = msg.headers["Host"];
-    size_t colonPos = hostHeader.find(":");
-    msg.hostname = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+    msg.hostname = hostHeader;
    
     return true;
 }

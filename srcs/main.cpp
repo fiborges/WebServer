@@ -4,6 +4,8 @@
 volatile sig_atomic_t flag = 0;
 std::vector<std::string> createdFiles;
 
+std::map<int, std::map<std::string, std::vector<ParserConfig> > > serversByPortAndHost;
+
 //Manipulador de sinal
 void handle_sigint(int sig)
 {
@@ -20,53 +22,110 @@ void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers,
 {
 	ParserClass parser(configFileName);
 	ConfiguredServers configuredServers = parser.fetchSpecifications();
-	std::set<int> addedPorts;
+	//std::set<int> addedPorts;
 	std::map<int, std::vector<ParserConfig> > serversByPort;
-	HTTrequestMSG httpRequestMsg;
-	std::string host = httpRequestMsg.hostname;
-	std::cout << "====> Hostname: " << httpRequestMsg.hostname << std::endl;
+	//HTTrequestMSG httpRequestMsg;
+	//std::string host = httpRequestMsg.hostname;
+
 
 	// Organize servers by port
 	for (size_t i = 0; i < configuredServers.size(); ++i)
 	{
 		ParserConfig parserConfig = configuredServers[i];
-		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
+		serversByPortAndHost[parserConfig.obtainPort()][parserConfig.retrieveHost()].push_back(parserConfig);
+		//serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
 	}
 
+	std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
+    std::map<int, std::map<std::string, std::vector<ParserConfig> > >::iterator portEntry;
+    for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
+        std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
+        std::map<std::string, std::vector<ParserConfig> >::iterator hostEntry;
+        for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
+            std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->second.size() << std::endl;
+        }
+    }
+
 	// Process each port
-	for (std::map<int, std::vector<ParserConfig> >::iterator it = serversByPort.begin(); it != serversByPort.end(); ++it)
+	for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry)
 	{
-		bool nameFound = false;
-		for (size_t i = 0; i < it->second.size(); ++i)
+		std::map<std::string, std::vector<ParserConfig> >::iterator hostEntry;
+		for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry)
 		{
-			if (it->second[i].retrieveServerName() == host)
+			std::vector<ParserConfig>::iterator config;
+			for (config = hostEntry->second.begin(); config != hostEntry->second.end(); ++config)
 			{
-				nameFound = true;
-				break;
+				const conf_File_Info *configInfo = config->getServerConfigurations();
+				ServerInfo *server = new ServerInfo();
+
+				std::cout << "==> Port Number: " << configInfo->portListen << " | Server Name: " << configInfo->ServerName << " | Server Host: " << configInfo->host << std::endl;
+				configs->push_back(configInfo);
+				setupServer(*server, *configInfo);
+				servers.push_back(server);
+
+				int port = portEntry->first;
+				std::string host = hostEntry->first;
+
+				// Imprimindo a porta, o nome do host e qualquer outra informação relevante de ParserConfig
+				std::cout << "Porta: " << port << ", Host: " << host << std::endl;
 			}
-		}
-
-		for (size_t i = 0; i < it->second.size(); ++i)
-		{
-			if (nameFound && it->second[i].retrieveServerName() != host)
-				continue;
-
-			if (addedPorts.find(it->first) != addedPorts.end())
-				continue;
-
-			const conf_File_Info* config = it->second[i].getServerConfigurations();
-			ServerInfo* server = new ServerInfo();
-			std::cout << "==> Port Number: " << config->portListen << " | Server Name: " << config->ServerName << std::endl;
-			configs->push_back(config);
-			setupServer(*server, *config);
-			servers.push_back(server);
-
-			addedPorts.insert(it->first);
-			if (!nameFound)
-				break;
 		}
 	}
 }
+
+
+// void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
+// {
+// 	ParserClass parser(configFileName);
+// 	ConfiguredServers configuredServers = parser.fetchSpecifications();
+// 	std::set<int> addedPorts;
+// 	std::map<int, std::vector<ParserConfig> > serversByPort;
+// 	HTTrequestMSG httpRequestMsg;
+// 	std::string host = httpRequestMsg.hostname;
+// 	//std::cout << "====> Hostname: " << httpRequestMsg.hostname << std::endl;
+
+// 	// Organize servers by port
+// 	for (size_t i = 0; i < configuredServers.size(); ++i)
+// 	{
+// 		ParserConfig parserConfig = configuredServers[i];
+// 		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
+// 	}
+
+// 	// Process each port
+// 	for (std::map<int, std::vector<ParserConfig> >::iterator it = serversByPort.begin(); it != serversByPort.end(); ++it)
+// 	{
+// 		bool nameFound = false;
+// 		for (size_t i = 0; i < it->second.size(); ++i)
+// 		{
+// 			if (it->second[i].retrieveServerName() == host)
+// 			{
+// 				nameFound = true;
+// 				break;
+// 			}
+// 		}
+
+// 		for (size_t i = 0; i < it->second.size(); ++i)
+// 		{
+// 			if (nameFound && it->second[i].retrieveServerName() != host)
+// 				continue;
+
+// 			if (addedPorts.find(it->first) != addedPorts.end())
+// 				continue;
+
+// 			const conf_File_Info* config = it->second[i].getServerConfigurations();
+// 			ServerInfo* server = new ServerInfo();
+// 			std::cout << "==> Port Number: " << config->portListen << " | Server Name: " << config->ServerName << std::endl;
+// 			configs->push_back(config);
+// 			setupServer(*server, *config);
+// 			servers.push_back(server);
+
+// 			addedPorts.insert(it->first);
+// 			if (!nameFound)
+// 				break;
+// 		}
+// 	}
+// }
+
 
 int main(int argc, char **argv)
 {

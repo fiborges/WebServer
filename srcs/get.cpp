@@ -3,13 +3,12 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: Invalid date        by                   #+#    #+#             */
-/*   Updated: 2024/07/03 11:18:15 by brolivei         ###   ########.fr       */
+/*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
+/*   Updated: 2024/07/03 21:08:09 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #include "../includes/get.hpp"
 
@@ -351,8 +350,8 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		{
 			//throw std::runtime_error("Error on binding");
 			std::cout << RED << "Error on binding" << RESET << std::endl;
-			server.sair = 1;
-			return ;
+			//server.sair = 1;
+			//return ;
 		}
 		if (listen(server.getSocketFD(), 128) < 0)
 		{
@@ -423,9 +422,9 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 	// Read the Body
 	HTTPParser parser;
-	HTTrequestMSG aaa;//NOVO
+	//HTTrequestMSG aaa;//NOVO
 	size_t contentLength = parser.getContentLength(request);
-	std::cout << "hostname: " << aaa.hostname << std::endl;
+	//std::cout << "hostname: " << aaa.hostname << std::endl;
 	// int raw = parser.get
 	server.setContentLength(contentLength);
 	//std::cout << "  Content-Length1: " << contentLength << std::endl;
@@ -1115,7 +1114,6 @@ void processRequest(const std::string& request, ServerInfo& server)
 	if (parser.parseRequest(requestCopy, requestMsg, maxSize))
 	{
 		std::vector<int> ports = server.getPortList();
-		std::cout << "[processRequest] Hostname: " << requestMsg.hostname << std::endl;
 
 		if (ports.empty())
 		{
@@ -1123,8 +1121,77 @@ void processRequest(const std::string& request, ServerInfo& server)
 			return;
 		}
 
-		int listeningPort = ports[0];
-		conf_File_Info &serverConfig = server.getConfig(listeningPort);
+		// ----------------------  ALTERACAO ------------------------ // 
+
+		std::cout << "[requestMsg] Hostname completo: " << requestMsg.hostname << std::endl;
+		std::string::size_type colonPos = requestMsg.hostname.find(":");
+		std::string portStr;
+		int porta = 0;
+		if (colonPos != std::string::npos) {
+			portStr = requestMsg.hostname.substr(colonPos + 1);
+			porta = std::atoi(portStr.c_str());
+		}
+		std::cout << "[requestMsg] Port: " << porta << std::endl;
+		std::string nameHost;
+		if (colonPos != std::string::npos)
+			nameHost = requestMsg.hostname.substr(0, colonPos);
+		std::cout << "[requestMsg] Hostname: " << nameHost << std::endl;
+
+		conf_File_Info &serverConfig = server.getConfig(porta);
+
+		std::map<int, std::map<std::string, std::vector<ParserConfig> > >::iterator portIt;
+		for ( portIt = serversByPortAndHost.begin(); portIt != serversByPortAndHost.end(); ++portIt)
+		{
+			std::map<std::string, std::vector<ParserConfig> >::iterator hostIt;
+			for (hostIt = portIt->second.begin(); hostIt != portIt->second.end(); ++hostIt)
+			{
+				if (portIt->first == porta && hostIt->first == nameHost)
+				{
+					std::cout << "Found matching port and host. host: " << hostIt->first << " | port: " << portIt->first << std::endl;
+					//std::vector<ParserConfig>& configs = hostIt->second;
+					//serverConfig = server.getConfig(porta);
+					//std::cout << "==> [][]Host: " << serverConfig.host << std::endl;
+
+					//std::cout << "@@ Server Name: " << hostIt->second[0].retrieveServerName() << std::endl;
+
+					bool alreadyExists = false;
+
+					if (!alreadyExists)
+					{
+						serversByPortAndHost[portIt->first][hostIt->first].push_back(&serverConfig);  // Adicionar a nova configuração
+
+						// Adicionar configuração ao server
+						server.addConfig(portIt->first, serverConfig);
+
+						// Debugging para confirmar a configuração adicionada
+						std::cout << "  Config added to server:" << std::endl;
+						std::cout << "==> Port: " << serverConfig.portListen << std::endl;
+						std::cout << "==> Host: " << serverConfig.host << std::endl;
+						std::cout << "==> ServerName: " << serverConfig.ServerName << std::endl;
+					}
+					else
+					{
+						std::cout << "Configuration already exists for this host and port." << std::endl;
+					}
+					//configAdded = true;
+				}
+			}
+		}
+		
+
+
+
+
+
+
+		
+
+
+		//int listeningPort = ports[0];
+		//conf_File_Info &serverConfig = server.getConfig(listeningPort);
+		serverConfig = server.getConfig(porta);
+
+		// ----------------------  ALTERACAO ------------------------ // 
 
 		// Salvar o diretório raiz original
 		std::string originalRootDirectory = serverConfig.RootDirectory;
