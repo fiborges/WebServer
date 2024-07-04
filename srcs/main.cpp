@@ -3,9 +3,8 @@
 
 volatile sig_atomic_t flag = 0;
 std::vector<std::string> createdFiles;
-
 std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost;
-//std::map<int, std::map<std::string, std::vector<ParserConfig> > > serversByPortAndHost;
+
 
 //Manipulador de sinal
 void handle_sigint(int sig)
@@ -37,19 +36,18 @@ ParserClass* setupServers(const char* configFileName, std::vector<ServerInfo*>& 
 		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
 	}
 
-	std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
+	// std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
     std::map<int, std::map<std::string, ParserConfig> >::iterator portEntry;
-    for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
-        std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
-        std::map<std::string, ParserConfig >::iterator hostEntry;
-        for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
-            std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
-        }
-    }
+    // for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
+    //     std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
+    //     std::map<std::string, ParserConfig >::iterator hostEntry;
+    //     for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
+    //         std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
+    //     }
+    // }
 
-	// Process each port
+
 	std::set<int> processedPorts;
-
 	for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry)
 	{
 		int port = portEntry->first;

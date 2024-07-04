@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/04 10:09:35 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/04 12:54:02 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,9 +78,8 @@
 
 extern volatile sig_atomic_t flag;
 extern std::vector<std::string> createdFiles;
-
 extern std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost;
-//extern std::map<int, std::map<std::string, std::vector<ParserConfig> > > serversByPortAndHost;
+
 
 class ServerInfo
 {
@@ -136,7 +135,6 @@ class ServerInfo
 		void		setRootOriginalDirectory(const std::string& dir);	
 		void		handleError(const std::string& errorMessage);
 
-		void cleanup1();
 		void cleanup2();
 };
 
@@ -145,11 +143,7 @@ std::string extractFileNameFromURL(const std::string& url);
 std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 bool		is_directory(const std::string &path);
-void		setupDirectory(ServerInfo& server, const conf_File_Info& config);
-int			remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-int			remove_directory(const char *path); //to use in main() to remove the temp directory
 void		setupServer(ServerInfo& server, const conf_File_Info& config);
-
 std::string	readRequest(int sockfd, ServerInfo& server);
 void		processRequest(const std::string& request, ServerInfo& server);
 bool		processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
@@ -158,13 +152,9 @@ std::string readFileContent(const std::string& filePath);
 std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
 bool		ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
-void		setupUploadDirectory(const std::string& serverRoot, const std::string& uploadDirectory);
-std::string	removeFirstDirectory(const std::string& fullPath);
-std::string	removeTrailingSlash(const std::string& path);
 bool		fileExistsInDirectory(const std::string& directory, const std::string& filename);
 void		processErrorPage(std::string second, int errorCode, const std::string& rootDirectory);
 void		handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfig, const HTTrequestMSG& requestMsg);
-
 std::string	getNewPath(const std::string& root, const std::string& path);
 std::vector<std::string> tokenize(const std::string& str, char delimiter);
 bool		isMethodAllowed(const std::set<std::string>& allowedMethods, const std::string& requestMethod);
@@ -175,12 +165,8 @@ bool		handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& reques
 bool		fileExists(const std::string& filePath);
 bool		isDirectory(const std::string& path);
 
-void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory);
-void createHtmlFiles(const std::string& rootDirectory);
-
-
-void checkDoors(ServerInfo& server, const conf_File_Info& serverConfig, HTTrequestMSG& requestMsg);
-
+//void		createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory);
+//void		createHtmlFiles(const std::string& rootDirectory);
 
 void		setupRunServer(std::vector<ServerInfo*>& servers, fd_set& read_fds, fd_set& write_fds, int& max_fd);
 void		runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_fds, int max_fd);
