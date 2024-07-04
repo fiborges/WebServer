@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/03 21:08:09 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/04 12:35:49 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1137,77 +1137,64 @@ void processRequest(const std::string& request, ServerInfo& server)
 			nameHost = requestMsg.hostname.substr(0, colonPos);
 		std::cout << "[requestMsg] Hostname: " << nameHost << std::endl;
 
-		conf_File_Info &serverConfig = server.getConfig(porta);
+		//conf_File_Info &serverConfig = server.getConfig(porta);
 
-		std::map<int, std::map<std::string, std::vector<ParserConfig> > >::iterator portIt;
-		for ( portIt = serversByPortAndHost.begin(); portIt != serversByPortAndHost.end(); ++portIt)
+		std::map<int, std::map<std::string, ParserConfig> >::iterator portIt;
+		for (portIt = serversByPortAndHost.begin(); portIt != serversByPortAndHost.end(); ++portIt)
 		{
-			std::map<std::string, std::vector<ParserConfig> >::iterator hostIt;
+			std::map<std::string, ParserConfig>::iterator hostIt;
 			for (hostIt = portIt->second.begin(); hostIt != portIt->second.end(); ++hostIt)
 			{
+				//ParserConfig& config = hostIt->second;
+				std::cout << "@@ Port: " << portIt->first << ", Host: " << hostIt->first << ", Config" << std::endl;
+				//std::cout << "@@ Server Name: " << config.retrieveServerName() << std::endl;
+
 				if (portIt->first == porta && hostIt->first == nameHost)
 				{
 					std::cout << "Found matching port and host. host: " << hostIt->first << " | port: " << portIt->first << std::endl;
-					//std::vector<ParserConfig>& configs = hostIt->second;
-					//serverConfig = server.getConfig(porta);
-					//std::cout << "==> [][]Host: " << serverConfig.host << std::endl;
-
-					//std::cout << "@@ Server Name: " << hostIt->second[0].retrieveServerName() << std::endl;
 
 					bool alreadyExists = false;
 
 					if (!alreadyExists)
 					{
-						serversByPortAndHost[portIt->first][hostIt->first].push_back(&serverConfig);  // Adicionar a nova configuração
-
+						// Adicionar a nova configuração
+						//serversByPortAndHost[portIt->first][hostIt->first] = serverConfig;
+						ParserConfig& config = hostIt->second;
+						const conf_File_Info configInfoPtr = config.getServerConfigurations();
+						conf_File_Info configInfo = configInfoPtr; // create a copy
+						server.addConfig(portIt->first, configInfo);
 						// Adicionar configuração ao server
-						server.addConfig(portIt->first, serverConfig);
+						//configs->push_back(configInfo);
+						//server.addConfig(portIt->first, configInfo);
 
 						// Debugging para confirmar a configuração adicionada
 						std::cout << "  Config added to server:" << std::endl;
-						std::cout << "==> Port: " << serverConfig.portListen << std::endl;
-						std::cout << "==> Host: " << serverConfig.host << std::endl;
-						std::cout << "==> ServerName: " << serverConfig.ServerName << std::endl;
+						std::cout << "==> Port: " << configInfo.portListen << std::endl;
+						std::cout << "==> Host: " << configInfo.host << std::endl;
+						std::cout << "==> ServerName: " << configInfo.ServerName << std::endl;
 					}
 					else
 					{
 						std::cout << "Configuration already exists for this host and port." << std::endl;
 					}
-					//configAdded = true;
 				}
 			}
 		}
 		
-
-
-
-
-
-
-		
-
-
-		//int listeningPort = ports[0];
-		//conf_File_Info &serverConfig = server.getConfig(listeningPort);
-		serverConfig = server.getConfig(porta);
+		conf_File_Info &serverConfig = server.getConfig(porta);
 
 		// ----------------------  ALTERACAO ------------------------ // 
 
 		// Salvar o diretório raiz original
 		std::string originalRootDirectory = serverConfig.RootDirectory;
 
-		//std::cout << " ##****** Root directory : " << originalRootDirectory << std::endl;
 
 		if (processRulesRequest(requestMsg, server) == true)
 		{
 			if (!requestMsg.is_cgi) // ======ALTERAÇÂO======
 			{
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
-				//int portListenCopy = serverConfig.portListen;
 				std::string rootDirectoryCopy = serverConfig.RootDirectory;
-				//std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
-				//std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
-				//std::cout << RED << "!!!!! config root: " << rootDirectoryCopy << RESET << std::endl;
 				handleRequest(requestMsg, server, serverConfig);
 			}
 			else
