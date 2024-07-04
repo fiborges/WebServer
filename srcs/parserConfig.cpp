@@ -187,8 +187,8 @@ bool ParserConfig::validateMethod(const std::string& httpMethod) const
            || Server_configurations->allowedMethods.count(ParserUtils::toLower(httpMethod));
 }
 
-const conf_File_Info* ParserConfig::getServerConfigurations() const {
-    return Server_configurations;
+conf_File_Info ParserConfig::getServerConfigurations() const {
+    return *Server_configurations;
 }
 
 bool matchWildcard(const std::string& pattern, const std::string& str) {

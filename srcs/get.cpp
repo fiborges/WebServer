@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/04 11:43:17 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/04 13:57:39 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@ ServerInfo::ServerInfo()
 	this->sockfd = -1;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	this->clientSocket = -1;
-	//this->rootUrl = "resources";
 	this->response = "";
 	this->clientSockets.clear();
 	this->portListen.clear();
@@ -137,28 +136,7 @@ conf_File_Info& ServerInfo::getConfig(int port)
 	return configs[port];
 }
 
-void ServerInfo::cleanup1()
-{
-	// Fecha todos os sockets de clientes
-	for (std::vector<int>::iterator it = clientSockets.begin(); it != clientSockets.end(); ++it)
-	{
-		if (*it != -1)
-			close(*it);
-	}
-	clientSockets.clear();
 
-	// Fecha o socket principal
-	if (sockfd != -1)
-	{
-		close(sockfd);
-		sockfd = -1; // Evita uso futuro do socket fechado
-	}
-
-	// Limpa outras estruturas
-	portListen.clear();
-	cli_addrs.clear();
-	configs.clear();
-}
 
 void ServerInfo::cleanup2()
 {
@@ -335,10 +313,8 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 		serv_addr.sin_addr.s_addr = INADDR_ANY;
 		serv_addr.sin_port = htons(config.portListen);
 		server.setAddress(serv_addr);
-		// setupDirectory(server, config);
 		// std::string serverRoot = config.RootDirectory;
 		// std::string fileUploadDirectory = config.fileUploadDirectory;
-		// setupUploadDirectory(serverRoot, fileUploadDirectory);
 
 		int opt = 1;
 		if (setsockopt(server.getSocketFD(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
@@ -726,33 +702,25 @@ bool handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& request
 
 void processErrorPage(std::string second, int errorCode, const std::string& rootDirectory)
 {
-	// Remover '/' se existir
 	size_t pos = second.find('/');
 	if (pos != std::string::npos)
 	{
 		second.erase(pos, 1);
 	}
 
-	//std::cout << "second: " << second << std::endl;
-	// Procurar por três dígitos e comparar com errorCode
 	if (second.size() >= 3)
 	{
 		std::string threeDigits = second.substr(0, 3);
-		//std::cout << "threeDigits: " << threeDigits << std::endl;
-
-		// Convert errorCode to string and get the first two digits
 		std::stringstream ss;
 		ss << errorCode;
 		std::string errorCodeStr = ss.str();
 		std::string firstTwoDigits = errorCodeStr.substr(0, 2);
 
-		// If the first digit is the same, replace the second and third digits
 		if (threeDigits[0] == errorCodeStr[0])
 		{
 			threeDigits[1] = errorCodeStr[1];
 			threeDigits[2] = errorCodeStr[2];
 		}
-		//std::cout << "threeDigits2: " << threeDigits << std::endl;
 
 		if (std::atoi(threeDigits.c_str()) == errorCode)
 		{
@@ -761,108 +729,75 @@ void processErrorPage(std::string second, int errorCode, const std::string& root
 			std::ofstream file(path.c_str());
 			if (file)
 			{
-
-				// Create an instance of ServerErrorHandler
 				ServerErrorHandler errorHandler;
-				// Generate the error page content
 				std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
-				// Write the error page content to the file
 				file << errorPageContent;
 				file.close();
-				//std::cout << "  " << errorCode << ".html file created at " << path << std::endl;
 				createdFiles.push_back(path);
-
-				// file << "<html>\n"
-				//      << "<head><title>" << errorCode << " Not Found</title></head>\n"
-				//      << "<body>\n"
-				//      << "<h1>" << errorCode << " Not Found</h1>\n"
-				//      << "<p>The requested URL was not found on this server.</p>\n"
-				//      << "</body>\n"
-				//      << "</html>\n";
-				// file.close();
-				// std::cout << "  " << errorCode << ".html file created at " << path << std::endl;
 			}
-			// else
-			// {
-			// 	std::cerr << "  Error: Could not create " << errorCode << ".html file at " << path << std::endl;
-			// }
 		}
 	}
 }
 
-void createHtmlFiles(const std::string& rootDirectory)
-{
-	ServerErrorHandler handler;
-	std::string path = rootDirectory + "/" + "delete.html";
-	std::ofstream file(path.c_str());
-	if (file)
-	{
-		std::string htmlContent = handler.generateDelete();
-		file << htmlContent;
-		file.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "get.html";
-	std::ofstream file2(path.c_str());
-	if (file2)
-	{
-		std::string htmlContent = handler.generateGet();
-		file2 << htmlContent;
-		file2.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "post.html";
-	std::ofstream file3(path.c_str());
-	if (file3)
-	{
-		std::string htmlContent = handler.generatePost();
-		file3 << htmlContent;
-		file3.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "upload.html";
-	std::ofstream file4(path.c_str());
-	if (file4)
-	{
-		std::string htmlContent = handler.generateUpload();
-		file4 << htmlContent;
-		file4.close();
-		createdFiles.push_back(path);
-	}
-}
+// void createHtmlFiles(const std::string& rootDirectory)
+// {
+// 	ServerErrorHandler handler;
+// 	std::string path = rootDirectory + "/" + "delete.html";
+// 	std::ofstream file(path.c_str());
+// 	if (file)
+// 	{
+// 		std::string htmlContent = handler.generateDelete();
+// 		file << htmlContent;
+// 		file.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "get.html";
+// 	std::ofstream file2(path.c_str());
+// 	if (file2)
+// 	{
+// 		std::string htmlContent = handler.generateGet();
+// 		file2 << htmlContent;
+// 		file2.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "post.html";
+// 	std::ofstream file3(path.c_str());
+// 	if (file3)
+// 	{
+// 		std::string htmlContent = handler.generatePost();
+// 		file3 << htmlContent;
+// 		file3.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "upload.html";
+// 	std::ofstream file4(path.c_str());
+// 	if (file4)
+// 	{
+// 		std::string htmlContent = handler.generateUpload();
+// 		file4 << htmlContent;
+// 		file4.close();
+// 		createdFiles.push_back(path);
+// 	}
+// }
 
-void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory)
-{
-	std::string name;
-	if (serverConfig.defaultFile.empty())
-		name = "index.html";
-	else
-		name = serverConfig.defaultFile;
-	//std::cout << "name: " << name << std::endl;
-	//std::cout << "RootDirectory: " << serverConfig.RootDirectory << std::endl;
-
-	std::string path = rootDirectory + "/" + name;
-	//std::cout << "HTML path: " << path << std::endl;
-	std::ofstream file(path.c_str());
-	if (file)
-	{
-		// Create an instance of ServerErrorHandler
-		ServerErrorHandler handler;
-		// Generate the error page content
-		std::string base = handler.generateIndex(name);
-		// Write the error page content to the file
-		file << base;
-		file.close();
-		createdFiles.push_back(path);
-		//std::cout << "  " << errorCode << ".html file created at " << path << std::endl;
-		// createdFiles.push_back(path);
-	}
-	// else
-	// {
-	// 	std::cerr << "  Error: Could not create "  << std::endl;
-	// }
-
-}
+// void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory)
+// {
+// 	std::string name;
+// 	if (serverConfig.defaultFile.empty())
+// 		name = "index.html";
+// 	else
+// 		name = serverConfig.defaultFile;
+// 	std::string path = rootDirectory + "/" + name;
+// 	std::ofstream file(path.c_str());
+// 	if (file)
+// 	{
+// 		ServerErrorHandler handler;
+// 		std::string base = handler.generateIndex(name);
+// 		file << base;
+// 		file.close();
+// 		createdFiles.push_back(path);
+// 	}
+// }
 
 
 // Principal Function to deal with rules from .conf file
@@ -895,8 +830,8 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		processErrorPage(it->second, it->first, serverConfig.RootDirectory);
 	}
 
-	createIndexFile(serverConfig, serverConfig.RootDirectory);
-	createHtmlFiles(serverConfig.RootDirectory);
+	//createIndexFile(serverConfig, serverConfig.RootDirectory);
+	//createHtmlFiles(serverConfig.RootDirectory);
 
 	if (serverConfig.LocationsMap.size() > 0)
 	{
@@ -1137,77 +1072,56 @@ void processRequest(const std::string& request, ServerInfo& server)
 			nameHost = requestMsg.hostname.substr(0, colonPos);
 		std::cout << "[requestMsg] Hostname: " << nameHost << std::endl;
 
-		conf_File_Info &serverConfig = server.getConfig(porta);
-
-		std::map<int, std::map<std::string, std::vector<ParserConfig> > >::iterator portIt;
-		for ( portIt = serversByPortAndHost.begin(); portIt != serversByPortAndHost.end(); ++portIt)
+		std::map<int, std::map<std::string, ParserConfig> >::iterator portIt;
+		for (portIt = serversByPortAndHost.begin(); portIt != serversByPortAndHost.end(); ++portIt)
 		{
-			std::map<std::string, std::vector<ParserConfig> >::iterator hostIt;
+			std::map<std::string, ParserConfig>::iterator hostIt;
 			for (hostIt = portIt->second.begin(); hostIt != portIt->second.end(); ++hostIt)
 			{
+				//std::cout << "@@ Port: " << portIt->first << ", Host: " << hostIt->first << ", Config" << std::endl;
+
 				if (portIt->first == porta && hostIt->first == nameHost)
 				{
 					std::cout << "Found matching port and host. host: " << hostIt->first << " | port: " << portIt->first << std::endl;
-					//std::vector<ParserConfig>& configs = hostIt->second;
-					//serverConfig = server.getConfig(porta);
-					//std::cout << "==> [][]Host: " << serverConfig.host << std::endl;
-
-					//std::cout << "@@ Server Name: " << hostIt->second[0].retrieveServerName() << std::endl;
 
 					bool alreadyExists = false;
 
 					if (!alreadyExists)
 					{
-						serversByPortAndHost[portIt->first][hostIt->first].push_back(&serverConfig);  // Adicionar a nova configuração
+						ParserConfig& config = hostIt->second;
+						const conf_File_Info configInfoPtr = config.getServerConfigurations();
+						conf_File_Info configInfo = configInfoPtr;
+						server.addConfig(portIt->first, configInfo);
 
-						// Adicionar configuração ao server
-						server.addConfig(portIt->first, serverConfig);
 
 						// Debugging para confirmar a configuração adicionada
-						std::cout << "  Config added to server:" << std::endl;
-						std::cout << "==> Port: " << serverConfig.portListen << std::endl;
-						std::cout << "==> Host: " << serverConfig.host << std::endl;
-						std::cout << "==> ServerName: " << serverConfig.ServerName << std::endl;
+						// std::cout << "  Config added to server:" << std::endl;
+						// std::cout << "==> Port: " << configInfo.portListen << std::endl;
+						// std::cout << "==> Host: " << configInfo.host << std::endl;
+						// std::cout << "==> ServerName: " << configInfo.ServerName << std::endl;
 					}
 					else
 					{
 						std::cout << "Configuration already exists for this host and port." << std::endl;
 					}
-					//configAdded = true;
 				}
 			}
 		}
 
-
-
-
-
-
-
-
-
-
-		//int listeningPort = ports[0];
-		//conf_File_Info &serverConfig = server.getConfig(listeningPort);
-		serverConfig = server.getConfig(porta);
+		conf_File_Info &serverConfig = server.getConfig(porta);
 
 		// ----------------------  ALTERACAO ------------------------ //
 
 		// Salvar o diretório raiz original
 		std::string originalRootDirectory = serverConfig.RootDirectory;
 
-		//std::cout << " ##****** Root directory : " << originalRootDirectory << std::endl;
 
 		if (processRulesRequest(requestMsg, server) == true)
 		{
 			if (!requestMsg.is_cgi) // ======ALTERAÇÂO======
 			{
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
-				//int portListenCopy = serverConfig.portListen;
 				std::string rootDirectoryCopy = serverConfig.RootDirectory;
-				//std::cout << RED << "!!!!! config upload: " << fileUploadDirectoryCopy << RESET << std::endl;
-				//std::cout << RED << "!!!!! config port: " << portListenCopy << RESET << std::endl;
-				//std::cout << RED << "!!!!! config root: " << rootDirectoryCopy << RESET << std::endl;
 				handleRequest(requestMsg, server, serverConfig);
 			}
 			else
@@ -1410,16 +1324,6 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 	if (!rootDirectory.empty() && rootDirectory[0] != '/') {
 		rootDirectory = '/' + rootDirectory;
 	}
-
-	// std::string requestMsgFile = removeTrailingSlash(requestMsg.path);
-	// std::string requestMsgFile2 = removeFirstDirectory(requestMsgFile);
-
-	// std::string fullPath = rootDirectory + requestMsgFile2;
-	//std::cout << "[handleGetRequest] rootDirectory: " << rootDirectory << std::endl;
-	//std::cout << "[handleGetRequest] requestMSG PATH original: " << requestMsg.path << std::endl;
-	//std::cout << "[handleGetRequest] requestMSG PATH1: " << requestMsgFile << std::endl;
-	//std::cout << "[handleGetRequest] requestMSG PATH2: " << requestMsgFile2 << std::endl;
-	//std::cout << "[handleGetRequest] Full path: " << fullPath << std::endl;
 
 	std::string fullPath = getCompletePath2();
 	//ifFileRmoveFile(fullPath);

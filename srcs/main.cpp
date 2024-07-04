@@ -3,8 +3,8 @@
 
 volatile sig_atomic_t flag = 0;
 std::vector<std::string> createdFiles;
+std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost;
 
-std::map<int, std::map<std::string, std::vector<ParserConfig> > > serversByPortAndHost;
 
 //Manipulador de sinal
 void handle_sigint(int sig)
@@ -18,10 +18,10 @@ void handle_sigint(int sig)
 	flag = 1;
 }
 
-void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
+ParserClass* setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
 {
-	ParserClass parser(configFileName);
-	ConfiguredServers configuredServers = parser.fetchSpecifications();
+	ParserClass *parser = new ParserClass(configFileName);
+	ConfiguredServers configuredServers = parser->fetchSpecifications();
 	//std::set<int> addedPorts;
 	std::map<int, std::vector<ParserConfig> > serversByPort;
 	//HTTrequestMSG httpRequestMsg;
@@ -32,45 +32,121 @@ void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers,
 	for (size_t i = 0; i < configuredServers.size(); ++i)
 	{
 		ParserConfig parserConfig = configuredServers[i];
-		serversByPortAndHost[parserConfig.obtainPort()][parserConfig.retrieveHost()].push_back(parserConfig);
-		//serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
+		serversByPortAndHost[parserConfig.obtainPort()][parserConfig.retrieveHost()] = parserConfig;
+		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
 	}
 
-	std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
-    std::map<int, std::map<std::string, std::vector<ParserConfig> > >::iterator portEntry;
-    for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
-        std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
-        std::map<std::string, std::vector<ParserConfig> >::iterator hostEntry;
-        for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
-            std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->second.size() << std::endl;
-        }
-    }
+	// std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
+    std::map<int, std::map<std::string, ParserConfig> >::iterator portEntry;
+    // for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
+    //     std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
+    //     std::map<std::string, ParserConfig >::iterator hostEntry;
+    //     for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
+    //         std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
+    //     }
+    // }
 
-	// Process each port
+
+	std::set<int> processedPorts;
 	for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry)
 	{
-		std::map<std::string, std::vector<ParserConfig> >::iterator hostEntry;
-		for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry)
+		int port = portEntry->first;
+
+		// Se a porta já foi processada, pule para a próxima iteração do loop
+		if (processedPorts.find(port) != processedPorts.end()) {
+			continue;
+		}
+
+		// Marque a porta como processada
+		processedPorts.insert(port);
+
+		std::map<std::string, ParserConfig>::iterator hostEntry;
+		hostEntry = portEntry->second.begin();
+		if (hostEntry != portEntry->second.end())
 		{
-			std::vector<ParserConfig>::iterator config;
-			for (config = hostEntry->second.begin(); config != hostEntry->second.end(); ++config)
-			{
-				const conf_File_Info *configInfo = config->getServerConfigurations();
-				ServerInfo *server = new ServerInfo();
+			ParserConfig& config = hostEntry->second;
+			const conf_File_Info configInfo = config.getServerConfigurations();
+			ServerInfo *server = new ServerInfo();
 
-				std::cout << "==> Port Number: " << configInfo->portListen << " | Server Name: " << configInfo->ServerName << " | Server Host: " << configInfo->host << std::endl;
-				configs->push_back(configInfo);
-				setupServer(*server, *configInfo);
-				servers.push_back(server);
+			std::cout << "==> Port Number: " << configInfo.portListen << " | Server Name: " << configInfo.ServerName << " | Server Host: " << configInfo.host << std::endl;
+			configs->push_back(&configInfo);
+			setupServer(*server, configInfo);
+			servers.push_back(server);
 
-				int port = portEntry->first;
-				std::string host = hostEntry->first;
+			std::string host = hostEntry->first;
 
-				// Imprimindo a porta, o nome do host e qualquer outra informação relevante de ParserConfig
-				std::cout << "Porta: " << port << ", Host: " << host << std::endl;
-			}
+			// Imprimindo a porta, o nome do host e qualquer outra informação relevante de ParserConfig
+			std::cout << "Porta: " << port << ", Host: " << host << std::endl;
 		}
 	}
+	return parser;
+}
+
+
+
+
+
+int main(int argc, char **argv)
+{
+	//GlobalFile globalFile(argv[1]);
+	// Configurar o manipulador de sinal
+	signal(SIGINT, handle_sigint);
+	//global_path = "resources/";
+
+	if (argc != 2)
+	{
+		std::cout << RED << "Error: Incorrect number of parameters provided.\n" << RESET;
+		std::cout << GREEN << "Usage: Please run the program with the correct configuration file as follows:\n" << RESET;
+		std::cout << "./webserv <config_file>\n";
+		std::cout << YELLOW << "Example: ./webserv config.txt\n" << RESET;
+		return (1);
+	}
+	try
+	{
+		std::vector<ServerInfo*> servers;
+		std::vector<const conf_File_Info*> configs;
+		//setupServers(argv[1], servers, &configs);
+		ParserClass* parser = setupServers(argv[1], servers, &configs);
+		//for (size_t i = 0; i < configs.size(); ++i)
+		//	runServer(servers);
+		fd_set read_fds, write_fds;
+		int max_fd;
+
+		int sair2 = 0;
+		for(size_t i = 0; i < servers.size(); ++i)
+		{
+			if (servers[i]->sair == 1)
+			{
+				sair2 = 1;
+				break;
+			}
+		}
+
+		if (sair2 == 0)
+		{
+			setupRunServer(servers, read_fds, write_fds, max_fd);
+
+			for (size_t i = 0; i < configs.size(); ++i)
+			{
+				runServer(servers, read_fds, write_fds, max_fd);
+			}
+			std::cout << GREEN << SBLINK << "\n ==> WebServer exit successfully!\n\n" << RESET;
+		}
+
+		for(size_t i = 0; i < servers.size(); ++i)
+		{
+			close(servers[i]->getSocketFD());
+			delete servers[i];
+		}
+		servers.clear();
+		delete parser;
+	}
+	catch(const std::exception &e)
+	{
+		std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
+	}
+	
+	return 0;
 }
 
 
@@ -125,68 +201,3 @@ void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers,
 // 		}
 // 	}
 // }
-
-
-int main(int argc, char **argv)
-{
-	//GlobalFile globalFile(argv[1]);
-	// Configurar o manipulador de sinal
-	signal(SIGINT, handle_sigint);
-	//global_path = "resources/";
-
-	if (argc != 2)
-	{
-		std::cout << RED << "Error: Incorrect number of parameters provided.\n" << RESET;
-		std::cout << GREEN << "Usage: Please run the program with the correct configuration file as follows:\n" << RESET;
-		std::cout << "./webserv <config_file>\n";
-		std::cout << YELLOW << "Example: ./webserv config.txt\n" << RESET;
-		return (1);
-	}
-	try
-	{
-		std::vector<ServerInfo*> servers;
-		std::vector<const conf_File_Info*> configs;
-		setupServers(argv[1], servers, &configs);
-		HTTrequestMSG httpRequestMsg;
-		//for (size_t i = 0; i < configs.size(); ++i)
-		//	runServer(servers);
-		fd_set read_fds, write_fds;
-		int max_fd;
-
-		int sair2 = 0;
-		for(size_t i = 0; i < servers.size(); ++i)
-		{
-			if (servers[i]->sair == 1)
-			{
-				sair2 = 1;
-				break;
-			}
-		}
-
-		if (sair2 == 0)
-		{
-			setupRunServer(servers, read_fds, write_fds, max_fd);
-			std::cout << "[hostname] main: "<< httpRequestMsg.hostname << std::endl;
-
-			for (size_t i = 0; i < configs.size(); ++i)
-			{
-				runServer(servers, read_fds, write_fds, max_fd);
-			}
-			std::cout << GREEN << SBLINK << "\n ==> WebServer exit successfully!\n\n" << RESET;
-		}
-
-		for(size_t i = 0; i < servers.size(); ++i)
-		{
-			close(servers[i]->getSocketFD());
-			delete servers[i];
-		}
-		servers.clear();
-
-	}
-	catch(const std::exception &e)
-	{
-		std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
-	}
-	
-	return 0;
-}

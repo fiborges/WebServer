@@ -8,6 +8,7 @@ bool matchWildcard(const std::string& pattern, const std::string& str);
 
 class ParserConfig {
 public:
+    ParserConfig() {} // NOVO
     ParserConfig(conf_File_Info* configData, const std::string& path_location = "");
     ParserConfig(const ParserConfig& src);
     ~ParserConfig();
@@ -36,7 +37,7 @@ public:
     bool validateMethod(const std::string& httpMethod) const;
 
     // Add getter for Server_configurations
-    const conf_File_Info* getServerConfigurations() const;
+    conf_File_Info getServerConfigurations() const;
 
 private:
     conf_File_Info* Server_configurations;
