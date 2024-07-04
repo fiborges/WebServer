@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/03 21:08:09 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/04 11:43:17 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1121,7 +1121,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 			return;
 		}
 
-		// ----------------------  ALTERACAO ------------------------ // 
+		// ----------------------  ALTERACAO ------------------------ //
 
 		std::cout << "[requestMsg] Hostname completo: " << requestMsg.hostname << std::endl;
 		std::string::size_type colonPos = requestMsg.hostname.find(":");
@@ -1177,21 +1177,21 @@ void processRequest(const std::string& request, ServerInfo& server)
 				}
 			}
 		}
-		
 
 
 
 
 
 
-		
+
+
 
 
 		//int listeningPort = ports[0];
 		//conf_File_Info &serverConfig = server.getConfig(listeningPort);
 		serverConfig = server.getConfig(porta);
 
-		// ----------------------  ALTERACAO ------------------------ // 
+		// ----------------------  ALTERACAO ------------------------ //
 
 		// Salvar o diretório raiz original
 		std::string originalRootDirectory = serverConfig.RootDirectory;
@@ -1225,7 +1225,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 				{
 					int	error = e.GetErrorCode();
 					handleError2(error, server, serverConfig, requestMsg);
-					std::cerr << e.what() << '\n';
+					std::cerr << e.what() << "\n";
 				}
 				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 			}

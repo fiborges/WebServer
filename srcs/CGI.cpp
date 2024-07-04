@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/03 11:38:06 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/04 11:46:11 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -489,9 +489,7 @@ const char* CGI::WrongCGIPath::what() const throw()
 
 const char* CGI::CGI_ExceptionClass::what() const throw()
 {
-	std::string	response = "ALERT: CGI DETECTED ERROR -> " + GetErrorCode() + '\n';
-
-	return (response.c_str());
+	return ("ALERT: CGI DETECTED ERROR\n");
 }
 
 
