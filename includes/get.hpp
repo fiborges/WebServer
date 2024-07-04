@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/04 12:54:02 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/04 14:56:24 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@
 # include <ctime>
 # include <list>
 
+#include "CR.hpp"
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
 # include "parser.hpp"
@@ -88,7 +89,7 @@ class ServerInfo
 		sockaddr_in serv_addr;
 		std::vector<sockaddr_in> cli_addrs;
 		std::string response;
-		
+
 		std::string rootUrl;
 		std::vector<int> clientSockets;
 		std::vector<int> portListen;
@@ -101,7 +102,7 @@ class ServerInfo
 	public:
 		ServerInfo();
 		~ServerInfo();
-	
+
 		int	clientSocket;
 		int sair;
 
@@ -132,7 +133,7 @@ class ServerInfo
 		void		setCompletePath(const std::string& path);
 		std::string	getCompletePath2() const;
 		std::string	getRootOriginalDirectory() const;
-		void		setRootOriginalDirectory(const std::string& dir);	
+		void		setRootOriginalDirectory(const std::string& dir);
 		void		handleError(const std::string& errorMessage);
 
 		void cleanup2();

@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/04 13:57:39 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/04 14:57:40 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -369,8 +369,9 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 //Read the request from the client and return it as a string
 std::string readRequest(int sockfd, ServerInfo& server)
 {
-	char buffer[4096];
-	std::string request;
+	CR			ChunkedOBJ;
+	char 		buffer[4096];
+	std::string	request;
 
 	// Read the header
 	while (1)
@@ -395,6 +396,9 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		if (request.find("\r\n\r\n") != std::string::npos)
 			break;
 	}
+
+	if (ChunkedOBJ.ItIsChunked(request))
+		std::cout << "It's a chunked request\n";
 
 	// Read the Body
 	HTTPParser parser;

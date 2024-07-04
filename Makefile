@@ -12,7 +12,7 @@ DIR_BUILD	=	build
 SRCS		=	$(DIR_SRCS)/main.cpp $(DIR_SRCS)/parser.cpp\
 				$(DIR_SRCS)/parser_utils.cpp $(DIR_SRCS)/parserConfig.cpp\
 				$(DIR_SRCS)/RequestParser.cpp $(DIR_SRCS)/erros.cpp\
-				$(DIR_SRCS)/get.cpp $(DIR_SRCS)/CGI.cpp
+				$(DIR_SRCS)/get.cpp $(DIR_SRCS)/CGI.cpp $(DIR_SRCS)/CR.cpp
 BUILD		=	$(subst $(DIR_SRCS), $(DIR_BUILD), $(SRCS:.cpp=.o))
 
 
