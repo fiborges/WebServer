@@ -68,15 +68,13 @@ ParserClass* setupServers(const char* configFileName, std::vector<ServerInfo*>& 
 			const conf_File_Info configInfo = config.getServerConfigurations();
 			ServerInfo *server = new ServerInfo();
 
-			std::cout << "==> Port Number: " << configInfo.portListen << " | Server Name: " << configInfo.ServerName << " | Server Host: " << configInfo.host << std::endl;
+			//std::cout << "==> Port Number: " << configInfo.portListen << " | Server Name: " << configInfo.ServerName << " | Server Host: " << configInfo.host << std::endl;
 			configs->push_back(&configInfo);
 			setupServer(*server, configInfo);
 			servers.push_back(server);
 
 			std::string host = hostEntry->first;
-
-			// Imprimindo a porta, o nome do host e qualquer outra informação relevante de ParserConfig
-			std::cout << "Porta: " << port << ", Host: " << host << std::endl;
+			//std::cout << "Porta: " << port << ", Host: " << host << std::endl;
 		}
 	}
 	return parser;

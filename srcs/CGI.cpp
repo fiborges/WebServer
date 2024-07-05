@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/04 11:46:11 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/05 14:55:41 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -455,7 +455,7 @@ void	CGI::Parent_process()
 	std::cout << "Response: " << response << std::endl;
 	if (response.empty() == true)
 	{
-		throw CGI_ExceptionClass(500); // Internal error.
+		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI
 	}
 	send(this->ClientSocket_, response.c_str(), response.size(), 0);
 }
