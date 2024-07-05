@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/05 18:04:40 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/05 18:09:40 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -346,11 +346,11 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	char 		buffer[4096];
 	std::string	request;
 
-	if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
-	{
-		std::cout << "It's a chunked request\n";
-		ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
-	}
+	//if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
+	//{
+	//	std::cout << "It's a chunked request\n";
+	//	ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
+	//}
 
 	// Read the header
 	while (1)
