@@ -3,10 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
+<<<<<<< HEAD
 /*   Updated: 2024/07/05 18:17:54 by fde-carv         ###   ########.fr       */
+=======
+/*   Updated: 2024/07/05 18:09:40 by brolivei         ###   ########.fr       */
+>>>>>>> d8129868321a01b1ee4e5fcdef08203d222c4495
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -342,9 +346,15 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 //Read the request from the client and return it as a string
 std::string readRequest(int sockfd, ServerInfo& server)
 {
-	CR			ChunkedOBJ;
+	CR			ChunkedOBJ = CR(sockfd);
 	char 		buffer[4096];
 	std::string	request;
+
+	//if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
+	//{
+	//	std::cout << "It's a chunked request\n";
+	//	ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
+	//}
 
 	// Read the header
 	while (1)
@@ -369,9 +379,6 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		if (request.find("\r\n\r\n") != std::string::npos)
 			break;
 	}
-
-	if (ChunkedOBJ.ItIsChunked(request))
-		std::cout << "It's a chunked request\n";
 
 	// Read the Body
 	HTTPParser parser;
@@ -1124,7 +1131,7 @@ void handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfi
 
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server, conf_File_Info &serverConfig)
 {
-	
+
 	std::string rootDirectory = serverConfig.RootDirectory;
 
 	if (!rootDirectory.empty() && rootDirectory[0] != '/')
@@ -1150,8 +1157,8 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 		return;
 	}
 
-		
-	
+
+
 	struct stat buffer;
 	if (stat(fullPath.c_str(), &buffer) == 0 )
 	{
