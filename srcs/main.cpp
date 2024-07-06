@@ -1,12 +1,9 @@
 #include "../includes/parser.hpp"
-//#include "../includes/erros.hpp"
 
 volatile sig_atomic_t flag = 0;
 std::vector<std::string> createdFiles;
 std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost;
 
-
-//Manipulador de sinal
 void handle_sigint(int sig)
 {
 	(void)sig;
@@ -22,74 +19,56 @@ ParserClass* setupServers(const char* configFileName, std::vector<ServerInfo*>& 
 {
 	ParserClass *parser = new ParserClass(configFileName);
 	ConfiguredServers configuredServers = parser->fetchSpecifications();
-	//std::set<int> addedPorts;
 	std::map<int, std::vector<ParserConfig> > serversByPort;
-	//HTTrequestMSG httpRequestMsg;
-	//std::string host = httpRequestMsg.hostname;
+	std::vector<ParserConfig> serverConfigs; 
 
-
-	// Organize servers by port
 	for (size_t i = 0; i < configuredServers.size(); ++i)
 	{
 		ParserConfig parserConfig = configuredServers[i];
 		serversByPortAndHost[parserConfig.obtainPort()][parserConfig.retrieveHost()] = parserConfig;
 		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
+		serverConfigs.push_back(parserConfig);
 	}
 
-	// std::cout << " Total ports in map: " << serversByPortAndHost.size() << std::endl;
-    std::map<int, std::map<std::string, ParserConfig> >::iterator portEntry;
-    // for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
-    //     std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
-    //     std::map<std::string, ParserConfig >::iterator hostEntry;
-    //     for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
-    //         std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
-    //     }
-    // }
+	std::map<int, std::map<std::string, ParserConfig> >::iterator portEntry;
+	// for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
+	//     std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
+	//     std::map<std::string, ParserConfig >::iterator hostEntry;
+	//     for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
+	//         std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
+	//     }
+	// }
 
+	const ParserConfig& config = serverConfigs[0];
+	// for (size_t i = 0; i < serverConfigs.size(); ++i)
+	// 	std::cout << "Processing config for host: " << config.retrieveHost() << ", port: " << config.obtainPort() << std::endl;
 
 	std::set<int> processedPorts;
 	for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry)
 	{
 		int port = portEntry->first;
 
-		// Se a porta já foi processada, pule para a próxima iteração do loop
-		if (processedPorts.find(port) != processedPorts.end()) {
+		if (processedPorts.find(port) != processedPorts.end())
 			continue;
-		}
 
-		// Marque a porta como processada
 		processedPorts.insert(port);
-
-		std::map<std::string, ParserConfig>::iterator hostEntry;
-		hostEntry = portEntry->second.begin();
+		std::map<std::string, ParserConfig>::iterator hostEntry = portEntry->second.find(config.retrieveHost() );
 		if (hostEntry != portEntry->second.end())
 		{
 			ParserConfig& config = hostEntry->second;
 			const conf_File_Info configInfo = config.getServerConfigurations();
 			ServerInfo *server = new ServerInfo();
-
-			//std::cout << "==> Port Number: " << configInfo.portListen << " | Server Name: " << configInfo.ServerName << " | Server Host: " << configInfo.host << std::endl;
 			configs->push_back(&configInfo);
 			setupServer(*server, configInfo);
 			servers.push_back(server);
-
-			std::string host = hostEntry->first;
-			//std::cout << "Porta: " << port << ", Host: " << host << std::endl;
 		}
 	}
 	return parser;
 }
 
-
-
-
-
 int main(int argc, char **argv)
 {
-	//GlobalFile globalFile(argv[1]);
-	// Configurar o manipulador de sinal
 	signal(SIGINT, handle_sigint);
-	//global_path = "resources/";
 
 	if (argc != 2)
 	{
@@ -103,10 +82,7 @@ int main(int argc, char **argv)
 	{
 		std::vector<ServerInfo*> servers;
 		std::vector<const conf_File_Info*> configs;
-		//setupServers(argv[1], servers, &configs);
 		ParserClass* parser = setupServers(argv[1], servers, &configs);
-		//for (size_t i = 0; i < configs.size(); ++i)
-		//	runServer(servers);
 		fd_set read_fds, write_fds;
 		int max_fd;
 
@@ -148,54 +124,55 @@ int main(int argc, char **argv)
 }
 
 
-// void setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
-// {
-// 	ParserClass parser(configFileName);
-// 	ConfiguredServers configuredServers = parser.fetchSpecifications();
-// 	std::set<int> addedPorts;
-// 	std::map<int, std::vector<ParserConfig> > serversByPort;
-// 	HTTrequestMSG httpRequestMsg;
-// 	std::string host = httpRequestMsg.hostname;
-// 	//std::cout << "====> Hostname: " << httpRequestMsg.hostname << std::endl;
 
-// 	// Organize servers by port
+
+// ParserClass* setupServers(const char* configFileName, std::vector<ServerInfo*>& servers, std::vector<const conf_File_Info*>* configs)
+// {
+// 	ParserClass *parser = new ParserClass(configFileName);
+// 	ConfiguredServers configuredServers = parser->fetchSpecifications();
+// 	std::map<int, std::vector<ParserConfig> > serversByPort;
+
 // 	for (size_t i = 0; i < configuredServers.size(); ++i)
 // 	{
 // 		ParserConfig parserConfig = configuredServers[i];
+// 		serversByPortAndHost[parserConfig.obtainPort()][parserConfig.retrieveHost()] = parserConfig;
 // 		serversByPort[parserConfig.obtainPort()].push_back(parserConfig);
 // 	}
 
-// 	// Process each port
-// 	for (std::map<int, std::vector<ParserConfig> >::iterator it = serversByPort.begin(); it != serversByPort.end(); ++it)
+//     std::map<int, std::map<std::string, ParserConfig> >::iterator portEntry;
+//     for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry) {
+//         std::cout << "   Port: " << portEntry->first << ", Hosts count: " << portEntry->second.size() << std::endl;
+//         std::map<std::string, ParserConfig >::iterator hostEntry;
+//         for (hostEntry = portEntry->second.begin(); hostEntry != portEntry->second.end(); ++hostEntry) {
+//             std::cout << "     Host: " << hostEntry->first << ", Configs count: " << hostEntry->first.size() << std::endl;
+//         }
+//     }
+
+// 	std::set<int> processedPorts;
+// 	for (portEntry = serversByPortAndHost.begin(); portEntry != serversByPortAndHost.end(); ++portEntry)
 // 	{
-// 		bool nameFound = false;
-// 		for (size_t i = 0; i < it->second.size(); ++i)
-// 		{
-// 			if (it->second[i].retrieveServerName() == host)
-// 			{
-// 				nameFound = true;
-// 				break;
-// 			}
+// 		int port = portEntry->first;
+
+// 		if (processedPorts.find(port) != processedPorts.end()) {
+// 			continue;
 // 		}
 
-// 		for (size_t i = 0; i < it->second.size(); ++i)
+// 		processedPorts.insert(port);
+
+// 		std::map<std::string, ParserConfig>::iterator hostEntry;
+// 		hostEntry = portEntry->second.begin();
+// 		if (hostEntry != portEntry->second.end())
 // 		{
-// 			if (nameFound && it->second[i].retrieveServerName() != host)
-// 				continue;
-
-// 			if (addedPorts.find(it->first) != addedPorts.end())
-// 				continue;
-
-// 			const conf_File_Info* config = it->second[i].getServerConfigurations();
-// 			ServerInfo* server = new ServerInfo();
-// 			std::cout << "==> Port Number: " << config->portListen << " | Server Name: " << config->ServerName << std::endl;
-// 			configs->push_back(config);
-// 			setupServer(*server, *config);
+// 			ParserConfig& config = hostEntry->second;
+// 			const conf_File_Info configInfo = config.getServerConfigurations();
+// 			ServerInfo *server = new ServerInfo();
+// 			std::cout << "CONFIG ORIGINAL: "  << configInfo.ServerName << " | " << configInfo.host << std::endl;
+// 			configs->push_back(&configInfo);
+// 			std::cout << "CONFIG ADICIOANDO: "  << configInfo.ServerName << " | " << configInfo.host << std::endl;
+// 			setupServer(*server, configInfo);
 // 			servers.push_back(server);
-
-// 			addedPorts.insert(it->first);
-// 			if (!nameFound)
-// 				break;
+// 			std::string host = hostEntry->first;
 // 		}
 // 	}
+// 	return parser;
 // }

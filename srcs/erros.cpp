@@ -72,7 +72,8 @@ std::string ServerErrorHandler::generateErrorPage(int errorCode, const std::stri
 		 << "<button onclick=\"location.href='/'\">Home</button>"
 		 << "</div>"
 		 << "</body>"
-		 << "</html>";
+		 << "</html>"
+		 << "\n";
 	return html.str();
 }
 

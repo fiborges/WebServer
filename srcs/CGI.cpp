@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/05 14:55:41 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/06 13:11:29 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -259,8 +259,8 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		std::cout << "Dealing with get request\n";
 		this->ClientSocket_ = ClientSocket;
 
-		CreateScriptURI();
-		CreateEnv();
+		CreateScriptURI(); //BAJ
+		CreateEnv(); //BAJ
 		//return ;
 	}
 

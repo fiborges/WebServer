@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/06 09:36:46 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/06 15:45:23 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -621,10 +621,6 @@ bool handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& request
 			}
 		}
 	}
-	else
-	{
-		//handleError2(403, server, serverConfig, requestMsg);
-	}
 	return true;
 }
 
@@ -642,7 +638,6 @@ void processErrorPage(std::string second, int errorCode, const std::string& root
 		std::stringstream ss;
 		ss << errorCode;
 		std::string errorCodeStr = ss.str();
-		std::string firstTwoDigits = errorCodeStr.substr(0, 2);
 
 		if (threeDigits[0] == errorCodeStr[0])
 		{
@@ -652,16 +647,19 @@ void processErrorPage(std::string second, int errorCode, const std::string& root
 
 		if (std::atoi(threeDigits.c_str()) == errorCode)
 		{
-
 			std::string path = rootDirectory + "/" + threeDigits + ".html";
-			std::ofstream file(path.c_str());
-			if (file)
+			std::ifstream existingFile(path.c_str());
+			if (!existingFile)
 			{
-				ServerErrorHandler errorHandler;
-				std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
-				file << errorPageContent;
-				file.close();
-				createdFiles.push_back(path);
+				std::ofstream file(path.c_str());
+				if (file)
+				{
+					ServerErrorHandler errorHandler;
+					std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
+					file << errorPageContent;
+					file.close();
+					createdFiles.push_back(path);
+				}
 			}
 		}
 	}
@@ -670,43 +668,70 @@ void processErrorPage(std::string second, int errorCode, const std::string& root
 void createHtmlFiles(const std::string& rootDirectory)
 {
 	ServerErrorHandler handler;
-	std::string path = rootDirectory + "/" + "delete.html";
-	std::ofstream file(path.c_str());
-	if (file)
-	{
-		std::string htmlContent = handler.generateDelete();
-		file << htmlContent;
-		file.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "get.html";
-	std::ofstream file2(path.c_str());
-	if (file2)
-	{
-		std::string htmlContent = handler.generateGet();
-		file2 << htmlContent;
-		file2.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "post.html";
-	std::ofstream file3(path.c_str());
-	if (file3)
-	{
-		std::string htmlContent = handler.generatePost();
-		file3 << htmlContent;
-		file3.close();
-		createdFiles.push_back(path);
-	}
-	path = rootDirectory + "/" + "upload.html";
-	std::ofstream file4(path.c_str());
-	if (file4)
-	{
-		std::string htmlContent = handler.generateUpload();
-		file4 << htmlContent;
-		file4.close();
-		createdFiles.push_back(path);
+	std::string filenames[] = {"delete.html", "get.html", "post.html", "upload.html"};
+
+	for (int i = 0; i < 4; ++i) {
+		std::string path = rootDirectory + "/" + filenames[i];
+
+		std::ifstream existingFile(path.c_str());
+		if (!existingFile) {
+			std::ofstream file(path.c_str());
+			if (file) {
+				std::string htmlContent;
+				switch(i) {
+					case 0: htmlContent = handler.generateDelete(); break;
+					case 1: htmlContent = handler.generateGet(); break;
+					case 2: htmlContent = handler.generatePost(); break;
+					case 3: htmlContent = handler.generateUpload(); break;
+				}
+				file << htmlContent;
+				file.close();
+				createdFiles.push_back(path);
+			}
+		}
 	}
 }
+
+// void createHtmlFiles(const std::string& rootDirectory)
+// {
+// 	ServerErrorHandler handler;
+// 	std::string path = rootDirectory + "/" + "delete.html";
+// 	std::ofstream file(path.c_str());
+// 	if (file)
+// 	{
+// 		std::string htmlContent = handler.generateDelete();
+// 		file << htmlContent;
+// 		file.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "get.html";
+// 	std::ofstream file2(path.c_str());
+// 	if (file2)
+// 	{
+// 		std::string htmlContent = handler.generateGet();
+// 		file2 << htmlContent;
+// 		file2.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "post.html";
+// 	std::ofstream file3(path.c_str());
+// 	if (file3)
+// 	{
+// 		std::string htmlContent = handler.generatePost();
+// 		file3 << htmlContent;
+// 		file3.close();
+// 		createdFiles.push_back(path);
+// 	}
+// 	path = rootDirectory + "/" + "upload.html";
+// 	std::ofstream file4(path.c_str());
+// 	if (file4)
+// 	{
+// 		std::string htmlContent = handler.generateUpload();
+// 		file4 << htmlContent;
+// 		file4.close();
+// 		createdFiles.push_back(path);
+// 	}
+// }
 
 void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory)
 {
@@ -716,14 +741,18 @@ void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirect
 	else
 		name = serverConfig.defaultFile;
 	std::string path = rootDirectory + "/" + name;
-	std::ofstream file(path.c_str());
-	if (file)
+	std::ifstream existingFile(path.c_str());
+	if (!existingFile)
 	{
-		ServerErrorHandler handler;
-		std::string base = handler.generateIndex(name);
-		file << base;
-		file.close();
-		createdFiles.push_back(path);
+		std::ofstream file(path.c_str());
+		if (file)
+		{
+			ServerErrorHandler handler;
+			std::string base = handler.generateIndex(name);
+			file << base;
+			file.close();
+			createdFiles.push_back(path);
+		}
 	}
 }
 
@@ -748,8 +777,8 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 		processErrorPage(it->second, it->first, serverConfig.RootDirectory);
 	}
 
-	//createIndexFile(serverConfig, serverConfig.RootDirectory);
-	//createHtmlFiles(serverConfig.RootDirectory);
+	createIndexFile(serverConfig, serverConfig.RootDirectory);
+	createHtmlFiles(serverConfig.RootDirectory);
 
 	if (serverConfig.LocationsMap.size() > 0)
 	{
@@ -941,6 +970,14 @@ void processRequest(const std::string& request, ServerInfo& server)
 		{
 			if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
 			{
+				std::cout << "OLA [0]" << std::endl;
+				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
+				std::string rootDirectoryCopy = serverConfig.RootDirectory;
+				handleRequest(requestMsg, server, serverConfig);
+			}
+			else if (requestMsg.is_cgi == true && requestMsg.method == HTTrequestMSG::GET)
+			{
+				std::cout << "OLA [1]" << std::endl;
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
 				std::string rootDirectoryCopy = serverConfig.RootDirectory;
 				handleRequest(requestMsg, server, serverConfig);
@@ -949,6 +986,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 			{
 				try
 				{
+					std::cout << "OLA [2]" << std::endl;
 					CGI cgi(serverConfig, requestMsg);
 					cgi.PerformCGI(server.clientSocket , ParaCGI);
 
