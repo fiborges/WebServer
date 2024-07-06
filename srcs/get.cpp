@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/05 14:54:01 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/05 18:17:54 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -617,6 +617,10 @@ bool handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& request
 			}
 		}
 	}
+	else
+	{
+		//handleError2(403, server, serverConfig, requestMsg);
+	}
 	return true;
 }
 
@@ -1194,7 +1198,8 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 			else
 			{
 				std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
-				handleError2(404, server, serverConfig, requestMsg);
+				//server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nDEFAULT PAGE.");
+				handleError2(403, server, serverConfig, requestMsg);
 				return;
 			}
 		}
@@ -1272,13 +1277,13 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 		}
 
 		// ----------------------//
-		int port = server.portListen[0];
-		std::string rootDirectory1 = server.configs[port].RootDirectory;
-		std::cout << "RootDirectory: " << rootDirectory1 << std::endl;
-		std::string fileUploadDirectory = server.configs[port].fileUploadDirectory;
-		std::cout << "FileUploadDirectory: " << fileUploadDirectory << std::endl;
-		std::string dataDirectory = rootDirectory1 + fileUploadDirectory + "/";
-		//std::string dataDirectory = "uploads/";
+		// int port = server.portListen[0];
+		// std::string rootDirectory1 = server.configs[port].RootDirectory;
+		// std::cout << "RootDirectory: " << rootDirectory1 << std::endl;
+		// std::string fileUploadDirectory = server.configs[port].fileUploadDirectory;
+		// std::cout << "FileUploadDirectory: " << fileUploadDirectory << std::endl;
+		// std::string dataDirectory = rootDirectory1 + fileUploadDirectory + "/";
+		std::string dataDirectory = "cgi-bin/uploads/";
 		//-------------------------//
 
 	//	std::cout << "Data directory: " << dataDirectory << std::endl;
@@ -1499,11 +1504,38 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 			{
 				// Write response to the client
 				int clientSocket = (*it)->clientSocket;
-				write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
-				// Remove client socket from read_fds and write_fds
-				FD_CLR(clientSocket, &read_fds);
-				FD_CLR(clientSocket, &write_fds);
-				socketsToClose.push_back(clientSocket);
+
+				ssize_t bytesWritten = write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
+				if (bytesWritten < 0)
+				{
+					perror("Error writing to socket");
+					FD_CLR(clientSocket, &read_fds);
+					FD_CLR(clientSocket, &write_fds);
+					close(clientSocket);
+					(*it)->clientSocket = -1;
+				}
+				else if (bytesWritten == 0)
+				{
+					std::cerr << "Client closed connection: Socket FD " << clientSocket << std::endl;
+					close(clientSocket);
+					FD_CLR(clientSocket, &read_fds);
+					FD_CLR(clientSocket, &write_fds);
+					(*it)->clientSocket = -1;
+				}
+				else
+				{
+					FD_CLR(clientSocket, &read_fds);
+					FD_CLR(clientSocket, &write_fds);
+					socketsToClose.push_back(clientSocket);
+					(*it)->clientSocket = -1;
+				}
+
+				
+				// write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
+				// // Remove client socket from read_fds and write_fds
+				// FD_CLR(clientSocket, &read_fds);
+				// FD_CLR(clientSocket, &write_fds);
+				// socketsToClose.push_back(clientSocket);
 				(*it)->clientSocket = -1;
 				if (newsockfd >= 0)
 				{
