@@ -3,16 +3,13 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-<<<<<<< HEAD
-/*   Updated: 2024/07/05 18:17:54 by fde-carv         ###   ########.fr       */
-=======
-/*   Updated: 2024/07/05 18:09:40 by brolivei         ###   ########.fr       */
->>>>>>> d8129868321a01b1ee4e5fcdef08203d222c4495
+/*   Updated: 2024/07/06 09:36:46 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "../includes/get.hpp"
 
