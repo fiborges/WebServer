@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:51:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/05 17:37:38 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/08 16:42:34 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ void	CR::HandleRequest()
 		std::cerr << "Error on recv\n";
 
 	std::cout << "TOTAL REQUEST:\n" << this->FullRequest_ << std::endl;
+	std::cout << "[FINISH]\n";
 	ProcessChunked();
 }
 
@@ -95,8 +96,6 @@ int	ConvertToDeci(std::string hex)
 	return (x);
 }
 
-
-
 std::string	CR::ProcessChunked()
 {
 	size_t		PosBegChunk = this->FullRequest_.find("\r\n\r\n") + 4;
@@ -115,28 +114,33 @@ std::string	CR::ProcessChunked()
 
 
 	InicioDosCHUNKES += 2;
+	std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
 	while (SizeOfChunkInDec != 0)
 	{
 		std::string	NewPiece;
 		//size_t	ChunkFinalPos = this->FullRequest_.find("\r\n", InicioDosCHUNKES);
 
-		while (NewPiece.size() != static_cast<size_t>(SizeOfChunkInDec))
+		while (this->FullRequest_[InicioDosCHUNKES] != '\r')
 			NewPiece += this->FullRequest_[InicioDosCHUNKES++];
 
 		this->CleanedRequest.append(NewPiece);
 
 		InicioDosCHUNKES += 2;
 
-		SizeOfChunkInHex = "";
+		std::string	ChunkSizeHex;
 
 		while (this->FullRequest_[InicioDosCHUNKES] != '\r')
-			SizeOfChunkInHex += this->FullRequest_[InicioDosCHUNKES++];
-		SizeOfChunkInDec = ConvertToDeci(SizeOfChunkInHex);
+			ChunkSizeHex += this->FullRequest_[InicioDosCHUNKES++];
+		SizeOfChunkInDec = ConvertToDeci(ChunkSizeHex);
+
+		std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
+		std::cout << "NEWPIECE:" << NewPiece << std::endl;
 
 		InicioDosCHUNKES += 2;
 	}
 
-	std::cout << "CleandedRequest:\n" << this->CleanedRequest << std::endl;
+	std::cout << "CleandedRequest:\n" << this->CleanedRequest;
+	std::cout << "[FINISH]\n";
 
 	return (this->CleanedRequest);
 }

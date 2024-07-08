@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/06 15:45:23 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/08 15:24:17 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -347,11 +347,11 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	char 		buffer[4096];
 	std::string	request;
 
-	//if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
-	//{
-	//	std::cout << "It's a chunked request\n";
-	//	ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
-	//}
+	if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
+	{
+		std::cout << "It's a chunked request\n";
+		ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
+	}
 
 	// Read the header
 	while (1)
@@ -1572,7 +1572,7 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 					(*it)->clientSocket = -1;
 				}
 
-				
+
 				// write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
 				// // Remove client socket from read_fds and write_fds
 				// FD_CLR(clientSocket, &read_fds);
