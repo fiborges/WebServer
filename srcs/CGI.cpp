@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/06 13:11:29 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/09 11:26:11 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,9 @@ void	CGI::CreateScriptURI()
 		throw CGI_ExceptionClass(415); // erro 415: Unsupported Media Type
 
 	std::cout << "SCRIPT_URI CREATED:" << this->ScriptURI_ << std::endl;
+	std::cout << "PATH_CGI:" << this->Info_.Path_CGI << std::endl;
+	if (this->Info_.Path_CGI.empty())
+		throw CGI_ExceptionClass(404);
 
 	if (this->ScriptURI_.substr(0, this->Info_.Path_CGI.size()) != this->Info_.Path_CGI)
 		throw CGI_ExceptionClass(404); // Not found the CGI resource
