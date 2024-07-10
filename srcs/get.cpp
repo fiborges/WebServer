@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/10 15:05:41 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/10 15:31:15 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -361,12 +361,6 @@ std::string readRequest(int sockfd, ServerInfo& server)
 	char 		buffer[4096];
 	std::string	request;
 
-	// if (ChunkedOBJ.ItIsChunked(request)) // Está a detectar
-	// {
-	// 	std::cout << "It's a chunked request\n";
-	// 	ChunkedOBJ.HandleRequest(); // Não está a lidar bem com o Request ainda.
-	// }
-
 	// Read the header
 	while (1)
 	{
@@ -393,7 +387,7 @@ std::string readRequest(int sockfd, ServerInfo& server)
 
 	if (ChunkedOBJ.ItIsChunked(request) == true)
 	{
-		std::cout << "Chunked Request detected\n";
+		std::cout << "Chunked Request detected HERE\n";
 		std::string	requestCR = ChunkedOBJ.HandleRequest(request);
 		return requestCR;
 	}
@@ -983,6 +977,24 @@ void processRequest(const std::string& request, ServerInfo& server)
 			{
 				try {
 					Chunked.CheckTheChunk();
+					if (requestMsg.is_cgi == true)
+					{
+						try
+						{
+							CGI cgi(serverConfig, requestMsg);
+							cgi.PerformCGI(server.clientSocket , ParaCGI);
+
+							std::string httpResponse;
+							server.setResponse(httpResponse);
+							printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+						}
+						catch(const CGI::CGI_ExceptionClass& e)
+						{
+							int	error = e.GetErrorCode();
+							handleError2(error, server, serverConfig, requestMsg);
+							std::cerr << e.what() << "\n";
+						}
+					}
 				}
 				catch(const CR::CR_ExceptionClass& e)
 				{
@@ -1194,7 +1206,7 @@ std::string checkForCgiBin(const std::string& path, const std::string& filePath,
 
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server, conf_File_Info &serverConfig)
 {
-	
+
 	std::string rootDirectory = serverConfig.RootDirectory;
 
 	if (!rootDirectory.empty() && rootDirectory[0] != '/')
@@ -1203,7 +1215,7 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 	std::string fullPath = getCompletePath2();
 	if (fullPath[fullPath.length() - 1] == '/')
 		fullPath.erase(fullPath.length() - 1);
-	
+
 	std::string filePath =  requestMsg.path;
 	std::string fullPath2 = checkForCgiBin(fullPath, filePath, server);
 	fullPath = fullPath2;

@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:07:37 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 13:18:27 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 15:06:20 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class	CR
 		CR(int ClientSocket);
 		CR(std::string Cleaned);
 
-		bool		ItIsChunked(std::string& Request);
+		static bool		ItIsChunked(std::string& Request);
 		bool		TheRequestIsFinished();
 		void		CheckTheChunk();
 

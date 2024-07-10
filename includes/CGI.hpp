@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/04 11:36:31 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 15:06:31 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 
 #include "../includes/conf_info.hpp"
 #include "../includes/RequestParser.hpp"
+#include "CR.hpp"
 //#include "LOG_CLASS.hpp"
 
 class CGI
@@ -41,6 +42,8 @@ class CGI
 		int	P_FD[2];
 		int	C_FD[2];
 		int	pid;
+
+		CR	Chunks;
 
 		std::map<std::string, std::string>::iterator it_;
 
@@ -68,6 +71,7 @@ class CGI
 		void	ExtractBody(std::string& buffer);
 		void	ExtractFileName();
 		void	ExtractFileContent();
+		void	ExtractChunkBody();
 
 		void	SendContentToScript();
 		void	SendAllRequestToScript();

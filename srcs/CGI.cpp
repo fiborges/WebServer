@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 11:17:35 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 15:10:48 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -239,7 +239,11 @@ void	CGI::CreateEnv()
 
 	key = "FILE_NAME=";
 
-	this->EnvStrings_.push_back(key + this->FileName_);
+	CR	Chunk;
+	if (Chunk.ItIsChunked(this->TotalRequest_))
+		this->EnvStrings_.push_back(key + "chunk.txt");
+	else
+		this->EnvStrings_.push_back(key + this->FileName_);
 
 	key = "GATEWAY_INTERFACE=";
 	value = "CGI/1.1";
@@ -261,10 +265,41 @@ void	CGI::CreateEnv()
 	this->Env_.push_back(NULL);
 }
 
+void	CGI::ExtractChunkBody()
+{
+	size_t	StartBody = this->TotalRequest_.find("\r\n\r\n") + 4;
+
+	while (this->TotalRequest_[StartBody])
+		this->Body_ += this->TotalRequest_[StartBody++];
+
+	size_t	EndBody = this->Body_.find("\r\n\r\n");
+
+	this->Body_.erase(EndBody);
+
+	std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
+}
+
 void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
+	CR	Chunk;
+
 	this->TotalRequest_ = buffer;
-	if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
+
+	if (Chunk.ItIsChunked(buffer) == true)
+	{
+		std::cout << "CGI:Dealing with ChunkedRequest\n";
+
+		if (this->Info_.fileUploadDirectory.empty())
+			throw CGI_ExceptionClass(500);
+
+		this->ClientSocket_ = ClientSocket;
+
+		CreateScriptURI();
+		ExtractChunkBody();
+		CreateEnv();
+	}
+
+	else if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
 	{
 		std::cout << "Dealing with get request\n";
 		this->ClientSocket_ = ClientSocket;
@@ -424,7 +459,9 @@ void	CGI::Parent_process()
 	close(this->P_FD[0]);
 	dup2(this->C_FD[0], STDIN_FILENO);
 
-	if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST"  && this->FileContent_.empty() == false)
+	if (this->Chunks.ItIsChunked(this->TotalRequest_) == true)
+		SendContentToScript();
+	else if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST"  && this->FileContent_.empty() == false)
 		SendContentToScript();
 	//if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
 	else
