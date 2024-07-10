@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:51:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/08 16:57:16 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 14:03:41 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,14 +21,20 @@ CR::CR(int ClientSocket)
 	this->ClientSocket_ = ClientSocket;
 }
 
+CR::CR(std::string Cleaned)
+{
+	this->CleanedRequest = Cleaned;
+}
+
 bool	CR::ItIsChunked(std::string& Request)
 {
 	std::string	ToFind = "Transfer-Encoding: chunked";
 
-	if (Request.find(ToFind))
+	if (Request.find(ToFind) != std::string::npos)
 		return (true);
 	else
 		return (false);
+	return false;
 }
 
 bool	CR::TheRequestIsFinished()
@@ -42,10 +48,17 @@ bool	CR::TheRequestIsFinished()
 	return true;
 }
 
-void	CR::HandleRequest()
+std::string	CR::HandleRequest(std::string RequestFromBegin)
 {
 	char	buffer[4096];
 	int		bytesRead;
+
+	this->FullRequest_ = RequestFromBegin;
+	if (TheRequestIsFinished() == true)
+	{
+		ProcessChunked();
+		return (this->CleanedRequest);
+	}
 
 	while ((bytesRead = recv(this->ClientSocket_, buffer, 4095, 0)) > 0)
 	{
@@ -61,6 +74,7 @@ void	CR::HandleRequest()
 	std::cout << "TOTAL REQUEST:\n" << this->FullRequest_ << std::endl;
 	std::cout << "[FINISH]\n";
 	ProcessChunked();
+	return (this->CleanedRequest);
 }
 
 int	ConvertToDeci(std::string hex)
@@ -104,7 +118,7 @@ std::string	CR::ProcessChunked()
 
 	this->CleanedRequest.append(this->FullRequest_, 0, PosBegChunk);
 
-	std::cout << "FirstPartOfCleanedRequest:\n" << this->CleanedRequest << "$\n";
+	//std::cout << "FirstPartOfCleanedRequest:\n" << this->CleanedRequest << "$\n";
 
 	size_t	InicioDosCHUNKES = this->FullRequest_.find("\r\n", PosBegChunk) + 2;
 
@@ -114,7 +128,7 @@ std::string	CR::ProcessChunked()
 
 
 	InicioDosCHUNKES += 2;
-	std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
+	//std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
 	while (SizeOfChunkInDec != 0)
 	{
 		std::string	NewPiece;
@@ -132,14 +146,34 @@ std::string	CR::ProcessChunked()
 			ChunkSizeHex += this->FullRequest_[InicioDosCHUNKES++];
 		SizeOfChunkInDec = ConvertToDeci(ChunkSizeHex);
 
-		std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
-		std::cout << "NEWPIECE:" << NewPiece << std::endl;
+		//std::cout << "SIZE:" << SizeOfChunkInDec << std::endl;
+		//std::cout << "NEWPIECE:" << NewPiece << std::endl;
 
 		InicioDosCHUNKES += 2;
 	}
 
+	this->CleanedRequest += "\r\n\r\n";
 	std::cout << "CleandedRequest:\n" << this->CleanedRequest;
 	std::cout << "[FINISH]\n";
 
 	return (this->CleanedRequest);
+}
+
+void	CR::CheckTheChunk()
+{
+	std::string	test;
+	size_t	BodyStart = this->CleanedRequest.find("\r\n\r\n") + 4;
+
+	while (this->CleanedRequest[BodyStart] != '\r')
+		test += this->CleanedRequest[BodyStart++];
+
+	std::cout << "TEST_STRING:" << test << "[FINISH]\n";
+
+	if (test.empty())
+		throw CR_ExceptionClass(400);
+}
+
+const char* CR::CR_ExceptionClass::what() const throw()
+{
+	return ("ALERT: CR DETECTED ERROR\n");
 }
