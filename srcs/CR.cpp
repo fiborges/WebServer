@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:51:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/08 16:42:34 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/08 16:57:16 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,7 +118,6 @@ std::string	CR::ProcessChunked()
 	while (SizeOfChunkInDec != 0)
 	{
 		std::string	NewPiece;
-		//size_t	ChunkFinalPos = this->FullRequest_.find("\r\n", InicioDosCHUNKES);
 
 		while (this->FullRequest_[InicioDosCHUNKES] != '\r')
 			NewPiece += this->FullRequest_[InicioDosCHUNKES++];
