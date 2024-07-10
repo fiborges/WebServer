@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/09 11:06:25 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 13:27:18 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -343,7 +343,7 @@ void setupServer(ServerInfo& server, const conf_File_Info& config)
 //Read the request from the client and return it as a string
 std::string readRequest(int sockfd, ServerInfo& server)
 {
-	//CR			ChunkedOBJ = CR(sockfd);
+	CR			ChunkedOBJ = CR(sockfd);
 	char 		buffer[4096];
 	std::string	request;
 
@@ -375,6 +375,13 @@ std::string readRequest(int sockfd, ServerInfo& server)
 		request.append(buffer, bytesRead);
 		if (request.find("\r\n\r\n") != std::string::npos)
 			break;
+	}
+
+	if (ChunkedOBJ.ItIsChunked(request) == true)
+	{
+		std::cout << "Chunked Request detected\n";
+		std::string	requestCR = ChunkedOBJ.HandleRequest(request);
+		return requestCR;
 	}
 
 	// Read the Body
@@ -968,7 +975,20 @@ void processRequest(const std::string& request, ServerInfo& server)
 
 		if (processRulesRequest(requestMsg, server) == true)
 		{
-			if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
+			CR	Chunked = CR(ParaCGI);
+			if (Chunked.ItIsChunked(ParaCGI))
+			{
+				try {
+					Chunked.CheckTheChunk();
+				}
+				catch(const CR::CR_ExceptionClass& e)
+				{
+					int	error = e.GetErrorCode();
+					handleError2(error, server, serverConfig, requestMsg);
+					std::cerr << e.what() << "\n";
+				}
+			}
+			else if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
 			{
 				std::cout << "OLA [0]" << std::endl;
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;

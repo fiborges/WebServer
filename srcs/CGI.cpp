@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/09 11:26:11 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 11:17:35 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,6 +188,13 @@ std::string	CGI::GetUploadDir(const std::string& path)
 	{
 		if (DirExists(path))
 			return path; // É absoluto
+		std::string	tmp;
+		tmp = path;
+		tmp.insert(0, this->Info_.Path_CGI);
+		tmp.insert(0, ".");
+		std::cout << "PATH_TOTAL:" << tmp << std::endl;
+		if (DirExists(tmp))
+			return "." + path;
 		throw CGI_ExceptionClass(500); // The directory to upload is not created
 	}
 	if (path[0] == '.')

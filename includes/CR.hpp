@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:07:37 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/05 16:01:15 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 13:18:27 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,12 +31,24 @@ class	CR
 		~CR();
 
 		CR(int ClientSocket);
+		CR(std::string Cleaned);
 
 		bool		ItIsChunked(std::string& Request);
 		bool		TheRequestIsFinished();
+		void		CheckTheChunk();
 
-		void		HandleRequest();
+		std::string	HandleRequest(std::string RequestFromBegin);
 		std::string	ProcessChunked();
+
+		class	CR_ExceptionClass : public std::exception
+		{
+			private:
+				int	ErrorCode_;
+			public:
+				CR_ExceptionClass(int ErrorCode) : ErrorCode_(ErrorCode) {}
+				int	GetErrorCode() const { return (this->ErrorCode_); }
+				virtual const char* what() const throw();
+		};
 };
 
 #endif

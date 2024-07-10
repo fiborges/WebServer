@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/06 12:11:42 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/10 13:14:44 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@
 # include <ctime>
 # include <list>
 
-#include "CR.hpp"
+# include "CR.hpp"
 # include "conf_info.hpp"
 # include "RequestParser.hpp"
 # include "parser.hpp"
