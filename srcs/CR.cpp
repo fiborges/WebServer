@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:51:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 13:18:03 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 14:03:41 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,6 +166,8 @@ void	CR::CheckTheChunk()
 
 	while (this->CleanedRequest[BodyStart] != '\r')
 		test += this->CleanedRequest[BodyStart++];
+
+	std::cout << "TEST_STRING:" << test << "[FINISH]\n";
 
 	if (test.empty())
 		throw CR_ExceptionClass(400);
