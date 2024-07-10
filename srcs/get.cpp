@@ -6,9 +6,10 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/10 15:20:41 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/10 15:31:15 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #include "../includes/get.hpp"
@@ -184,6 +185,19 @@ std::string ServerInfo::getRootOriginalDirectory() const
 void ServerInfo::setRootOriginalDirectory(const std::string& dir)
 {
 	rootOriginalDirectory = dir;
+}
+
+// Takes a relative path ou transformes in absolute path
+std::string ServerInfo::getCompletePath(const std::string& path)
+{
+	char cwd[1024];
+	getcwd(cwd, sizeof(cwd));
+	std::string full_path2 = std::string(cwd);
+	if (!path.empty() && path[0] != '/')
+		full_path2 += '/';
+
+	full_path2 += path;
+	return full_path2;
 }
 
 // ================================================================================================= //
@@ -495,18 +509,7 @@ bool isMethodAllowed(const std::set<std::string>& allowedMethods, const std::str
 	return false;
 }
 
-// Takes a relative path ou transformes in absolute path
-std::string ServerInfo::getCompletePath(const std::string& path)
-{
-	char cwd[1024];
-	getcwd(cwd, sizeof(cwd));
-	std::string full_path2 = std::string(cwd);
-	if (!path.empty() && path[0] != '/')
-		full_path2 += '/';
 
-	full_path2 += path;
-	return full_path2;
-}
 
 // If last token is a file, remove it
 std::string ifFileRmoveFile(std::string path)
@@ -1002,14 +1005,6 @@ void processRequest(const std::string& request, ServerInfo& server)
 			}
 			else if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
 			{
-				std::cout << "OLA [0]" << std::endl;
-				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
-				std::string rootDirectoryCopy = serverConfig.RootDirectory;
-				handleRequest(requestMsg, server, serverConfig);
-			}
-			else if (requestMsg.is_cgi == true && requestMsg.method == HTTrequestMSG::GET)
-			{
-				std::cout << "OLA [1]" << std::endl;
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
 				std::string rootDirectoryCopy = serverConfig.RootDirectory;
 				handleRequest(requestMsg, server, serverConfig);
@@ -1054,10 +1049,10 @@ bool fileExists(const std::string& filePath)
 // Function to handle the request from the HTTP method
 void handleRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info &serverConfig)
 {
-	// int port = server.getPortList()[0];
-	// std::string filePath = server.getConfig(port).RootDirectory + request.path;
-	// std::cout << "Port HANDLE REQUEST : " << port << std::endl;
-	// conf_File_Info &serverConfig = server.getConfig(port);
+	//int port = server.getPortList()[0];
+	//std::string filePath = server.getConfig(port).RootDirectory + request.path;
+	//std::cout << "Port HANDLE REQUEST : " << port << std::endl;
+	//conf_File_Info &serverConfig = server.getConfig(port);
 
 	// if (request.path == "/favicon.ico")
 	// {
@@ -1076,7 +1071,8 @@ void handleRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info &s
 	// }
 	//else
 	{
-		std::string filePath = "resources/website" + request.path;
+		//std::string filePath =  request.path;
+		//std::cout << "FILE PATH: " << filePath << std::endl;
 		//std::string filePath = server.configs[port].RootDirectory + request.path;
 		if (request.method == HTTrequestMSG::GET)
 		{
@@ -1195,6 +1191,19 @@ void handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfi
 }
 
 
+std::string checkForCgiBin(const std::string& path, const std::string& filePath, ServerInfo& server)
+{
+	std::string resultPath = path;
+	std::string aaa;
+    if (!(path.find("cgi-bin") == std::string::npos))
+	{
+		resultPath = filePath;
+		aaa = server.getCompletePath(resultPath);
+		resultPath = aaa;
+    }
+	return resultPath;
+}
+
 void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server, conf_File_Info &serverConfig)
 {
 
@@ -1204,10 +1213,12 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 		rootDirectory = '/' + rootDirectory;
 
 	std::string fullPath = getCompletePath2();
-	if (fullPath[fullPath.length() - 1] == '/') {
+	if (fullPath[fullPath.length() - 1] == '/')
 		fullPath.erase(fullPath.length() - 1);
-	}
-	//std::cout << "[handleGetRequest] @@ Full path: " << fullPath << std::endl;
+
+	std::string filePath =  requestMsg.path;
+	std::string fullPath2 = checkForCgiBin(fullPath, filePath, server);
+	fullPath = fullPath2;
 
 	if (!fileExists(fullPath))
 	{
@@ -1222,8 +1233,6 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		return;
 	}
-
-
 
 	struct stat buffer;
 	if (stat(fullPath.c_str(), &buffer) == 0 )
