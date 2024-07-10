@@ -28,7 +28,7 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
         std::cout << "Content-Length header is larger than actual data size" << std::endl;
         return false;
     }
-    if (msg.path.find("cgi") != std::string::npos) {
+    if (msg.path.find(".py") != std::string::npos) {
         msg.is_cgi = true;
         std::cout << "Detected CGI request" << std::endl;
         std::string boundary = getBoundary(msg.headers["Content-Type"]);
