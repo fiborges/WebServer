@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 15:06:31 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 18:40:46 by filipa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,8 +88,6 @@ class CGI
 	public:
 		// Orthodox
 		CGI();
-		//CGI(const CGI& other);
-		//const CGI&	operator=(const CGI& other);
 		~CGI();
 
 		CGI(conf_File_Info info, HTTrequestMSG request);

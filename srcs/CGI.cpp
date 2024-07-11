@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 15:10:48 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 13:08:47 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,6 +114,9 @@ void	CGI::ExtractBody(std::string& buffer)
 	ssize_t	boundStart = buffer.find("\r\n\r\n");
 
 	this->Body_.append(buffer, boundStart + 4);
+
+	if (this->Body_.empty())
+		throw CGI_ExceptionClass(400);
 }
 
 void	CGI::ExtractFileName()
@@ -313,22 +316,6 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	{
 		if (this->Info_.fileUploadDirectory.empty())
 			throw CGI_ExceptionClass(500); // The upload path is not configurated in .conf
-		// std::cout << "SERVER_INFO:\n\n";
-
-		// std::cout << this->Info_.defaultFile << std::endl;
-		// std::cout << this->Info_.RootDirectory << std::endl;
-		// std::cout << "PATH_CGI: " << this->Info_.Path_CGI << std::endl;
-		// std::cout << this->Info_.fileUploadDirectory << std::endl << std::endl;
-
-		// std::cout << "REQUEST_INFO:\n\n";
-
-		// std::cout << this->Request_.method << std::endl;
-		// std::cout << this->Request_.path << std::endl;
-		// std::cout << this->Request_.query << std::endl;
-		// std::cout << this->Request_.content_length << std::endl;
-
-		// for (std::map<std::string, std::string>::iterator it = this->Request_.cgi_env.begin(); it != this->Request_.cgi_env.end(); it++)
-		// 	std::cout << it->first << " | " << it->second << std::endl;
 
 		this->ClientSocket_ = ClientSocket;
 
@@ -367,14 +354,6 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		}
 		CreateEnv();
 	}
-
-	// LOG_CLASS::CreateLog("FinalBoundary", this->FinalBoundary_);
-
-	// LOG_CLASS::CreateLog("Body", this->Body_);
-
-	// LOG_CLASS::CreateLog("FileName", this->FileName_);
-
-	// LOG_CLASS::CreateLog("FileContent", this->FileContent_);
 
 	// Creating Pipe
 	if (pipe(this->P_FD) == -1 || pipe(this->C_FD) == -1)
@@ -499,7 +478,7 @@ void	CGI::Parent_process()
 			break;
 	}
 	close(this->C_FD[0]);
-	std::cout << "Response: " << response << std::endl;
+	//std::cout << "Response: " << response << std::endl;
 	if (response.empty() == true)
 	{
 		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI

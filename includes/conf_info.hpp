@@ -28,12 +28,13 @@ struct conf_File_Info
     std::map<int, std::string> errorMap;
     ForwardingURL redirectURL;
     std::set<std::string> allowedMethods;
-    bool autoindexPresent; // flag 
+    bool autoindexPresent;
     int maxRequestSize;
     std::string fileUploadDirectory;
     Locations LocationsMap;
-    std::string cgiExtension; // Adicionado
-    std::string uploadToDirectory; // Adicionado
+    std::string cgiExtension;
+    std::string uploadToDirectory;
+    std::string tryFile; // adicionado
 };
 
 #endif

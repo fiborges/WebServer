@@ -49,6 +49,7 @@ private:
     void handleHost(const ParserUtils::Strings& tokens, conf_File_Info* config);
     std::string createErrorMsg(const std::string& erro_msg);
     void ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition);
+    void confirmTryFile(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword); // Adicionado
 
     void checkServer(const ParserUtils::Strings& pieces);
     void checkLocation(const ParserUtils::Strings& pieces);

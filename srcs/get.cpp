@@ -6,16 +6,16 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 19:35:51 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/11 19:47:34 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 
 #include "../includes/get.hpp"
 
 //std::vector<std::string> createdFiles;
 //volatile sig_atomic_t flag = 0;
+//std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost; // Adicionado
 
 ServerInfo::ServerInfo()
 {
@@ -902,8 +902,9 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					bool methodAllowed = isMethodAllowed(it->second.allowedMethods, requestMethod);
 					if (!methodAllowed)
 					{
+
 						std::cout << "aqui"<< std::endl;
-						handleError2(403, server, serverConfig, requestMsg);
+						handleError2(405, server, serverConfig, requestMsg); // ALTERACAO ANTES ESTAVA ERRO 403
 						return false;
 					}
 					return true;
@@ -1785,7 +1786,11 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 				// Write response to the client
 				int clientSocket = (*it)->clientSocket;
 
+
 				//std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n";
+
+				//std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n"; // CHECKING THE RESPONSE
+
 				ssize_t bytesWritten = write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
 				if (bytesWritten < 0)
 				{
