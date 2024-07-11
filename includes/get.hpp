@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/10 13:14:44 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 19:33:56 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,6 +141,7 @@ class ServerInfo
 
 std::string extractFileNameFromURL(const std::string& url);
 
+void		printError(const std::string& errorMessage);
 std::string	methodToString(HTTrequestMSG::Method method);
 void		printLog(const std::string& method, const std::string& path, const std::string& version, const std::string& httpResponse, ServerInfo& server);
 bool		is_directory(const std::string &path);

@@ -149,3 +149,16 @@ curl --resolve fred.com:8082:127.0.0.1 http://fred.com:8082
 
 curl -X GET http://localhost:8082/cgi-bin/uploads/aaa.txt
 
+//POST not working
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" --data "name=John&addr=123+Main+St" http://localhost:8082/cgi-bin/hello.py
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" --data "name=John&addr=123+Main+St" http://localhost:8082/cgi-bin/hello.py -o response_curl.html
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" --data "name=John&addr=123+Main+St" http://localhost:8082/cgi-bin/hello.py --http0.9 -o response_curl.html
+
+//POST fred
+curl -X POST http://localhost:8082 -d "chave1=valor1&chave2=valor2
+
+// DELETE
+curl -X DELETE localhost:8082/cgi-bin/uploads/rodri.sh
+
+// UNKNOWN
+curl -X UNKNOWN localhost:8082
