@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/10 15:31:15 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 10:40:56 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -970,9 +970,24 @@ void processRequest(const std::string& request, ServerInfo& server)
 
 		std::string originalRootDirectory = serverConfig.RootDirectory;
 
+		CR	Chunked = CR(ParaCGI);
+		if (Chunked.ItIsChunked(ParaCGI))
+		{
+			try
+			{
+				Chunked.CheckTheChunk();
+			}
+			catch(const CGI::CGI_ExceptionClass& e)
+			{
+				int	error = e.GetErrorCode();
+				handleError2(error, server, serverConfig, requestMsg);
+				std::cerr << e.what() << "\n";
+				return ;
+			}
+		}
+
 		if (processRulesRequest(requestMsg, server) == true)
 		{
-			CR	Chunked = CR(ParaCGI);
 			if (Chunked.ItIsChunked(ParaCGI))
 			{
 				try {
