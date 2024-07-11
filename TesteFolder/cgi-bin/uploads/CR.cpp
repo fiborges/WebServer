@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/04 14:51:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/11 10:46:53 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 10:45:14 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -178,3 +178,4 @@ const char* CR::CR_ExceptionClass::what() const throw()
 {
 	return ("ALERT: CR DETECTED ERROR\n");
 }
+

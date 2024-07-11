@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 10:40:56 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 11:11:50 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -971,20 +971,6 @@ void processRequest(const std::string& request, ServerInfo& server)
 		std::string originalRootDirectory = serverConfig.RootDirectory;
 
 		CR	Chunked = CR(ParaCGI);
-		if (Chunked.ItIsChunked(ParaCGI))
-		{
-			try
-			{
-				Chunked.CheckTheChunk();
-			}
-			catch(const CGI::CGI_ExceptionClass& e)
-			{
-				int	error = e.GetErrorCode();
-				handleError2(error, server, serverConfig, requestMsg);
-				std::cerr << e.what() << "\n";
-				return ;
-			}
-		}
 
 		if (processRulesRequest(requestMsg, server) == true)
 		{
@@ -1018,6 +1004,7 @@ void processRequest(const std::string& request, ServerInfo& server)
 					std::cerr << e.what() << "\n";
 				}
 			}
+
 			else if (requestMsg.is_cgi == false) // ======ALTERAÇÂO======
 			{
 				std::string fileUploadDirectoryCopy = serverConfig.fileUploadDirectory;
@@ -1602,6 +1589,7 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 				// Write response to the client
 				int clientSocket = (*it)->clientSocket;
 
+				std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n";
 				ssize_t bytesWritten = write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
 				if (bytesWritten < 0)
 				{
