@@ -195,6 +195,11 @@ void ParserClass::ensureAllModulesClosed()
     throw ConfigError(createErrorMsg("Configuration Error: Unexpected end of file. Make sure all blocks are properly closed with a closing curly brace '}' and there are no unmatched opening braces '{'."));
 }
 
+void ParserClass::confirmTryFile(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword) {
+    ensureCorrectArgNumber(commandParts, commandParts.size() != 2);
+    Keyword->tryFile = commandParts[1];
+}
+
 void ParserClass::checkAndConfirmValidMap() {
     validationMapKeys["listen"] = &ParserClass::confirmListenSettings;
     validationMapKeys["server_name"] = &ParserClass::confirmServerName;
@@ -206,10 +211,11 @@ void ParserClass::checkAndConfirmValidMap() {
     validationMapKeys["limit_except"] = &ParserClass::checkProcedures;
     validationMapKeys["client_body_size"] = &ParserClass::ensureClientBodyCapacity;
     validationMapKeys["cgi_pass"] = &ParserClass::confirmCGISettings;
-    validationMapKeys["cgi_ext"] = &ParserClass::confirmCGIExtension; // Adicionado
+    validationMapKeys["cgi_ext"] = &ParserClass::confirmCGIExtension;
     validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDirectory;
-    validationMapKeys["upload_to"] = &ParserClass::confirmUploadToDirectory; // Adicionado
-    validationMapKeys["host"] = &ParserClass::handleHost; // Adicionado
+    validationMapKeys["upload_to"] = &ParserClass::confirmUploadToDirectory;
+    validationMapKeys["host"] = &ParserClass::handleHost;
+    validationMapKeys["try_file"] = &ParserClass::confirmTryFile; // Adicionado
 }
 
 std::string ParserClass::createErrorMsg(const std::string& erro_msg)

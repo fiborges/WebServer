@@ -23,6 +23,7 @@ void printConfig(const conf_File_Info& config, const std::string& location = "")
     std::cout << BOLD << "std::string cgiExtension: " << RESET << config.cgiExtension << std::endl;
     std::cout << BOLD << "bool directoryListingEnabled: " << RESET << (config.directoryListingEnabled ? "true" : "false") << std::endl;
     std::cout << BOLD << "bool autoindexPresent: " << RESET << (config.autoindexPresent ? "true" : "false") << std::endl; // Verificação da flag autoindexPresent
+    std::cout << BOLD << "std::string tryFile: " << RESET << config.tryFile << std::endl;
 
     std::cout << BOLD << YELLOW << "std::map<int, std::string> errorMap: " << RESET << std::endl;
     for (std::map<int, std::string>::const_iterator it = config.errorMap.begin(); it != config.errorMap.end(); ++it) {
@@ -54,7 +55,7 @@ void testMatching(const ParserConfig& parserConfig, const std::string& path) {
         std::string matchedPath = parserConfig.matchPath(path);
         ParserConfig context = parserConfig.extractContext(matchedPath);
         std::cout << GREEN << "Matched Path: " << matchedPath << RESET << std::endl;
-        printConfig(*context.getServerConfigurations(), matchedPath);
+        printConfig(context.getServerConfigurations(), matchedPath);
         std::cout << BOLD << "cgiExtension: " << RESET << context.fetchCGIExtension() << std::endl;
         std::cout << BOLD << "uploadToDirectory: " << RESET << context.fetchUploadToDirectory() << std::endl;
     } catch (const std::exception& e) {
@@ -74,7 +75,7 @@ int main() {
             std::string numberAsString = ss.str();
 
             printHeader("Server " + numberAsString + " Configuration");
-            printConfig(*servers[i].getServerConfigurations());
+            printConfig(servers[i].getServerConfigurations());
 
             // Testing path matching for each server
             printSubHeader("Path Matching Tests for Server " + numberAsString);
