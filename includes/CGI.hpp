@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/10 15:06:31 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 11:43:22 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,8 +88,6 @@ class CGI
 	public:
 		// Orthodox
 		CGI();
-		//CGI(const CGI& other);
-		//const CGI&	operator=(const CGI& other);
 		~CGI();
 
 		CGI(conf_File_Info info, HTTrequestMSG request);

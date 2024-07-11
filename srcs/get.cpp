@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 11:11:50 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/11 14:49:56 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -801,7 +801,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					bool methodAllowed = isMethodAllowed(it->second.allowedMethods, requestMethod);
 					if (!methodAllowed)
 					{
-						handleError2(403, server, serverConfig, requestMsg);
+						handleError2(405, server, serverConfig, requestMsg); // ALTERACAO ANTES ESTAVA ERRO 403
 						return false;
 					}
 					return true;
@@ -1589,7 +1589,7 @@ void runServer(std::vector<ServerInfo*>& servers, fd_set read_fds, fd_set write_
 				// Write response to the client
 				int clientSocket = (*it)->clientSocket;
 
-				std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n";
+				//std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n"; // CHECKING THE RESPONSE
 				ssize_t bytesWritten = write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
 				if (bytesWritten < 0)
 				{
