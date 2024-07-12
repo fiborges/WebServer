@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -8,7 +7,6 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
-# Define sleep duration in seconds
 x=5
 
 function print_test_case {
@@ -21,7 +19,6 @@ function print_test_case {
     sleep $x
 }
 
-# Initialize test number
 test_num=1
 
 # Basic GET Requests
@@ -139,6 +136,12 @@ curl -X POST -F "file=@invalidfile.invalid" http://localhost:8080/uploads/
 # File Download
 print_test_case "GET request to download a file" "Should successfully download the specified file."
 curl -O http://localhost:8080/uploads/upload.html
+
+((test_num++))
+
+# Chunked Transfer Encoding
+print_test_case "POST request with chunked transfer encoding" "Should handle chunked transfer encoding properly."
+python3 chunked_request.py
 
 ((test_num++))
 
