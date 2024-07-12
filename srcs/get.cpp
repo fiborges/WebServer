@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/12 11:31:10 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/12 12:15:47 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -863,34 +863,37 @@ void createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirect
 	}
 }
 
-bool handleTryFileRequest(const std::string& completeFullPath, const std::string& tryFileName, ServerInfo& server) {
-    std::cout << "completeFullPath : " << completeFullPath << std::endl;
-    std::string tryFilePath = completeFullPath + tryFileName;
-    std::cout << "TRYFILEPATH: " << tryFilePath << std::endl;
-    struct stat buffer;
+// bool handleTryFileRequest(const std::string& completeFullPath, const std::string& tryFileName, ServerInfo& server) {
+//     std::cout << "completeFullPath : " << completeFullPath << std::endl;
+//     std::string tryFilePath = completeFullPath + tryFileName;
+//     std::cout << "TRYFILEPATH: " << tryFilePath << std::endl;
+//     struct stat buffer;
 
-    if (is_directory(completeFullPath)) {
-        std::cout << "--[1]--" << std::endl;
-        std::cout << "tryFileName : " << tryFileName << std::endl;
-        if (!tryFileName.empty()) {
-            if (stat(tryFilePath.c_str(), &buffer) == 0) {
-                std::cout << "SIM" << std::endl;
-                std::string fileContent = readFileContent(tryFilePath);
-                std::string contentType = getContentType(tryFilePath);
-                server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-                return true;
-            } else {
-                std::cout << "NAO" << std::endl;
-                // Aqui você pode tratar o caso de arquivo não encontrado, se necessário
-                return false;
-            }
-        } else {
-            // Tratar o caso de tryFileName vazio, se necessário
-            return false;
-        }
-    }
-    return false;
-}
+//     if (is_directory(completeFullPath))
+// 	{
+//         std::cout << "--[1]--" << std::endl;
+//         std::cout << "tryFileName : " << tryFileName << std::endl;
+//         if (!tryFileName.empty()) {
+//             if (stat(tryFilePath.c_str(), &buffer) == 0)
+// 			{
+//                 std::cout << "SIM" << std::endl;
+//                 std::string fileContent = readFileContent(tryFilePath);
+//                 std::string contentType = getContentType(tryFilePath);
+//                 server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+//                 return true;
+//             }
+// 			else
+// 			{
+//                 std::cout << "NAO" << std::endl;
+//                 return false;
+//             }
+//         } else {
+//             // Tratar o caso de tryFileName vazio, se necessário
+//             return false;
+//         }
+//     }
+//     return false;
+// }
 
 
 // Principal Function to deal with rules from .conf file
@@ -919,7 +922,6 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 	{
 		for (Locations::const_iterator it = serverConfig.LocationsMap.begin(); it != serverConfig.LocationsMap.end(); ++it)
 		{
-			//std::cout << "$ >>>>> it->first: " << it->first << std::endl;
 			if (it->first == browserRelativePath)
 			{
 				if(it->first == "/")
@@ -932,7 +934,6 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 					bool methodAllowed = isMethodAllowed(it->second.allowedMethods, requestMethod);
 					if (!methodAllowed)
 					{
-
 						std::cout << "aqui"<< std::endl;
 						handleError2(405, server, serverConfig, requestMsg); // ALTERACAO ANTES ESTAVA ERRO 403
 						return false;
@@ -969,12 +970,9 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 				serverConfig.RootDirectory = newMixedPath;
 				server.setCompletePath(completeFullPath);
 
-
-
-
-
-
 				std::cout << "completeFullPath : " << completeFullPath << std::endl;
+				if (completeFullPath.rfind('/') != completeFullPath.length() - 1)
+					completeFullPath += '/';
 				std::string tryFilePath = completeFullPath + it->second.tryFile;
 				std::cout << "TRYFILEPATH: " << tryFilePath << std::endl;
 				struct stat buffer;
@@ -993,28 +991,8 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 							server.setCheckFile(1);
 							return true;
 						}
-						// else
-						// {
-						// 	std::cout << "NAO" << std::endl;
-						// 	handleError2(404, server, serverConfig, requestMsg);
-						// 	return false;
-						// }
 					}
-					// else
-					// {
-					// 	handleError2(404, server, serverConfig, requestMsg);
-					// 	return false;
-					// }
 				}
-
-
-
-
-
-
-
-
-
 
 				if (is_directory(completeFullPath))
 				{
@@ -1038,13 +1016,6 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 						}
 					}
 				}
-
-
-
-
-
-
-
 			}
 			else if (it->first == getDirectoryPath(requestMsg.path))
 			{
@@ -1413,35 +1384,14 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 		return;
 	}
 
-
-
-
-	// std::string marta = "marta.html";
-	// //std::cout << "fileExistsInDirectory: " << fileExistsInDirectory(fullPath, marta) << std::endl;
-	// if (isDirectory(fullPath) && fileExistsInDirectory(fullPath, marta) == false)
-	// {
-	// 	std::cout << "MARTA" << std::endl;
-	// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-	// 	return ;
-	// }
-	// else
-	// {
-	// 	std::cout << "MARTA ERROR" << std::endl;
-	// 	handleError2(404, server, serverConfig, requestMsg);
-	// 	return;
-	// }
-
-
 	int chechFILE = server.getCheckFile();
 	if (isDirectory(fullPath) && chechFILE == 1)
 	{
-		std::cout << "SSSS : " << serverConfig.tryFile << std::endl;
 		server.getResponse();
 		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 		server.setCheckFile(0);
 		return;
 	}
-
 
 	if (isDirectory(fullPath) && serverConfig.directoryListingEnabled == true && fileExistsInDirectory(fullPath, serverConfig.defaultFile) == false)
 	{
