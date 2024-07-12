@@ -8,32 +8,47 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
+# Define sleep duration in seconds
+x=5
+
 function print_test_case {
+    echo -e "\n"
+    echo -e "========================================================================="
+    echo -e "\n"
     echo -e "${CYAN}Testing: ${1}${RESET}"
     echo -e "${YELLOW}Expected Result: ${2}${RESET}"
+    sleep $x
 }
+
 
 # Basic GET Requests
 print_test_case "GET request to root directory" "Should return the root directory contents or index file."
 curl -X GET http://localhost:8080/
 
+
 print_test_case "GET request to uploads directory" "Should return the contents of the uploads directory."
 curl -X GET http://localhost:8080/uploads/
 
+
 # POST Requests
 print_test_case "POST request to upload a file" "Should successfully upload a file."
-curl -X POST -F "file=@/home/firibeir/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
+curl -X POST -F "file=@./resources/website/upload.html" http://localhost:8080/uploads/
+#curl -X POST -F "file=@/home/firibeir/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
+
 
 # DELETE Requests
 print_test_case "DELETE request to remove a file" "..."
 curl -X DELETE http://localhost:8080/uploads/CR.cpp
 
+
 # CGI Script Execution
 print_test_case "GET request to execute a .py CGI script" "Should execute the Python CGI script and return its output."
 curl -X GET http://localhost:8080/cgi-bin/ExampleGET.py
 
+
 print_test_case "POST request to execute a .py CGI script" "Should execute the Python CGI script with POST data and return its output."
-curl -X POST -d "name=John&age=30" http://localhost:8080/cgi-bin/ExampleGET.py
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "num1=10&num2=20&num3=30" http://localhost:8080/cgi-bin/ExampleGET.py
+echo -e "========================================================================="
 
 # # Error Pages
 # print_test_case "PUT request to root (Method Not Allowed)" "Should return 405 Method Not Allowed error page."
@@ -90,4 +105,5 @@ curl -X POST -d "name=John&age=30" http://localhost:8080/cgi-bin/ExampleGET.py
 # # Clean up large test file
 # rm -f largefile.txt
 
+echo -e "\n"
 echo -e "${GREEN}All tests completed.${RESET}"

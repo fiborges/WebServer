@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/12 12:15:47 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/12 16:53:02 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1353,12 +1353,12 @@ std::string checkForCgiBin(const std::string& path, const std::string& filePath,
 {
 	std::string resultPath = path;
 	std::string aaa;
-    if (!(path.find("cgi-bin") == std::string::npos))
+	if (!(path.find("cgi-bin") == std::string::npos))
 	{
 		resultPath = filePath;
 		aaa = server.getCompletePath(resultPath);
 		resultPath = aaa;
-    }
+	}
 	return resultPath;
 }
 
@@ -1491,16 +1491,16 @@ std::string extractFileNameFromURL(const std::string& url)
 
 std::string extractFileNameFromPath(const std::string& path)
 {
-    size_t pos = path.find_last_of("/\\");
-    if (pos != std::string::npos)
+	size_t pos = path.find_last_of("/\\");
+	if (pos != std::string::npos)
 	{
-        return path.substr(pos + 1);
-    }
+		return path.substr(pos + 1);
+	}
 	else
 	{
-        // No directory separator found, return the whole path as it is likely just a file name
-        return path;
-    }
+		// No directory separator found, return the whole path as it is likely just a file name
+		return path;
+	}
 }
 
 
@@ -1534,7 +1534,9 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 
 
+
 		std::string fullPath = getCompletePath2();
+		std::cout << "fullPath after entrada: " << fullPath << std::endl;
 		if (fullPath[fullPath.length() - 1] == '/')
 			fullPath.erase(fullPath.length() - 1);
 
@@ -1542,22 +1544,55 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 		std::string fullPath2 = checkForCgiBin(fullPath, filePath, server);
 		fullPath = fullPath2;
 
-		std::cout << "fullPath: " << fullPath << std::endl;
+		std::cout << "fullPath after cgi_check: " << fullPath << std::endl;
 		std::cout << "Request path: " << requestMsg.path << std::endl;
 
 
 		std::string fileName = extractFileNameFromPath(requestMsg.path);
 		//std::string fileName = extractFileNameFromURL(requestMsg.query);
 		std::cout << "File name: " << fileName << std::endl;
+
+
+		std::cout << "serverconfig upload directory: " << serverConfig.fileUploadDirectory << std::endl;
+		if (serverConfig.fileUploadDirectory == "./../uploads")
+		{
+			std::string zzz = "";
+			std::string fullPath5 = getCompletePath(zzz) + requestMsg.path;
+			std::cout << "fullPath5: " << fullPath5 << std::endl;
+			fullPath = fullPath5;
+		}
+		std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
+
+
+
+
+
+
+		
 		// ----------------------//
-		// int port = server.portListen[0];
-		// std::string rootDirectory1 = server.configs[port].RootDirectory;
-		// std::cout << "RootDirectory: " << rootDirectory1 << std::endl;
-		// std::string fileUploadDirectory = server.configs[port].fileUploadDirectory;
-		// std::cout << "FileUploadDirectory: " << fileUploadDirectory << std::endl;
-		// std::string dataDirectory = rootDirectory1 + fileUploadDirectory + "/";
-		std::string dataDirectory = "cgi-bin/uploads/";
+		int port = server.portListen[0];
+		std::string rootDirectory1 = server.configs[port].RootDirectory;
+		std::cout << "RootDirectory: " << rootDirectory1 << std::endl;
+		std::string fileUploadDirectory = server.configs[port].fileUploadDirectory;
+		std::cout << "FileUploadDirectory: " << fileUploadDirectory << std::endl;
+		std::string dataDirectory = rootDirectory1 + fileUploadDirectory + "/";
+		std::cout << "dataDirectory :"<< dataDirectory << std::endl;
+		//std::string dataDirectory = "cgi-bin/uploads/";
 		//-------------------------//
+
+
+		// std::string fullPath = getCompletePath2();
+		// if (fullPath[fullPath.length() - 1] == '/')
+		// 	fullPath.erase(fullPath.length() - 1);
+
+		// std::string filePath = requestMsg.path;
+		// std::string fullPath2 = checkForCgiBin(fullPath, filePath, server);
+		// fullPath = fullPath2;
+		// std::cout << "fullPath after cgi-check: "<< fullPath << std::endl;
+
+
+
+
 
 		//	std::cout << "Data directory: " << dataDirectory << std::endl;
 		//server.getCompletePath2();
@@ -1583,16 +1618,16 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 		}
 
 
-		if (filePath.substr(0, dataDirectory.size()) != dataDirectory)
-		{
+		// if (filePath.substr(0, dataDirectory.size()) != dataDirectory)
+		// {
 
-			std::cerr << "Error: Invalid file path." << std::endl;
-			handleError2(400, server, serverConfig, requestMsg);
-			return;
-		}
+		// 	std::cerr << "Error: Invalid file path." << std::endl;
+		// 	handleError2(400, server, serverConfig, requestMsg);
+		// 	return;
+		// }
 
 		filePath = fullPath;//dataDirectory + fileName;
-
+		std::cout << "FINAL!!!: " << filePath << std::endl;
 		// Check if the file exists and is accessible
 		if (access(filePath.c_str(), F_OK) != -1)
 		{
@@ -1608,7 +1643,6 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 				handleError2(501, server, serverConfig, requestMsg);
 				return ;
 			}
-
 		}
 		else
 		{
