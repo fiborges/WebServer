@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 21:52:07 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/12 11:15:58 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,6 +99,8 @@ class ServerInfo
 		std::map<int, conf_File_Info> configs;
 		std::string complete_path;
 		
+		int check_file;
+		
 
 	public:
 		ServerInfo();
@@ -136,6 +138,18 @@ class ServerInfo
 		std::string	getRootOriginalDirectory() const;
 		void		setRootOriginalDirectory(const std::string& dir);
 		void		handleError(const std::string& errorMessage);
+
+		int getCheckFile()
+		{
+			return check_file;
+		}
+
+		// Setter
+		void setCheckFile(int value)
+		{
+			check_file = value;
+		}
+		
 
 		void cleanup2();
 };

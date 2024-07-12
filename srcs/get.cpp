@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 21:58:08 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/12 11:31:10 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ ServerInfo::ServerInfo()
 	this->rootOriginalDirectory = "";
 	this->configs = std::map<int, conf_File_Info>();
 	this->sair = 0;
+	this->check_file = 0;
 }
 
 ServerInfo::~ServerInfo()
@@ -989,14 +990,15 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 							std::string fileContent = readFileContent(tryFilePath);
 							std::string contentType = getContentType(tryFilePath);
 							server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+							server.setCheckFile(1);
 							return true;
 						}
-						else
-						{
-							std::cout << "NAO" << std::endl;
-							handleError2(404, server, serverConfig, requestMsg);
-							return false;
-						}
+						// else
+						// {
+						// 	std::cout << "NAO" << std::endl;
+						// 	handleError2(404, server, serverConfig, requestMsg);
+						// 	return false;
+						// }
 					}
 					// else
 					// {
@@ -1042,7 +1044,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 
 
-				
+
 			}
 			else if (it->first == getDirectoryPath(requestMsg.path))
 			{
@@ -1167,9 +1169,9 @@ void processRequest(const std::string& request, ServerInfo& server)
 						try
 						{
 							CGI cgi(serverConfig, requestMsg);
-							cgi.PerformCGI(server.clientSocket , ParaCGI);
+							std::string httpResponse = cgi.PerformCGI(server.clientSocket , ParaCGI);
 
-							std::string httpResponse;
+							server.setResponse(httpResponse);
 							server.setResponse(httpResponse);
 							printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 						}
@@ -1200,9 +1202,8 @@ void processRequest(const std::string& request, ServerInfo& server)
 				try
 				{
 					CGI cgi(serverConfig, requestMsg);
-					cgi.PerformCGI(server.clientSocket , ParaCGI);
+					std::string httpResponse = cgi.PerformCGI(server.clientSocket , ParaCGI);
 
-					std::string httpResponse;
 					server.setResponse(httpResponse);
 					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 				}
@@ -1431,14 +1432,15 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 	// }
 
 
-	
-	// if (isDirectory(fullPath))
-	// {
-	// 	std::cout << "SSSS : " << serverConfig.tryFile << std::endl;
-	// 	server.getResponse();
-	// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-	// 	return;
-	// }
+	int chechFILE = server.getCheckFile();
+	if (isDirectory(fullPath) && chechFILE == 1)
+	{
+		std::cout << "SSSS : " << serverConfig.tryFile << std::endl;
+		server.getResponse();
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+		server.setCheckFile(0);
+		return;
+	}
 
 
 	if (isDirectory(fullPath) && serverConfig.directoryListingEnabled == true && fileExistsInDirectory(fullPath, serverConfig.defaultFile) == false)
@@ -1592,8 +1594,8 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 		std::cout << "fullPath: " << fullPath << std::endl;
 		std::cout << "Request path: " << requestMsg.path << std::endl;
-		
-		
+
+
 		std::string fileName = extractFileNameFromPath(requestMsg.path);
 		//std::string fileName = extractFileNameFromURL(requestMsg.query);
 		std::cout << "File name: " << fileName << std::endl;
@@ -1633,12 +1635,12 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 		if (filePath.substr(0, dataDirectory.size()) != dataDirectory)
 		{
-			
+
 			std::cerr << "Error: Invalid file path." << std::endl;
 			handleError2(400, server, serverConfig, requestMsg);
 			return;
 		}
-		
+
 		filePath = fullPath;//dataDirectory + fileName;
 
 		// Check if the file exists and is accessible

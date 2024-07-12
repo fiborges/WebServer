@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/11 18:40:46 by filipa           ###   ########.fr       */
+/*   Updated: 2024/07/12 11:15:40 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,11 +59,13 @@ class CGI
 		std::string	ScriptURI_;
 		std::string	TotalRequest_;
 
+		std::string	FinalResponse;
+
 		std::vector<std::string>	EnvStrings_;
 		std::vector<char*>			Env_;
 
 		void	Child_process();
-		void	Parent_process();
+		std::string&	Parent_process();
 
 		void	CreateScriptURI();
 		void	ExtractPathInfo(std::string& buffer, conf_File_Info& info);
@@ -93,7 +95,7 @@ class CGI
 		CGI(conf_File_Info info, HTTrequestMSG request);
 
 		// Public Method
-		void	PerformCGI(const int ClientSocket, std::string& buffer_in);
+		std::string&	PerformCGI(const int ClientSocket, std::string& buffer_in);
 
 		class	CGI_ExceptionClass : public std::exception
 		{
