@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/12 11:16:38 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/12 11:31:10 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1044,7 +1044,7 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 
 
 
-				
+
 			}
 			else if (it->first == getDirectoryPath(requestMsg.path))
 			{
@@ -1169,9 +1169,9 @@ void processRequest(const std::string& request, ServerInfo& server)
 						try
 						{
 							CGI cgi(serverConfig, requestMsg);
-							cgi.PerformCGI(server.clientSocket , ParaCGI);
+							std::string httpResponse = cgi.PerformCGI(server.clientSocket , ParaCGI);
 
-							std::string httpResponse;
+							server.setResponse(httpResponse);
 							server.setResponse(httpResponse);
 							printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 						}
@@ -1202,9 +1202,8 @@ void processRequest(const std::string& request, ServerInfo& server)
 				try
 				{
 					CGI cgi(serverConfig, requestMsg);
-					cgi.PerformCGI(server.clientSocket , ParaCGI);
+					std::string httpResponse = cgi.PerformCGI(server.clientSocket , ParaCGI);
 
-					std::string httpResponse;
 					server.setResponse(httpResponse);
 					printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 				}
@@ -1595,8 +1594,8 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 		std::cout << "fullPath: " << fullPath << std::endl;
 		std::cout << "Request path: " << requestMsg.path << std::endl;
-		
-		
+
+
 		std::string fileName = extractFileNameFromPath(requestMsg.path);
 		//std::string fileName = extractFileNameFromURL(requestMsg.query);
 		std::cout << "File name: " << fileName << std::endl;
@@ -1636,12 +1635,12 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG& requestMsg, ServerInfo& serv
 
 		if (filePath.substr(0, dataDirectory.size()) != dataDirectory)
 		{
-			
+
 			std::cerr << "Error: Invalid file path." << std::endl;
 			handleError2(400, server, serverConfig, requestMsg);
 			return;
 		}
-		
+
 		filePath = fullPath;//dataDirectory + fileName;
 
 		// Check if the file exists and is accessible

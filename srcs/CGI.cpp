@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/11 13:08:47 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/12 11:16:45 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -282,7 +282,7 @@ void	CGI::ExtractChunkBody()
 	std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
 }
 
-void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
+std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	CR	Chunk;
 
@@ -373,7 +373,8 @@ void	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	if (this->pid == 0)
 		Child_process();
 	else
-		Parent_process();
+		this->FinalResponse = Parent_process();
+	return (this->FinalResponse);
 }
 
 void	CGI::Child_process()
@@ -432,7 +433,7 @@ void	CGI::WaitFiveSeconds()
 	}
 }
 
-void	CGI::Parent_process()
+std::string&	CGI::Parent_process()
 {
 	close(this->C_FD[1]);
 	close(this->P_FD[0]);
@@ -450,7 +451,6 @@ void	CGI::Parent_process()
 	}
 
 	char		line[1024];
-	std::string	response;
 
 	WaitFiveSeconds();
 
@@ -472,18 +472,19 @@ void	CGI::Parent_process()
 			exit(-1);
 		}
 
-		response.append(line, bytesRead);
+		this->FinalResponse.append(line, bytesRead);
 
 		if (bytesRead < 1023)
 			break;
 	}
 	close(this->C_FD[0]);
 	//std::cout << "Response: " << response << std::endl;
-	if (response.empty() == true)
+	if (this->FinalResponse.empty() == true)
 	{
 		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI
 	}
-	send(this->ClientSocket_, response.c_str(), response.size(), 0);
+	//send(this->ClientSocket_, response.c_str(), response.size(), 0);
+	return (this->FinalResponse);
 }
 
 // ===========================Exceptions
