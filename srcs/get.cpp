@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/11 21:58:08 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/12 11:16:38 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ ServerInfo::ServerInfo()
 	this->rootOriginalDirectory = "";
 	this->configs = std::map<int, conf_File_Info>();
 	this->sair = 0;
+	this->check_file = 0;
 }
 
 ServerInfo::~ServerInfo()
@@ -989,14 +990,15 @@ bool processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server)
 							std::string fileContent = readFileContent(tryFilePath);
 							std::string contentType = getContentType(tryFilePath);
 							server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+							server.setCheckFile(1);
 							return true;
 						}
-						else
-						{
-							std::cout << "NAO" << std::endl;
-							handleError2(404, server, serverConfig, requestMsg);
-							return false;
-						}
+						// else
+						// {
+						// 	std::cout << "NAO" << std::endl;
+						// 	handleError2(404, server, serverConfig, requestMsg);
+						// 	return false;
+						// }
 					}
 					// else
 					// {
@@ -1431,14 +1433,15 @@ void ServerInfo::handleGetRequest(HTTrequestMSG& requestMsg, ServerInfo& server,
 	// }
 
 
-	
-	// if (isDirectory(fullPath))
-	// {
-	// 	std::cout << "SSSS : " << serverConfig.tryFile << std::endl;
-	// 	server.getResponse();
-	// 	printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
-	// 	return;
-	// }
+	int chechFILE = server.getCheckFile();
+	if (isDirectory(fullPath) && chechFILE == 1)
+	{
+		std::cout << "SSSS : " << serverConfig.tryFile << std::endl;
+		server.getResponse();
+		printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
+		server.setCheckFile(0);
+		return;
+	}
 
 
 	if (isDirectory(fullPath) && serverConfig.directoryListingEnabled == true && fileExistsInDirectory(fullPath, serverConfig.defaultFile) == false)
