@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Delete a file from the upload directory</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 70vh;
+				margin: 0;
+				background-color: #01012b;
+			}
+			h1 {
+				font-family: "Arial", monospace;
+				font-size: 2.5em;
+				font-weight: 900;
+			}
+			.container {
+				text-align: center;
+				max-width: 850px;
+				width: 100%;
+				background-color: #94bbd0;
+				padding: 20px;
+				border-radius: 10px;
+				box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+			}
+			.buttons {
+				font-size: 20px;
+				padding: 10px 20px;
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				margin-bottom: 20px;
+				margin-left: 10px;
+				margin-top: 5px;
+			}
+			.home-button {
+				display: flex;
+				justify-content: center;
+				margin-bottom: 20px;
+			}
+			.file-message {
+				margin-top: 10px;
+				margin-bottom: 10px;
+				padding-left: 4em;
+				text-align: left;
+			}
+			.file-message strong {
+				font-weight: bold;
+				color: rgb(255, 255, 255);
+				font-size: 20px;
+			}
+			.file-name {
+				color: red;
+			}
+			.glow-on-hover {
+				border: none;
+				outline: none;
+				color: #fff;
+				cursor: pointer;
+				position: relative;
+				z-index: 0;
+				border-radius: 10px;
+			}
+			.glow-on-hover:before {
+				content: '';
+				background: linear-gradient(45deg, #ff0000, #ff0000);
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				background-size: 400%;
+				z-index: -1;
+				filter: blur(5px);
+				width: calc(100% + 5px);
+				height: calc(100% + 5px);
+				animation: glowing 20s linear infinite;
+				opacity: 0;
+				transition: opacity .3s ease-in-out;
+				border-radius: 10px;
+			}
+			.glow-on-hover:active {
+				color: #000000;
+			}
+			.glow-on-hover:active:after {
+				background: #72bae0;
+			}
+			.glow-on-hover:hover:before {
+				opacity: 1;
+			}
+			.glow-on-hover:after {
+				z-index: -1;
+				content: '';
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background: #090345;
+				left: 0;
+				top: 0;
+				border-radius: 10px;
+			}
+			.delete-button {
+				background-color: #8d0000 !important;
+				color: #ffffff !important;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Delete a file from the upload directory</h1>
+			<div class="home-button">
+				<a href="/"><button class="buttons glow-on-hover"><b>Home</b></button></a>
+			</div>
+			<div class="button-group">
+				<input type="file" name="file" id="file" class="buttons glow-on-hover">
+				<button onclick="deleteFile()" class="buttons glow-on-hover delete-button">Delete</button>
+			</div>
+			<div class="file-message glow-on-hover" id="file-message"><strong>Selected file:</strong></div>
+		</div>
+		<script>
+			function deleteFile() {
+				var input = document.getElementById('file');
+				var file = input.files[0];
+				if (!file) {
+					document.getElementById('file-message').innerHTML = '<strong>Selected file:</strong>';
+					alert('Please select a file to delete.');
+					return;
+				}
+				var xhr = new XMLHttpRequest();
+				var url = '/cgi-bin/uploads/' + encodeURIComponent(file.name);
+				xhr.open('DELETE', url, true);
+				xhr.onreadystatechange = function () {
+					if (xhr.readyState == 4 && xhr.status == 200) {
+						alert('File deleted successfully: ' + file.name);
+					} else if (xhr.readyState == 4) {
+						alert('Error deleting file: ' + file.name);
+					}
+				};
+				xhr.send();
+				document.getElementById('file-message').innerHTML = '<strong>Selected file: </strong> <span class="file-name">' + file.name + '</span>';
+				input.value = '';
+			}
+		</script>
+	</body>
+</html>

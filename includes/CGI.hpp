@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/12 11:15:40 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/12 21:38:57 by filipa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,7 +110,7 @@ class CGI
 		class	NoScriptAllowed : public std::exception
 		{
 			private:
-				int	ErrorCode_;
+				//int	ErrorCode_;
 			public:
 				virtual const char* what() const throw();
 		};
