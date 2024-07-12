@@ -49,8 +49,7 @@ private:
     void handleHost(const ParserUtils::Strings& tokens, conf_File_Info* config);
     std::string createErrorMsg(const std::string& erro_msg);
     void ensureCorrectArgNumber(const ParserUtils::Strings& tokens, bool badCondition);
-    void confirmTryFile(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword); // Adicionado
-
+    void confirmTryFile(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void checkServer(const ParserUtils::Strings& pieces);
     void checkLocation(const ParserUtils::Strings& pieces);
     void confirmListenSettings(const ParserUtils::Strings& parameters, conf_File_Info* Keyword);
@@ -66,8 +65,6 @@ private:
     void confirmRedirect(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void checkProcedures(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
     void ensureClientBodyCapacity(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword);
-
-    // Fixing missing function declarations
     void startServerModule();
     void startLocationModule(const std::string& location);
     void endCurrentModule();

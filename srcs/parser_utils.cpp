@@ -20,7 +20,7 @@ std::string ParserUtils::getSplitSubstring(const std::string& input, const std::
         return tokens[idx];
     } else 
     {
-        return "";  // Safe return if index is out of bounds
+        return "";
     }
 }
 
@@ -97,11 +97,9 @@ std::string& ParserUtils::trim_Rigth(std::string& s) {
 
 std::string ParserUtils::normalizePath(const std::string& path) {
     std::string normalized = path;
-        // Remover barras finais
      while (!normalized.empty() && normalized[normalized.size() - 1] == '/') {
         normalized.erase(normalized.size() - 1);
     }
-        // Garantir que começa com uma barra
     if (!normalized.empty() && normalized[0] != '/') {
         normalized = "/" + normalized;
     }

@@ -103,14 +103,12 @@ const std::string& ParserConfig::fetchUploadToDirectory() const
 }
 
 std::string ParserConfig::matchPath(const std::string& searchPath) const {
-    // Verificar correspondência exata primeiro
     for (Locations::const_iterator it = Server_configurations->LocationsMap.begin(); it != Server_configurations->LocationsMap.end(); ++it) {
         if (searchPath == it->first) {
             return it->first;
         }
     }
 
-    // Verificar correspondência de prefixo
     std::string matchedPath = "/";
     size_t maxLength = 0;
 
@@ -134,7 +132,6 @@ ParserConfig ParserConfig::extractContext(const std::string& requestedPath) cons
     if (Server_configurations->LocationsMap.count(requestedPath)) {
         environmentInfo = &Server_configurations->LocationsMap.at(requestedPath);
     } else if (requestedPath == "/") {
-        // Criar uma configuração padrão para a raiz se não estiver explicitamente definida
         static conf_File_Info defaultRootConfig;
         defaultRootConfig.portListen = Server_configurations->portListen;
         defaultRootConfig.ServerName = Server_configurations->ServerName;
@@ -154,8 +151,6 @@ ParserConfig ParserConfig::extractContext(const std::string& requestedPath) cons
     if (environmentInfo->defaultFile.empty()) {
         environmentInfo->defaultFile = Server_configurations->defaultFile;
     }
-
-    // Propagar configurações de redirecionamento e CGI se existirem
     if (environmentInfo->redirectURL.httpStatusCode != 0) {
         Server_configurations->redirectURL = environmentInfo->redirectURL;
     }

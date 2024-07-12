@@ -9,18 +9,12 @@ const std::string HTTPParser::DELIMITER = HTTP_LINE_BREAK + HTTP_LINE_BREAK;
 bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSize) {
     ServerErrorHandler errorHandler;
 
-    //std::cout << "Starting parseRequest" << std::endl;
-
     if (!parseHeader(raw, msg)) {
         msg.error = errorHandler.generateErrorPage(400);
         std::cout << "Failed to parse header" << std::endl;
         return false;
     }
-
-    //std::cout << "Header parsed successfully" << std::endl;
     setContentLength(msg);
-
-    //std::cout << "Content-Length set to " << msg.content_length << std::endl;
 
     if (static_cast<size_t>(msg.content_length) > raw.size()) {
         printf("msg content lenght: %d , raw size: %lu ", msg.content_length , raw.size());
@@ -76,9 +70,9 @@ bool HTTPParser::parseRequest(std::string& raw, HTTrequestMSG& msg, size_t maxSi
 std::string HTTPParser::getBoundary(const std::string& contentType) {
     size_t pos = contentType.find("boundary=");
     if (pos == std::string::npos) {
-        return "";  // Não foi encontrado boundary.
+        return "";
     }
-    pos += 9; // Tamanho de "boundary="
+    pos += 9;
     size_t end = contentType.find(';', pos);
     if (end == std::string::npos) {
         end = contentType.length();
@@ -147,7 +141,7 @@ bool HTTPParser::processChunkedBody(std::string& raw, HTTrequestMSG& msg, size_t
 
         msg.process_bytes += chunkSize;
         if (static_cast<size_t>(msg.process_bytes) > maxSize) {
-            msg.error = errorHandler.generateErrorPage(413); // Request entity too large
+            msg.error = errorHandler.generateErrorPage(413);
             msg.state = HTTrequestMSG::FINISH;
             return false;
         }
@@ -184,49 +178,11 @@ bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
         msg.error = errorHandler.generateErrorPage(400);
         return false;
     }
-
-    // Extrair hostname do cabeçalho Host
-    // std::string hostHeader = msg.headers["Host"];
-    // size_t colonPos = hostHeader.find(":");
-    // msg.hostname = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
-
     std::string hostHeader = msg.headers["Host"];
     msg.hostname = hostHeader;
    
     return true;
 }
-
-
-/*bool HTTPParser::parseHeader(std::string& raw, HTTrequestMSG& msg) {
-    ServerErrorHandler errorHandler;
-    size_t pos = raw.find("\r\n");
-    if (pos == std::string::npos) {
-        msg.error = errorHandler.generateErrorPage(400);
-        return false;
-    }
-    std::string requestLine = raw.substr(0, pos);
-    raw.erase(0, pos + 2);
-    std::istringstream requestLineStream(requestLine);
-    if (!readRequestLine2(requestLineStream, msg)) {
-        msg.error = errorHandler.generateErrorPage(400);
-        return false;
-    }
-    
-    pos = raw.find("\r\n\r\n");
-    if (pos == std::string::npos) {
-        msg.error = errorHandler.generateErrorPage(400);
-        return false;
-    }
-    std::string headers = raw.substr(0, pos);
-    raw.erase(0, pos + 4);
-    std::istringstream headersStream(headers);
-    if (!readHeaders2(headersStream, msg)) {
-        msg.error = errorHandler.generateErrorPage(400);
-        return false;
-    }
-   
-    return true;
-}*/
 
 bool HTTPParser::readRequestLine2(std::istringstream& stream, HTTrequestMSG& msg) {
     std::string method, path, version;

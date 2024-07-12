@@ -3,13 +3,10 @@
 
 #include "librarie.hpp"
 
-// Forward declaration of the conf_File_Info struct
 struct conf_File_Info;
 
-// Defines an alias Locations for a map where the keys are strings (representing paths) and the values are conf_File_Info structs.
 typedef std::map<std::string, conf_File_Info> Locations;
 
-// struct Redirect that represents a redirect configuration
 struct ForwardingURL
 {
     int httpStatusCode;
@@ -34,7 +31,7 @@ struct conf_File_Info
     Locations LocationsMap;
     std::string cgiExtension;
     std::string uploadToDirectory;
-    std::string tryFile; // adicionado
+    std::string tryFile;
 };
 
 #endif

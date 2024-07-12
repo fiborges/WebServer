@@ -47,7 +47,6 @@ void ParserClass::readAndProcessConfig() {
         } else if (currentState == "In_Location") {
             parseLocationModule(pieces);
         }
-        // Verifica a presença de "autoindex" e define a flag
         if (pieces[0] == "autoindex") {
             conFileInProgress->autoindexPresent = true;
         }
@@ -67,8 +66,6 @@ void ParserClass::validateRequiredParameters() {
         if (configIterator->RootDirectory.empty()) {
             throw ConfigError("Error: Missing 'root' directive in a server block. Every server block must include a 'root' directive to specify the root directory.");
         }
-
-        // Verificar se a configuração de redirecionamento e CGI estão definidas em qualquer localização e propagá-las
         for (std::map<std::string, conf_File_Info>::iterator locIter = configIterator->LocationsMap.begin(); locIter != configIterator->LocationsMap.end(); ++locIter) {
             if (locIter->second.redirectURL.httpStatusCode != 0) {
                 configIterator->redirectURL = locIter->second.redirectURL;
@@ -127,7 +124,7 @@ void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
     locationPrefix = ParserUtils::normalizePath(location);
 
     if (locationPrefix.empty()) {
-        locationPrefix = "/"; // Corrigir para path raiz
+        locationPrefix = "/";
     }
 
     if (conFileInProgress->LocationsMap.find(locationPrefix) != conFileInProgress->LocationsMap.end()) {
@@ -138,8 +135,6 @@ void ParserClass::checkLocation(const ParserUtils::Strings& pieces) {
 }
 
 void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
-    //std::cout << "Parsing location module: " << pieces[0] << std::endl;
-
     if (pieces[0] == "}") {
         currentState = "In";
     } else if (pieces[0] == "listen" || pieces[0] == "server_name") {
@@ -149,10 +144,7 @@ void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
         if (locationPath.empty()) {
             locationPath = "/";
         }
-
-        // Suporte para wildcards (e.g., *.py, *.js, etc.)
         confFileHandler handler = validationMapKeys.at(pieces[0]);
-        //std::cout << "Processing handler for: " << pieces[0] << " at location " << locationPath << std::endl;
 
         if (locationPath.find('*') != std::string::npos) {
             for (std::map<std::string, conf_File_Info>::iterator it = conFileInProgress->LocationsMap.begin();
@@ -163,7 +155,6 @@ void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
                 }
             }
         } else {
-            //std::cout << "Exact handler match for: " << locationPath << std::endl;
             (this->*handler)(pieces, &conFileInProgress->LocationsMap[locationPath]);
         }
     } else {
@@ -174,7 +165,7 @@ void ParserClass::parseLocationModule(const ParserUtils::Strings& pieces) {
 inline void ParserClass::startLocationModule(const std::string& location) {
     std::string locationPath = ParserUtils::normalizePath(location);
     if (locationPath.empty()) {
-        locationPath = "/"; // Corrigir para path raiz
+        locationPath = "/";
     }
 
     if (conFileInProgress->LocationsMap.find(locationPath) != conFileInProgress->LocationsMap.end()) {
@@ -215,7 +206,7 @@ void ParserClass::checkAndConfirmValidMap() {
     validationMapKeys["upload_dir"] = &ParserClass::confirmUploadDirectory;
     validationMapKeys["upload_to"] = &ParserClass::confirmUploadToDirectory;
     validationMapKeys["host"] = &ParserClass::handleHost;
-    validationMapKeys["try_file"] = &ParserClass::confirmTryFile; // Adicionado
+    validationMapKeys["try_file"] = &ParserClass::confirmTryFile;
 }
 
 std::string ParserClass::createErrorMsg(const std::string& erro_msg)
@@ -267,7 +258,7 @@ void ParserClass::checkAutoindex(const ParserUtils::Strings& commandParts, conf_
         throw ConfigError(createErrorMsg("Configuration Error: The 'autoindex' value '" + commandParts[1] + "' is invalid. Only 'on' or 'off' are accepted values. Please adjust your 'autoindex' setting to use one of these valid options."));
     }
     Keyword->directoryListingEnabled = (commandParts[1] == "on") ? true : false;
-    Keyword->autoindexPresent = true; // Definir flag aqui
+    Keyword->autoindexPresent = true;
 }
 
 void ParserClass::verifyErrorPage(const ParserUtils::Strings& commandParts, conf_File_Info* Keyword)
