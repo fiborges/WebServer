@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/14 14:08:57 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/14 14:27:17 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -939,6 +939,14 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 					handleError2(405, server, serverConfig, requestMsg);
 					return false;
 				}
+				
+				int bodySizeBytes = server.getContentLength();
+				bodySizeBytes -= 200;
+				if (bodySizeBytes > serverConfig.maxRequestSize)
+				{
+					handleError2(413, server, serverConfig, requestMsg);
+					return false;
+				}
 
 				std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 				std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
@@ -990,6 +998,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 						}
 					}
 				}
+
 			}
 			else if (it->first == getDirectoryPath(requestMsg.path))
 			{
