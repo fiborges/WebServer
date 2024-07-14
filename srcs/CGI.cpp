@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/14 10:33:53 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/14 10:51:10 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -302,6 +302,8 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 		CreateScriptURI();
 		ExtractChunkBody();
 		CreateEnv();
+		if (this->FileContent_.empty())
+			throw CGI_ExceptionClass(400);
 	}
 
 	else if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
@@ -355,6 +357,8 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 			ExtractFileContent();
 		}
 		CreateEnv();
+		if (this->FileContent_.empty() || this->FileContent_ == "\r")
+			throw CGI_ExceptionClass(400);
 	}
 
 	// Creating Pipe
