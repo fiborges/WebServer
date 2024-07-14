@@ -34,13 +34,14 @@ curl -X GET http://localhost:8080/uploads/
 
 # POST Requests
 print_test_case "POST request to upload a file" "Should successfully upload a file."
-curl -X POST -F "file=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
+curl -X POST -F "file=@./resources/website/aaa.txt" http://localhost:8080/uploads/
+#curl -X POST -F "file=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
 
 ((test_num++))
 
 # DELETE Requests
 print_test_case "DELETE request to remove a file" "Should delete the specified file."
-curl -X DELETE http://localhost:8080/uploads/CR.cpp
+curl -X DELETE http://localhost:8080/uploads/aaa.txt
 
 ((test_num++))
 
