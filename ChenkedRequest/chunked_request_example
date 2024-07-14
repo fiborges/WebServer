@@ -18,3 +18,7 @@ Data is sent in a series of chunks.The Content-Length header is omitted in this 
 of each chunk you need to add the length of the current chunk in hexadecimal format, followed by '\r\n' and
 then the chunk itself, followed by another '\r\n'. The terminating chunk is a regular chunk, with the exception
 that its length is zero. It is followed by the trailer, which consists of a (possibly empty) sequence of header fields.
+
+Curl command to send chunked request:
+
+curl -X POST http://localhost:8000/endpoint -H "Transfer-Encoding: chunked" -d $'5\r\nhello\r\n6\r\n world!\r\n0\r\n\r\n'

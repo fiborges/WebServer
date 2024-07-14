@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    UploadScript.py                                    :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+         #
+#    By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/05/15 14:17:14 by brolivei          #+#    #+#              #
-#    Updated: 2024/07/05 14:44:51 by fde-carv         ###   ########.fr        #
+#    Updated: 2024/07/14 10:30:29 by brolivei         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 		#save_file(folder_name, file_name, file_content)
 		save_file(upload_dir, file_name)
 
-		print("HTTP/1.2 200 OK\r\nContent-Type: text/html\r\n\r\n")
+		print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
 		print(f"""
 		<!DOCTYPE html>
 		<html lang="en">

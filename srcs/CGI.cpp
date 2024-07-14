@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/12 11:16:45 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/14 10:33:53 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,6 +278,8 @@ void	CGI::ExtractChunkBody()
 	size_t	EndBody = this->Body_.find("\r\n\r\n");
 
 	this->Body_.erase(EndBody);
+	//this->Body_.append('\0');
+	this->FileContent_ = this->Body_;
 
 	std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
 }
