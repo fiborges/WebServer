@@ -10,52 +10,53 @@ RESET='\033[0m'
 x=5
 
 function print_test_case {
-    echo -e "\n"
-    echo -e "========================================================================="
-    echo -e "\n"
-    echo -e "${BLUE}Test ${test_num}: ${1}${RESET}"
-    echo -e "${CYAN}Expected Result: ${2}${RESET}"
-    echo -e "\n"
-    sleep $x
+	echo -e "\n"
+	echo -e "========================================================================="
+	echo -e "\n"
+	echo -e "${BLUE}Test ${test_num}: ${1}${RESET}"
+	echo -e "${CYAN}Expected Result: ${2}${RESET}"
+	echo -e "\n"
+	read -p "Pressione enter para continuar..."
+	#sleep $x
 }
 
 test_num=1
-
+# [1] OK
 # Basic GET Requests
 print_test_case "GET request to root directory" "Should return the root directory contents or index file."
 curl -X GET http://localhost:8080/
 
 ((test_num++))
-
+# [2] OK
 print_test_case "GET request to uploads directory" "Should return the contents of the uploads directory."
 curl -X GET http://localhost:8080/uploads/
 
 ((test_num++))
-
+# [3] OK 
 # POST Requests
 print_test_case "POST request to upload a file" "Should successfully upload a file."
 curl -X POST -F "file=@./resources/website/aaa.txt" http://localhost:8080/uploads/
 #curl -X POST -F "file=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
 
 ((test_num++))
-
+# [4] OK 
 # DELETE Requests
 print_test_case "DELETE request to remove a file" "Should delete the specified file."
 curl -X DELETE http://localhost:8080/uploads/aaa.txt
 
 ((test_num++))
-
+# [5] OK 
 # CGI Script Execution
 print_test_case "GET request to execute ExampleGET.py CGI script" "Should execute the Python CGI script and return its output."
 curl -X GET http://localhost:8080/cgi-bin/ExampleGET.py
 
 ((test_num++))
-
+# [6]
 print_test_case "POST request to execute ExampleGET.py CGI script" "Should execute the Python CGI script with POST data and return its output."
 curl -X POST -d "name=John&age=30" http://localhost:8080/cgi-bin/ExampleGET.py
 
 ((test_num++))
-
+# [7] 
 # Error Pages
 print_test_case "PUT request to root (Method Not Allowed)" "Should return 405 Method Not Allowed error page."
 curl -X PUT http://localhost:8080/

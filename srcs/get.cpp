@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/14 14:27:17 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/14 16:10:15 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1187,7 +1187,7 @@ void processRequest(const std::string &request, ServerInfo &server)
 							std::string httpResponse = cgi.PerformCGI(server.clientSocket, ParaCGI);
 
 							server.setResponse(httpResponse);
-							server.setResponse(httpResponse);
+							//server.setResponse(httpResponse);
 							printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 						}
 						catch (const CGI::CGI_ExceptionClass &e)
@@ -1254,23 +1254,23 @@ void handleRequest(HTTrequestMSG &request, ServerInfo &server, conf_File_Info &s
 	// std::string filePath = server.getConfig(port).RootDirectory + request.path;
 	// std::cout << "Port HANDLE REQUEST : " << port << std::endl;
 	// conf_File_Info &serverConfig = server.getConfig(port);
-
-	// if (request.path == "/favicon.ico")
-	// {
-	// 	std::string faviconPath = "resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
-	// 	//std::string faviconPath = serverConfig.RootDirectory + "/favicon.ico";
-	// 	std::string fileContent = readFileContent(faviconPath);
-	// 	if (!fileContent.empty())
-	// 	{
-	// 		std::string contentType = "image/x-icon"; // Define the content type based on the file extension
-	// 		server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
-	// 	}
-	// 	else
-	// 	{
-	// 		handleError2(404, server, serverConfig, request);
-	// 	}
-	// }
-	// else
+	//std::cout << "request.path : "<< request.path << std::endl;
+	if (request.path == "/favicon.ico")
+	{
+		std::string faviconPath = "resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
+		//std::string faviconPath = serverConfig.RootDirectory + "/favicon.ico";
+		std::string fileContent = readFileContent(faviconPath);
+		if (!fileContent.empty())
+		{
+			std::string contentType = "image/x-icon"; // Define the content type based on the file extension
+			server.setResponse("HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + fileContent);
+		}
+		else
+		{
+			handleError2(404, server, serverConfig, request);
+		}
+	}
+	else
 	{
 		// std::string filePath =  request.path;
 		// std::cout << "FILE PATH: " << filePath << std::endl;
@@ -1786,6 +1786,20 @@ void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, c
 				}
 				outFile << fileContent;
 				outFile.close();
+
+				std::ifstream inFile((fullPath + fileName).c_str(), std::ios::binary);
+				if (!inFile)
+				{
+					handleError2(500, server, serverConfig, request);
+					return;
+				}
+				std::string fileContentForResponse((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+				inFile.close();
+
+				std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n\r\n";
+				httpResponse += fileContentForResponse;
+
+				setResponse(httpResponse);
 			}
 			else
 			{
@@ -2007,9 +2021,9 @@ void runServer(std::vector<ServerInfo *> &servers, fd_set read_fds, fd_set write
 				// Write response to the client
 				int clientSocket = (*it)->clientSocket;
 
-				// std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n";
+				//std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n";
 
-				// std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n"; // CHECKING THE RESPONSE
+				//std::cout << "RESPONSE:\n" << (*it)->getResponse() << "[END]\n"; // CHECKING THE RESPONSE
 
 				ssize_t bytesWritten = write(clientSocket, (*it)->getResponse().c_str(), (*it)->getResponse().length());
 				if (bytesWritten < 0)
