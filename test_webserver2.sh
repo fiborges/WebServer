@@ -51,18 +51,18 @@ print_test_case "GET request to execute ExampleGET.py CGI script" "Should execut
 curl -X GET http://localhost:8080/cgi-bin/ExampleGET.py
 
 ((test_num++))
-# [6]
+# [6] MAL
 print_test_case "POST request to execute ExampleGET.py CGI script" "Should execute the Python CGI script with POST data and return its output."
-curl -X POST -d "name=John&age=30" http://localhost:8080/cgi-bin/ExampleGET.py
+curl -X POST -d "num1=0&num2=30&num3=4" http://localhost:8080/cgi-bin/ExampleGET.py
 
 ((test_num++))
-# [7] 
+# [7] OK
 # Error Pages
 print_test_case "PUT request to root (Method Not Allowed)" "Should return 405 Method Not Allowed error page."
 curl -X PUT http://localhost:8080/
 
 ((test_num++))
-
+# [8] esta a dar 400 em vez de 500
 print_test_case "POST request to CGI script causing error" "Should return 500 Internal Server Error page."
 curl -X POST -d "trigger=error" http://localhost:8080/cgi-bin/error_script.py
 

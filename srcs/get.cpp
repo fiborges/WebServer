@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/14 16:10:15 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 10:47:16 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -951,6 +951,11 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 				std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 				std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
 				std::string completeFullPath = completeNewMixedPath + requestMsg.path;
+				if (it->first == "/uploads")
+				{
+					std::cout << "completeFullPath: " << completeFullPath << std::endl;
+					return true;
+				}
 
 				serverConfig.RootDirectory = newMixedPath;
 				server.setCompletePath(completeFullPath);
@@ -1005,6 +1010,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 				std::string fred = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 				std::string bbb = server.getCompletePath(fred);
 				std::string aaa = bbb + requestMsg.path;
+				std::cout << "AAA [][] : "<< aaa << std::endl;
 				server.setCompletePath(aaa);
 
 				int bodySizeBytes = server.getContentLength();
@@ -1770,9 +1776,10 @@ void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, c
 				//std::cout << "serverconfig upload directory: " << serverConfig.fileUploadDirectory << std::endl;
 				if (serverConfig.fileUploadDirectory == "./../uploads")
 				{
+					//std::cout << "serverConfig.fileUploadDirectory :" << serverConfig.fileUploadDirectory << std::endl;
 					std::string zzz = "";
 					std::string fullPath5 = getCompletePath(zzz) + request.path;
-					std::cout << "fullPath5: " << fullPath5 << std::endl;
+					std::cout << "fullPath6: " << fullPath5 << std::endl;
 					fullPath = fullPath5;
 				}
 				//std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
