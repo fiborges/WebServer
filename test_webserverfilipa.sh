@@ -128,7 +128,7 @@ curl -X POST -F "file=@invalidfile.invalid" http://localhost:8081/uploads/
 
 ((test_num++))
 
-#[17] ok
+#[17] MAL - o ficheiro nao e' igual e no servidor tem 404
 # File Download
 print_test_case "GET request to download a file" "Should successfully download the specified file."
 curl -O http://localhost:8081/uploads/chunk.txt
