@@ -62,28 +62,28 @@ print_test_case "PUT request to root (Method Not Allowed)" "Should return 405 Me
 curl -X PUT http://localhost:8080/
 
 ((test_num++))
-# [8] esta a dar 400 em vez de 500
+# [8] MAL esta a dar 400 em vez de 500
 print_test_case "POST request to CGI script causing error" "Should return 500 Internal Server Error page."
 curl -X POST -d "trigger=error" http://localhost:8080/cgi-bin/error_script.py
 
 ((test_num++))
-
+# [9] OK
 # Autoindex
 print_test_case "GET request to autoindexed directory" "Should return the directory listing."
 curl -X GET http://localhost:8080/uploads/
 
 ((test_num++))
-
+# [10] OK
 # Client Body Size Limit
 print_test_case "POST request with large file exceeding client body size limit" "Should return an error indicating the file is too large."
 dd if=/dev/zero of=largefile.txt bs=1024 count=200
 curl -X POST -F "file=@largefile.txt" http://localhost:8080/uploads/
 
 ((test_num++))
-
+# [11] OK
 # Custom Headers
 print_test_case "GET request with custom header" "Should return the response with the custom header included."
-curl -X GET -H "X-Custom-Header: value" http://localhost:8080/
+curl -v -H "Custom-Header: value" http://localhost:8080/
 
 ((test_num++))
 

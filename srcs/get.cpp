@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/15 10:47:16 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 11:31:33 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -951,11 +951,11 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 				std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 				std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
 				std::string completeFullPath = completeNewMixedPath + requestMsg.path;
-				if (it->first == "/uploads")
-				{
-					std::cout << "completeFullPath: " << completeFullPath << std::endl;
-					return true;
-				}
+				// if (it->first == "/uploads")
+				// {
+				// 	std::cout << "completeFullPath: " << completeFullPath << std::endl;
+				// 	return true;
+				// }
 
 				serverConfig.RootDirectory = newMixedPath;
 				server.setCompletePath(completeFullPath);
@@ -1263,7 +1263,7 @@ void handleRequest(HTTrequestMSG &request, ServerInfo &server, conf_File_Info &s
 	//std::cout << "request.path : "<< request.path << std::endl;
 	if (request.path == "/favicon.ico")
 	{
-		std::string faviconPath = "resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
+		std::string faviconPath = "./resources/website/favicon.ico"; // if the solicitation is for favicon.ico, reads and send the file content
 		//std::string faviconPath = serverConfig.RootDirectory + "/favicon.ico";
 		std::string fileContent = readFileContent(faviconPath);
 		if (!fileContent.empty())
@@ -1565,11 +1565,13 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG &requestMsg, ServerInfo &serv
 			return;
 		}
 
-		if (serverConfig.fileUploadDirectory.empty())
-		{
-			handleError2(500, server, serverConfig, requestMsg);
-			return;
-		}
+		// std::cout << "serverConfig.fileUploadDirectory: " << serverConfig.fileUploadDirectory << std::endl;
+		// if (serverConfig.fileUploadDirectory.empty())
+		// {
+		// 	std::cout << "--[1]--" << std::endl;
+		// 	handleError2(500, server, serverConfig, requestMsg);
+		// 	return;
+		// }
 
 		if (requestMsg.method != HTTrequestMSG::DELETE)
 		{
@@ -1590,18 +1592,17 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG &requestMsg, ServerInfo &serv
 		std::cout << "Request path: " << requestMsg.path << std::endl;
 
 		std::string fileName = extractFileNameFromPath(requestMsg.path);
-		// std::string fileName = extractFileNameFromURL(requestMsg.query);
-		std::cout << "File name: " << fileName << std::endl;
+		//std::cout << "File name: " << fileName << std::endl;
 
-		std::cout << "serverconfig upload directory: " << serverConfig.fileUploadDirectory << std::endl;
-		if (serverConfig.fileUploadDirectory == "./../uploads")
-		{
-			std::string zzz = "";
-			std::string fullPath5 = getCompletePath(zzz) + requestMsg.path;
-			//std::cout << "fullPath5: " << fullPath5 << std::endl;
-			fullPath = fullPath5;
-		}
-		std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
+		// std::cout << "serverconfig upload directory: " << serverConfig.fileUploadDirectory << std::endl;
+		// if (serverConfig.fileUploadDirectory == "./../uploads")
+		// {
+		// 	std::string zzz = "";
+		// 	std::string fullPath5 = getCompletePath(zzz) + requestMsg.path;
+		// 	//std::cout << "fullPath5: " << fullPath5 << std::endl;
+		// 	fullPath = fullPath5;
+		// }
+		// std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
 
 		// ----------------------//
 		int port = server.portListen[0];
@@ -1680,6 +1681,7 @@ void ServerInfo::handleDeleteRequest(HTTrequestMSG &requestMsg, ServerInfo &serv
 	catch (const std::runtime_error &e)
 	{
 		std::cerr << e.what() << std::endl;
+		std::cout << "--[2]--" << std::endl;
 		handleError2(500, server, serverConfig, requestMsg);
 		return;
 	}
@@ -1774,14 +1776,14 @@ void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, c
 				std::string fullPath = server.getCompletePath2();
 				//std::cout << "PATH: " << fullPath << std::endl;
 				//std::cout << "serverconfig upload directory: " << serverConfig.fileUploadDirectory << std::endl;
-				if (serverConfig.fileUploadDirectory == "./../uploads")
-				{
-					//std::cout << "serverConfig.fileUploadDirectory :" << serverConfig.fileUploadDirectory << std::endl;
-					std::string zzz = "";
-					std::string fullPath5 = getCompletePath(zzz) + request.path;
-					std::cout << "fullPath6: " << fullPath5 << std::endl;
-					fullPath = fullPath5;
-				}
+				// if (serverConfig.fileUploadDirectory == "./../uploads")
+				// {
+				// 	//std::cout << "serverConfig.fileUploadDirectory :" << serverConfig.fileUploadDirectory << std::endl;
+				// 	std::string zzz = "";
+				// 	std::string fullPath5 = getCompletePath(zzz) + request.path;
+				// 	std::cout << "fullPath6: " << fullPath5 << std::endl;
+				// 	fullPath = fullPath5;
+				// }
 				//std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
 				std::string fileContent = it->second.first;
 				std::string fileName = it->second.second;
