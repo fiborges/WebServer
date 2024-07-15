@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/14 10:51:10 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/15 11:42:27 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,11 +284,26 @@ void	CGI::ExtractChunkBody()
 	std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
 }
 
+void	CGI::ExtractFormFromBody()
+{
+	size_t	BodyStart = this->TotalRequest_.find("\r\n\r\n") + 4;
+	int		Length = 0;
+
+	while (Length != this->Request_.content_length)
+	{
+		this->FileContent_ += this->TotalRequest_[BodyStart++];
+		Length++;
+	}
+}
+
 std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 {
 	CR	Chunk;
 
 	this->TotalRequest_ = buffer;
+
+
+	std::cout << "RECIEVED_REQUEST:" << this->TotalRequest_ << "[FINAL]\n";
 
 	if (Chunk.ItIsChunked(buffer) == true)
 	{
@@ -313,9 +328,7 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 		CreateScriptURI(); //BAJ
 		CreateEnv(); //BAJ
-		//return ;
 	}
-
 	else
 	{
 		if (this->Info_.fileUploadDirectory.empty())
@@ -357,7 +370,9 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 			ExtractFileContent();
 		}
 		CreateEnv();
-		if (this->FileContent_.empty() || this->FileContent_ == "\r")
+		if (this->TotalRequest_.find("application/x-www-form-urlencoded"))
+			ExtractFormFromBody();
+		if ((this->FileContent_.empty() || this->FileContent_ == "\r") && this->Request_.query.empty())
 			throw CGI_ExceptionClass(400);
 	}
 
@@ -484,8 +499,8 @@ std::string&	CGI::Parent_process()
 			break;
 	}
 	close(this->C_FD[0]);
-	//std::cout << "Response: " << response << std::endl;
-	if (this->FinalResponse.empty() == true)
+	//std::cout << "Response: " << this->FinalResponse << std::endl;
+	if ((this->FinalResponse.empty() == true) || (this->FinalResponse.find("HTTP/1.1") == std::string::npos))
 	{
 		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI
 	}

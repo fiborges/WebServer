@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: filipa <filipa@student.42.fr>              +#+  +:+       +#+        */
+/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 13:59:11 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/12 21:38:57 by filipa           ###   ########.fr       */
+/*   Updated: 2024/07/15 11:08:07 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ class CGI
 		void	ExtractFileName();
 		void	ExtractFileContent();
 		void	ExtractChunkBody();
+		void	ExtractFormFromBody();
 
 		void	SendContentToScript();
 		void	SendAllRequestToScript();
