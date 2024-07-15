@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/15 11:31:33 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 17:36:48 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -533,13 +533,9 @@ std::string ifFileRmoveFile(std::string path)
 std::string removeLastSlash(const std::string &fullPath)
 {
 	if (fullPath == "/")
-	{
 		return fullPath;
-	}
 	if (!fullPath.empty() && fullPath[fullPath.size() - 1] == '/')
-	{
 		return fullPath.substr(0, fullPath.size() - 1);
-	}
 	return fullPath;
 }
 
@@ -637,111 +633,34 @@ bool handleDirectoryListing(conf_File_Info &serverConfig, HTTrequestMSG &request
 	return true;
 }
 
-// bool handleTryFile(conf_File_Info& serverConfig, ServerInfo& server)
-// {
-// 	if(serverConfig.directoryListingEnabled)
-// 	{
-// 		std::string rootDirectory = serverConfig.RootDirectory;
-// 		if (!rootDirectory.empty() && rootDirectory[0] == '/')
-// 			rootDirectory = rootDirectory.substr(1);
-
-// 		std::string fullPath = server.getCompletePath2();
-
-// 		if (fullPath.at(0) != '/')
-// 			fullPath = "/" + fullPath;
-
-// 		std::string full_path1 = fullPath;;
-// 		std::string full_path2;
-// 		if (full_path1.substr(0, 5) == "/home")
-// 			full_path2 = full_path1;
-// 		else
-// 		{
-// 			char cwd[1024];
-// 			getcwd(cwd, sizeof(cwd));
-// 			full_path2 = std::string(cwd) + full_path1;
-// 		}
-
-// 		struct stat path_stat;
-// 		if(stat(full_path2.c_str(), &path_stat) != 0)
-// 		{
-// 			handleError2(500, server, serverConfig, requestMsg);
-// 			return false;
-// 		}
-// 		bool is_directory = S_ISDIR(path_stat.st_mode);
-
-// 		std::string response;
-// 		if (is_directory)
-// 		{
-// 			DIR *dir;
-// 			struct dirent *ent;
-// 			std::vector<int> portList = server.getPortList();
-// 			int port = portList[0];
-// 			std::string serverAddress = "127.0.0.1";
-// 			std::stringstream ss;
-// 			ss << port;
-// 			std::string portStr = ss.str();
-// 			if ((dir = opendir (full_path2.c_str())) != NULL)
-// 			{
-
-// 				response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
-// 				response += "<html><head><style>body { background: #ADD8E6; }</style></head><body>";
-
-// 				std::vector<std::string> entries;
-// 				while ((ent = readdir (dir)) != NULL)
-// 				{
-// 					entries.push_back(ent->d_name);
-// 				}
-// 				std::sort(entries.begin(), entries.end()); // Sort the entries
-
-// 				for (size_t i = 0; i < entries.size(); i++)
-// 				{
-// 					response += entries[i];
-// 					response += "<br>";
-// 				}
-
-// 				response += "<br>";
-// 				response += "<button onclick=\"location.href='http://" + serverAddress + ":" + portStr + "'\" type=\"button\">HOME</button>";
-// 				response += "</body></html>\n";
-// 				closedir (dir);
-// 			}
-// 			else
-// 			{
-// 				handleError2(500, server, serverConfig, requestMsg);
-// 			}
-// 			server.setResponse(response);
-// 		}
-// 		else
-// 		{
-// 			std::ifstream file(full_path2.c_str());
-// 			if (file.is_open())
-// 			{
-// 				response = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-// 				server.setResponse(response);
-// 			}
-// 			else
-// 			{
-// 				handleError2(404, server, serverConfig, requestMsg);
-// 			}
-// 		}
-// 	}
-// 	return true;
-// }
-
-void processErrorPage(std::string second, int errorCode, const std::string &rootDirectory)
+void processErrorPage(std::string second, int errorCode, const std::string &rootDirectory, ServerInfo &server)
 {
+	//std::vector<std::string> threeDigitsVector;
+	
 	size_t pos = second.find('/');
+
+    std::string nameAfterSlash;
+    if (pos != std::string::npos)
+    {
+        nameAfterSlash = second.substr(pos + 1);
+    }
+	std::cout << "nameAfterSlash :" << nameAfterSlash << std::endl;
+	//server.errorCodeStr = nameAfterSlash;
+
 	if (pos != std::string::npos)
 	{
 		second.erase(pos, 1);
 	}
-
 	if (second.size() >= 3)
 	{
 		std::string threeDigits = second.substr(0, 3);
+		
+
+
 		std::stringstream ss;
 		ss << errorCode;
 		std::string errorCodeStr = ss.str();
+		std::cout << "CCCCC errorCodeStr: " << errorCodeStr << std::endl;
 
 		if (threeDigits[0] == errorCodeStr[0])
 		{
@@ -749,9 +668,13 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
 			threeDigits[2] = errorCodeStr[2];
 		}
 
+		std::cout << "threeDigits: " << threeDigits << std::endl;
+		server.nameAfterSlashSets[threeDigits] = nameAfterSlash;
+		server.threeDigitsSet.insert(threeDigits);
 		if (std::atoi(threeDigits.c_str()) == errorCode)
 		{
-			std::string path = rootDirectory + "/" + threeDigits + ".html";
+			//std::string path = rootDirectory + "/" + threeDigits + ".html";
+			std::string path = rootDirectory + "/" + nameAfterSlash;
 			std::ifstream existingFile(path.c_str());
 			if (!existingFile)
 			{
@@ -759,10 +682,38 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
 				if (file)
 				{
 					ServerErrorHandler errorHandler;
-					std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
-					file << errorPageContent;
-					file.close();
-					createdFiles.push_back(path);
+					{
+						for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
+						{
+							std::cout << "SSS Key: " << it->first << " SSS Value: " << it->second << '\n';
+						
+
+						//if (server.nameAfterSlashSets.size() > 1)
+						//{
+							std::cout << "    errorCodeStr: "<< errorCodeStr << std::endl;
+						if (server.nameAfterSlashSets.find(errorCodeStr) != server.nameAfterSlashSets.end())
+						{
+							std::cout << "  it->second: "<< it->second << std::endl;
+							std::string errorPageContent = errorHandler.generateErrorPagePublic_2(it->second);
+							file << errorPageContent;
+							file.close();
+							createdFiles.push_back(path);
+		
+						}
+						else
+						{
+							std::cout << "  errorCode "<< errorCode << std::endl;
+							std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
+							file << errorPageContent;
+							file.close();
+							createdFiles.push_back(path);
+						}
+						// std::string errorPageContent = errorHandler.generateErrorPagePublic_2(nameAfterSlash);
+						// file << errorPageContent;
+						// file.close();
+						// createdFiles.push_back(path);
+						}
+					}
 				}
 			}
 		}
@@ -888,11 +839,11 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 	{
 		if (it != serverConfig.errorMap.end())
 			errorMap[it->first] = it->second;
-		processErrorPage(it->second, it->first, serverConfig.RootDirectory);
+		processErrorPage(it->second, it->first, serverConfig.RootDirectory, server);
 	}
 
-	createIndexFile(serverConfig, serverConfig.RootDirectory);
-	createHtmlFiles(serverConfig.RootDirectory);
+	//createIndexFile(serverConfig, serverConfig.RootDirectory);
+	//createHtmlFiles(serverConfig.RootDirectory);
 
 	if (serverConfig.LocationsMap.size() > 0)
 	{
@@ -1373,24 +1324,73 @@ void handleError2(int errorCode, ServerInfo &server, conf_File_Info &serverConfi
 	originalRootDirectory = std::string(realPath2);
 	// std::cout << "[error] originalRootDirectory2 : " << originalRootDirectory << std::endl;
 
+	std::string errorFilePath2;
+	std::string dois;
 	// Check if the custom error file exists
-	std::string errorFilePath2 = originalRootDirectory + "/" + errorCodeStr + ".html";
+	//std::string errorFilePath2 = originalRootDirectory + "/" + errorCodeStr + ".html";
+	for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
+	{
+		std::cout << "it->first: " << it->first << std::endl;
+		std::cout << "it->second: " << it->second << std::endl;
+		std::cout << "errorCodeStr: " << errorCodeStr << std::endl;
+		if (it->first == errorCodeStr)
+		{
+			errorFilePath2 = originalRootDirectory + "/" + it->second;
+			dois = it->second;
+		}
+	}
+	std::cout << "errorFilePath2: " << errorFilePath2 << std::endl;
 	ServerErrorHandler errorHandler;
 	// Generate the error page content
-	std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
-	std::string errorMessage = errorHandler.getErrorMessage(errorCode);
 	// if (fileExists(errorFilePath))
+
 	if (fileExists(errorFilePath2))
 	{
-		// If the custom error file exists, serve it
-		std::ifstream errorFile(errorFilePath2.c_str());
-		std::string errorFileContent;
-		std::copy(std::istreambuf_iterator<char>(errorFile), std::istreambuf_iterator<char>(), std::back_inserter(errorFileContent));
+		std::cout << "errorCodeStr antes vector: " << errorCodeStr << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
+		{
+			std::cout << "Key: " << it->first << " Value: " << it->second << '\n';
+		
+		}
+		
 
-		server.setResponse("HTTP/1.1 " + errorCodeStr + " " + errorMessage + "\r\nContent-Type: text/html\r\n\r\n" + errorFileContent);
-	}
+
+		if (server.nameAfterSlashSets.size() > 1)
+		{
+			if (server.nameAfterSlashSets.find(errorCodeStr) != server.nameAfterSlashSets.end())
+			{
+				std::cout << "dois: " << dois << std::endl;
+				std::string errorPageContent = errorHandler.generateErrorPagePublic_2(dois);
+				//std::string errorPageContent = errorHandler.generateErrorPage_2(dois);
+				std::string errorMessage = errorHandler.getErrorMessage(errorCode);
+				std::cout << "1 errorFilePath2: " << errorFilePath2 << std::endl;
+				// If the custom error file exists, serve it
+				std::ifstream errorFile(errorFilePath2.c_str());
+				std::string errorFileContent;
+				std::copy(std::istreambuf_iterator<char>(errorFile), std::istreambuf_iterator<char>(), std::back_inserter(errorFileContent));
+
+				server.setResponse("HTTP/1.1 " + errorCodeStr + " " + errorMessage + "\r\nContent-Type: text/html\r\n\r\n" + errorFileContent);
+			}
+		}
+		else
+		{
+			std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
+			std::string errorMessage = errorHandler.getErrorMessage(errorCode);
+			std::string errorFilePath2 = originalRootDirectory + "/" + errorCodeStr + ".html";
+			std::cout << "2 errorFilePath2: " << errorFilePath2 << std::endl;
+			// If the custom error file exists, serve it
+			std::ifstream errorFile(errorFilePath2.c_str());
+			std::string errorFileContent;
+			std::copy(std::istreambuf_iterator<char>(errorFile), std::istreambuf_iterator<char>(), std::back_inserter(errorFileContent));
+
+			server.setResponse("HTTP/1.1 " + errorCodeStr + " " + errorMessage + "\r\nContent-Type: text/html\r\n\r\n" + errorFileContent);
+		}
+		
+
+	}	
 	else
 	{
+		std::string errorMessage = errorHandler.getErrorMessage(errorCode);
 		server.setResponse("HTTP/1.1 " + errorCodeStr + " " + errorMessage + "\r\nContent-Type: text/plain\r\n\r\n" + errorMessage + "\nERROR " + errorCodeStr + "\n");
 	}
 

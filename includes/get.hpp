@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/12 11:15:58 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 15:50:12 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,6 +100,7 @@ class ServerInfo
 		std::string complete_path;
 		
 		int check_file;
+
 		
 
 	public:
@@ -108,6 +109,11 @@ class ServerInfo
 
 		int	clientSocket;
 		int sair;
+		std::set<std::string> threeDigitsSet;
+		//std::string errorCodeStr;
+		//std::map<std::string, std::set<std::string> > nameAfterSlashSets;
+		//std::map<std::set<std::string>, std::string> nameAfterSlashSets;
+		std::map<std::string, std::string> nameAfterSlashSets;
 
 		void		setSocketFD(int socket);
 		int			getSocketFD() const;
@@ -170,7 +176,8 @@ std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
 bool		ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
 bool		fileExistsInDirectory(const std::string& directory, const std::string& filename);
-void		processErrorPage(std::string second, int errorCode, const std::string& rootDirectory);
+void processErrorPage(std::string second, int errorCode, const std::string &rootDirectory, ServerInfo &server);
+//void		processErrorPage(std::string second, int errorCode, const std::string& rootDirectory);
 void		handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfig, const HTTrequestMSG& requestMsg);
 std::string	getNewPath(const std::string& root, const std::string& path);
 std::vector<std::string> tokenize(const std::string& str, char delimiter);
