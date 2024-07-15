@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/15 21:40:08 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 22:46:03 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -626,6 +626,7 @@ bool handleDirectoryListing(conf_File_Info &serverConfig, HTTrequestMSG &request
 			}
 			else
 			{
+				
 				handleError2(404, server, serverConfig, requestMsg);
 			}
 		}
@@ -1001,7 +1002,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 	serverConfig.RootDirectory = aaa;
 	if (!is_directory(aaa) && methodToString(requestMsg.method) != "POST")
 	{
-		handleError2(404, server, serverConfig, requestMsg);
+		handleError2(403, server, serverConfig, requestMsg); // PASSEI de 404 para 403
 		return false;
 	}
 	return true;
@@ -1731,6 +1732,21 @@ std::map<std::string, std::pair<std::string, std::string> > parseMultipartFormDa
 	return parts;
 }
 
+bool isExtensionValid(const std::string& fileName, const std::set<std::string>& allowedExtensions) {
+	size_t dotPos = fileName.rfind('.');
+	if (dotPos == std::string::npos) return false; // Sem extensão
+	std::string extension = fileName.substr(dotPos + 1);
+	return allowedExtensions.find(extension) != allowedExtensions.end();
+}
+
+// Função para verificar se o nome do arquivo é válido (não nulo e sem caracteres inválidos)
+bool isFileNameValid(const std::string& fileName) {
+	return !fileName.empty() && fileName.find('/') == std::string::npos && fileName.find('\\') == std::string::npos;
+}
+
+// // Adicione a validação no local apropriado
+// std::set<std::string> allowedExtensions = {"jpg", "png", "txt", "pdf"}; // Defina suas extensões permitidas aqui
+
 void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, conf_File_Info &serverConfig)
 {
 	if (!request.is_cgi)
@@ -1766,6 +1782,9 @@ void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, c
 				return;
 			}
 
+			const std::string extensionsArray[] = {"jpg", "png", "txt", "pdf", "html", "py", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "mp3", "mp4", "avi", "mkv", "gif", "csv", "json", "xml"};
+			std::set<std::string> allowedExtensions(extensionsArray, extensionsArray + sizeof(extensionsArray) / sizeof(extensionsArray[0]));
+	
 			std::string boundary = contentType.substr(boundaryPos + 9);
 			std::map<std::string, std::pair<std::string, std::string> > parts = parseMultipartFormData(body, boundary);
 			std::map<std::string, std::pair<std::string, std::string> >::iterator it = parts.find("file");
@@ -1785,6 +1804,12 @@ void ServerInfo::handlePostRequest(HTTrequestMSG &request, ServerInfo &server, c
 				//std::cout << "fullPath after ./../uploads: " << fullPath << std::endl;
 				std::string fileContent = it->second.first;
 				std::string fileName = it->second.second;
+
+				if (!isFileNameValid(fileName) || !isExtensionValid(fileName, allowedExtensions)) {
+					handleError2(400, server, serverConfig, request); // Trate como um erro de solicitação inválida
+					return;
+				}
+				
 				std::ofstream outFile((fullPath + fileName).c_str(), std::ios::binary);
 				if (!outFile)
 				{

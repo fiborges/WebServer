@@ -104,25 +104,27 @@ curl -X GET http://localhost:8081/nonexistentfile.html
 
 ((test_num++))
 
-# [14] MAL NAO ME FAZ OS UPLOADS
+# [14] MAL NAO ME FAZ OS UPLOADS --> nao faz porcasa de file1 e file2
 # Multiple File Uploads
 print_test_case "POST request to upload multiple files" "Should successfully upload multiple files."
-curl -X POST -F "file1=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" -F "file2=@/Users/filipa/Desktop/WebServer/resources/website/get.html" http://localhost:8080/uploads/
+curl -X POST -F "file1=@./resources/website/upload.html" -F "file2=@./resources/website/get.html" http://localhost:8081/uploads/
+curl -X POST -F "file1=@./resources/website/aaa.txt" -F "file2=@./resources/website/aaa1.txt" http://localhost:8081/uploads/
+
 
 ((test_num++))
 
-# [15] BAD ERRO 404 E TEM QUE DAR 403
+# [15] OK
 # Directory Traversal Protection
 print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error - 403 Forbidden"
 curl -X GET http://localhost:8081/../etc/passwd
 
 ((test_num++))
 
-# [16] nao esta a dar o erro correto
+# [16] OK
 # Invalid File Upload
-#print_test_case "POST request to upload an invalid file type" "Should return an error indicating invalid file type. - 415 Unsupported Media Type"
-#echo "This is a test file with an invalid extension" > invalidfile.invalid
-#curl -X POST -F "file=@invalidfile.invalid" http://localhost:8081/uploads/
+print_test_case "POST request to upload an invalid file type" "Should return an error indicating invalid file type. - 415 Unsupported Media Type"
+echo "This is a test file with an invalid extension" > invalidfile.invalid
+curl -X POST -F "file=@invalidfile.invalid" http://localhost:8081/uploads/
 
 ((test_num++))
 
