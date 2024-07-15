@@ -51,7 +51,7 @@ print_test_case "GET request to execute ExampleGET.py CGI script" "Should execut
 curl -X GET http://localhost:8080/cgi-bin/ExampleGET.py
 
 ((test_num++))
-# [6] MAL
+# [6] OK
 print_test_case "POST request to execute ExampleGET.py CGI script" "Should execute the Python CGI script with POST data and return its output."
 curl -X POST -d "num1=0&num2=30&num3=4" http://localhost:8080/cgi-bin/ExampleGET.py
 
@@ -62,7 +62,7 @@ print_test_case "PUT request to root (Method Not Allowed)" "Should return 405 Me
 curl -X PUT http://localhost:8080/
 
 ((test_num++))
-# [8] MAL esta a dar 400 em vez de 500
+# [8] OK
 print_test_case "POST request to CGI script causing error" "Should return 500 Internal Server Error page."
 curl -X POST -d "trigger=error" http://localhost:8080/cgi-bin/error_script.py
 
@@ -75,7 +75,7 @@ curl -X GET http://localhost:8080/uploads/
 ((test_num++))
 # [10] OK
 # Client Body Size Limit
-print_test_case "POST request with large file exceeding client body size limit" "Should return an error indicating the file is too large."
+print_test_case "POST request with large file exceeding client body size limit" "Should return an error indicating the file is too large. - 413 Payload Too Large"
 dd if=/dev/zero of=largefile.txt bs=1024 count=200
 curl -X POST -F "file=@largefile.txt" http://localhost:8080/uploads/
 
@@ -87,47 +87,35 @@ curl -v -H "Custom-Header: value" http://localhost:8080/
 
 ((test_num++))
 
-# Other HTTP Methods
-print_test_case "HEAD request to root directory" "Should return headers only."
-curl -I http://localhost:8080/
-
-((test_num++))
-
-print_test_case "OPTIONS request to root directory" "Should return allowed HTTP methods."
-curl -X OPTIONS http://localhost:8080/
-
-((test_num++))
-
+# [12] OK
 # Testing Redirections
 print_test_case "GET request to a redirected URL" "Should return the new location of the resource."
 curl -L http://localhost:8080/redirect
 
 ((test_num++))
 
+# [13] OK
 # 404 Not Found
 print_test_case "GET request for a non-existent file" "Should return 404 Not Found error page."
 curl -X GET http://localhost:8080/nonexistentfile.html
 
 ((test_num++))
 
+# [14] - nao me deixa fazer os multiplos 
 # Multiple File Uploads
 print_test_case "POST request to upload multiple files" "Should successfully upload multiple files."
-curl -X POST -F "file1=@/Users/filipa/Desktop/WebServer/resources/website/upload1.html" -F "file2=@/Users/filipa/Desktop/WebServer/resources/website/upload2.html" http://localhost:8080/uploads/
+curl -X POST -F "file1=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" -F "file2=@/Users/filipa/Desktop/WebServer/resources/website/get.html" http://localhost:8080/uploads/
 
 ((test_num++))
 
-# CGI Script with Query Parameters
-print_test_case "GET request to CGI script with query parameters" "Should execute the Python CGI script and return its output with query parameters."
-curl -X GET "http://localhost:8080/cgi-bin/ExampleGET.py?name=Jane&age=25"
-
-((test_num++))
-
+# [15] erro 403 forbiden e esta a dar 404
 # Directory Traversal Protection
-print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error."
+print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error. - 403 Forbidden"
 curl -X GET http://localhost:8080/../etc/passwd
 
 ((test_num++))
 
+# [16] nao esta a dar o erro 400 Bad Request
 # Invalid File Upload
 print_test_case "POST request to upload an invalid file type" "Should return an error indicating invalid file type."
 echo "This is a test file with an invalid extension" > invalidfile.invalid
@@ -135,12 +123,14 @@ curl -X POST -F "file=@invalidfile.invalid" http://localhost:8080/uploads/
 
 ((test_num++))
 
+# [17] OK
 # File Download
 print_test_case "GET request to download a file" "Should successfully download the specified file."
 curl -O http://localhost:8080/uploads/upload.html
 
 ((test_num++))
 
+# [18] OK
 # Chunked Transfer Encoding
 print_test_case "POST request with chunked transfer encoding" "Should handle chunked transfer encoding properly."
 python3 chunked_request.py
