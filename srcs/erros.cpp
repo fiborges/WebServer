@@ -82,6 +82,7 @@ std::string ServerErrorHandler::generateErrorPage(int errorCode, const std::stri
 
 std::string ServerErrorHandler::AgenerateErrorPage_2(std::string errorCodeStr)
 {
+    (void) errorCodeStr;
 	std::ostringstream html;
 	html << "<!DOCTYPE html>\n"
 		 << "<html lang=\"en\">\n"
@@ -99,8 +100,39 @@ std::string ServerErrorHandler::AgenerateErrorPage_2(std::string errorCodeStr)
 		 << "</head>\n"
 		 << "<body>\n"
 		 << "\t<div class=\"error-container\">\n"
-		 << "\t\t<h1 class=\"errorCode\">Error " << errorCodeStr << "</h1>\n"
-		 << "\t\t<p>" << "Default Error Page for " << errorCodeStr << "</p>\n"
+		 << "\t\t<h1 class=\"errorCode\">Error " << "xxx" << "</h1>\n"
+		 << "\t\t<p>" << "Default Error Page for " << "xxx" << "</p>\n"
+		 << "\t\t<br>\n"
+		 << "\t\t<button onclick=\"location.href='/'\">Home</button>\n"
+		 << "\t</div>\n"
+		 << "</body>\n"
+		 << "</html>\n"
+		 << "\n";
+	return html.str();
+}
+
+std::string ServerErrorHandler::AgenerateErrorPage_3(std::string errorCodeStr)
+{
+    (void)errorCodeStr;
+	std::ostringstream html;
+	html << "<!DOCTYPE html>\n"
+		 << "<html lang=\"en\">\n"
+		 << "<head>\n"
+		 << "\t<meta charset=\"UTF-8\">\n"
+		 << "\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+		 << "\t<style>\n"
+		 << "\t\tbody { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #ADD8E6; }\n"
+		 << "\t\th1 { font-size: 50px; }\n"
+		 << "\t\t.errorCode { color: red; }\n"
+		 << "\t\tp { font-size: 20px; color: #333; }\n"
+		 << "\t\t.error-container { max-width: 600px; margin: auto; }\n"
+		 << "\t</style>\n"
+		 << "\t<title>Error " << "Default Error Page" << "</title>\n"
+		 << "</head>\n"
+		 << "<body>\n"
+		 << "\t<div class=\"error-container\">\n"
+		 << "\t\t<h1 class=\"errorCode\">Error " << "500" << "</h1>\n"
+		 << "\t\t<p>" << "Default Error Page for " << "500" << "</p>\n"
 		 << "\t\t<br>\n"
 		 << "\t\t<button onclick=\"location.href='/'\">Home</button>\n"
 		 << "\t</div>\n"
@@ -111,46 +143,43 @@ std::string ServerErrorHandler::AgenerateErrorPage_2(std::string errorCodeStr)
 }
 
 // Gera uma página de erro HTML baseada no código de erro
-std::string ServerErrorHandler::BgenerateErrorPage_2(int errorCode)
+std::string ServerErrorHandler::BgenerateErrorPage_2(std::string errorCodeStr)
 {
-    std::stringstream ss;
-    ss << errorCode;
-    std::string errorCodeStr = ss.str();
-    std::cout << "errorCodeStr antes do if no error: " << errorCodeStr << std::endl;
-
-    std::cout << "AAA errorCodeStr: " << errorCodeStr << std::endl;
+    std::string aaa = errorCodeStr;
+    // ss << errorCode;
+    // std::string errorCodeStr = ss.str();
+    //std::cout << "=====> AAA errorCodeStr: " << aaa << std::endl;
 
     if (errorCodeStr.substr(0, 3).find('x') != std::string::npos)
     {
-        if (errorCodeStr[0] == '4')
-            errorCodeStr = "4xx";
-        else if (errorCodeStr[0] == '5')
-            errorCodeStr = "5xx";
+        //std::cout << "=====>>> errorCodeStr no error[0]: " << aaa[0] << std::endl;
+        if (aaa[0] == '4')
+        {
+            aaa = "4xx";
+            errorCodeStr = aaa;
+            return AgenerateErrorPage_2(errorCodeStr);
+        }
+        else if (aaa[0] == '5')
+        {
+            //std::cout << "=====>>> errorCodeStr no error[0]: " << aaa[0] << std::endl;
+            aaa = "5xx";
+            errorCodeStr = aaa;
+           //std::cout << "=====>>> errorCodeStr no error completo: " << errorCodeStr << std::endl;
+            return AgenerateErrorPage_3(aaa);
+        }
         else
-            errorCodeStr = "xxx";
+        {
+            aaa = "xxx";
+            errorCodeStr = aaa;
+            return AgenerateErrorPage_2(errorCodeStr);
+        }
+
     
-        //std::map<std::string, std::string>::iterator it = errorMessages.find(errorCodeStr);
-        //if (it != errorMessages.end())
-        std::cout << "errorCodeStr no error: " << errorCodeStr << std::endl;
-        return AgenerateErrorPage_2(errorCodeStr);
-        //else
-        //    return generateErrorPage_2("500", "Internal Server Error"); // Erro padrão
+       // std::cout << "=====>>> errorCodeStr no error: " << aaa << std::endl;
+
     }
     else
-    {
-        std::map<int, std::string>::iterator it = errorMessages.find(errorCode);
-        if (it != errorMessages.end())
-        {
-            return generateErrorPage(errorCode, it->second);
-
-        }
-        else
-        {
-            return generateErrorPage(500, "Internal Server Error"); // Erro padrão
-
-        }
-    }
-    
+        return generateErrorPage(500, "Internal Server Error"); // Erro padrão
 }
 
 // std::string ServerErrorHandler::getErrorMessage_2(std::string errorCode)

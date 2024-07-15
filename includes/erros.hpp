@@ -14,7 +14,7 @@ public:
 	std::string generateErrorPage(int errorCode);
 	std::string getErrorMessage(int errorCode);
 
-	std::string BgenerateErrorPage_2(int errorCode);
+	std::string BgenerateErrorPage_2(std::string errorCodeStr);
 	std::string getErrorMessage_2(std::string errorCode);
 
 	std::string generateIndex(const std::string& name);
@@ -23,13 +23,14 @@ public:
 	std::string generatePost();
 	std::string generateUpload();
 
-	std::string generateErrorPagePublic_2(std::string errorCodeStr) {
-        return AgenerateErrorPage_2(errorCodeStr);
-    }
+	// std::string generateErrorPagePublic_2(std::string errorCodeStr) {
+    //     return BgenerateErrorPage_2(errorCodeStr);
+    // }
 
 private:
 	std::map<int, std::string> errorMessages;
 	std::string AgenerateErrorPage_2(std::string errorCodeStr);
+	std::string AgenerateErrorPage_3(std::string errorCodeStr);
 	std::string generateErrorPage(int errorCode, const std::string& errorMessage);
 
 

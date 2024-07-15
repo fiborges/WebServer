@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/15 17:36:48 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/15 21:40:08 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -633,9 +633,12 @@ bool handleDirectoryListing(conf_File_Info &serverConfig, HTTrequestMSG &request
 	return true;
 }
 
+
+
+
+
 void processErrorPage(std::string second, int errorCode, const std::string &rootDirectory, ServerInfo &server)
 {
-	//std::vector<std::string> threeDigitsVector;
 	
 	size_t pos = second.find('/');
 
@@ -644,7 +647,7 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
     {
         nameAfterSlash = second.substr(pos + 1);
     }
-	std::cout << "nameAfterSlash :" << nameAfterSlash << std::endl;
+	//std::cout << "nameAfterSlash :" << nameAfterSlash << std::endl;
 	//server.errorCodeStr = nameAfterSlash;
 
 	if (pos != std::string::npos)
@@ -656,11 +659,10 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
 		std::string threeDigits = second.substr(0, 3);
 		
 
-
 		std::stringstream ss;
 		ss << errorCode;
 		std::string errorCodeStr = ss.str();
-		std::cout << "CCCCC errorCodeStr: " << errorCodeStr << std::endl;
+		//std::cout << "CCCCC errorCodeStr: " << errorCodeStr << std::endl;
 
 		if (threeDigits[0] == errorCodeStr[0])
 		{
@@ -668,7 +670,7 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
 			threeDigits[2] = errorCodeStr[2];
 		}
 
-		std::cout << "threeDigits: " << threeDigits << std::endl;
+		//std::cout << "threeDigits: " << threeDigits << std::endl;
 		server.nameAfterSlashSets[threeDigits] = nameAfterSlash;
 		server.threeDigitsSet.insert(threeDigits);
 		if (std::atoi(threeDigits.c_str()) == errorCode)
@@ -682,36 +684,43 @@ void processErrorPage(std::string second, int errorCode, const std::string &root
 				if (file)
 				{
 					ServerErrorHandler errorHandler;
-					{
-						for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
-						{
-							std::cout << "SSS Key: " << it->first << " SSS Value: " << it->second << '\n';
-						
+					std::string firstThreeChars = nameAfterSlash.substr(0, 3);
 
-						//if (server.nameAfterSlashSets.size() > 1)
-						//{
-							std::cout << "    errorCodeStr: "<< errorCodeStr << std::endl;
-						if (server.nameAfterSlashSets.find(errorCodeStr) != server.nameAfterSlashSets.end())
+					
+
+
+
+					
+					//std::cout << "@@@@   firstThreeChars: " << firstThreeChars << std::endl;
+					int digitCount = 0;
+					for (size_t i = 0; i < firstThreeChars.length() && i < 3; ++i)
+					{
+						if (firstThreeChars[i] >= '0' && firstThreeChars[i] <= '9')
 						{
-							std::cout << "  it->second: "<< it->second << std::endl;
-							std::string errorPageContent = errorHandler.generateErrorPagePublic_2(it->second);
-							file << errorPageContent;
-							file.close();
-							createdFiles.push_back(path);
-		
+							++digitCount;
+							//std::cout << "+++ digitCount: " << digitCount << std::endl;
 						}
-						else
+					}
+					for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
+					{
+						if (digitCount == 3)
 						{
-							std::cout << "  errorCode "<< errorCode << std::endl;
+							//std::cout << "ESTOU NOS NUMEROS" << std::endl;
+							//std::cout << "  errorCode " << errorCode << std::endl;
 							std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
 							file << errorPageContent;
 							file.close();
 							createdFiles.push_back(path);
+							//digitCount = 0;
 						}
-						// std::string errorPageContent = errorHandler.generateErrorPagePublic_2(nameAfterSlash);
-						// file << errorPageContent;
-						// file.close();
-						// createdFiles.push_back(path);
+						else
+						{
+							//std::cout << "ESTOU NOS XXX" << std::endl;
+							//std::cout << "  it->second: " << it->second << std::endl;
+							std::string errorPageContent = errorHandler.BgenerateErrorPage_2(it->second);
+							file << errorPageContent;
+							file.close();
+							createdFiles.push_back(path);
 						}
 					}
 				}
@@ -1330,9 +1339,6 @@ void handleError2(int errorCode, ServerInfo &server, conf_File_Info &serverConfi
 	//std::string errorFilePath2 = originalRootDirectory + "/" + errorCodeStr + ".html";
 	for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
 	{
-		std::cout << "it->first: " << it->first << std::endl;
-		std::cout << "it->second: " << it->second << std::endl;
-		std::cout << "errorCodeStr: " << errorCodeStr << std::endl;
 		if (it->first == errorCodeStr)
 		{
 			errorFilePath2 = originalRootDirectory + "/" + it->second;
@@ -1346,24 +1352,16 @@ void handleError2(int errorCode, ServerInfo &server, conf_File_Info &serverConfi
 
 	if (fileExists(errorFilePath2))
 	{
-		std::cout << "errorCodeStr antes vector: " << errorCodeStr << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = server.nameAfterSlashSets.begin(); it != server.nameAfterSlashSets.end(); ++it)
-		{
-			std::cout << "Key: " << it->first << " Value: " << it->second << '\n';
-		
-		}
-		
-
 
 		if (server.nameAfterSlashSets.size() > 1)
 		{
 			if (server.nameAfterSlashSets.find(errorCodeStr) != server.nameAfterSlashSets.end())
 			{
-				std::cout << "dois: " << dois << std::endl;
-				std::string errorPageContent = errorHandler.generateErrorPagePublic_2(dois);
+				// std::cout << "dois: " << dois << std::endl;
+				// std::string errorPageContent = errorHandler.generateErrorPagePublic_2(dois);
 				//std::string errorPageContent = errorHandler.generateErrorPage_2(dois);
 				std::string errorMessage = errorHandler.getErrorMessage(errorCode);
-				std::cout << "1 errorFilePath2: " << errorFilePath2 << std::endl;
+				//std::cout << "1 errorFilePath2: " << errorFilePath2 << std::endl;
 				// If the custom error file exists, serve it
 				std::ifstream errorFile(errorFilePath2.c_str());
 				std::string errorFileContent;
@@ -1374,10 +1372,10 @@ void handleError2(int errorCode, ServerInfo &server, conf_File_Info &serverConfi
 		}
 		else
 		{
-			std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
+			//std::string errorPageContent = errorHandler.generateErrorPage(errorCode);
 			std::string errorMessage = errorHandler.getErrorMessage(errorCode);
 			std::string errorFilePath2 = originalRootDirectory + "/" + errorCodeStr + ".html";
-			std::cout << "2 errorFilePath2: " << errorFilePath2 << std::endl;
+			//std::cout << "2 errorFilePath2: " << errorFilePath2 << std::endl;
 			// If the custom error file exists, serve it
 			std::ifstream errorFile(errorFilePath2.c_str());
 			std::string errorFileContent;
