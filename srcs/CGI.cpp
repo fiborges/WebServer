@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/15 11:42:27 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/15 17:11:26 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,10 @@ CGI::CGI(conf_File_Info info, HTTrequestMSG request)
 
 bool	CGI::FileExists(const std::string& path)
 {
-	struct stat	buffer;
+	struct stat	buffer; // Estrutura usada para armazenar informações de um ficheiro
 	return (stat(path.c_str(), &buffer) == 0);
+
+	// A função stat retorna 0 se conseguir obter informações sobre o ficheiro
 }
 
 bool	CGI::DirExists(const std::string& path)
@@ -186,7 +188,7 @@ void	CGI::SendAllRequestToScript()
 
 std::string	CGI::GetUploadDir(const std::string& path)
 {
-	std::cout << "UPLOAD_PATH_RECIEVED:" << path << std::endl;
+	//std::cout << "UPLOAD_PATH_RECIEVED:" << path << std::endl;
 	if (path[0] == '/')
 	{
 		if (DirExists(path))
@@ -198,6 +200,7 @@ std::string	CGI::GetUploadDir(const std::string& path)
 		std::cout << "PATH_TOTAL:" << tmp << std::endl;
 		if (DirExists(tmp))
 			return "." + path;
+		std::cerr << "The upload path is not configured in a correct manner.\n";
 		throw CGI_ExceptionClass(500); // The directory to upload is not created
 	}
 	if (path[0] == '.')
@@ -212,7 +215,10 @@ std::string	CGI::GetUploadDir(const std::string& path)
 		if (DirExists(tmp))
 			return path; // É relativo e está verificado se correto.
 		else
+		{
+			std::cerr << "The upload path is not configured in a correct manner.\n";
 			throw CGI_ExceptionClass(500); // The directory to upload is not created
+		}
 	}
 	return "./" + path; // É relativo e vamos verificar se correto.
 }
@@ -302,15 +308,15 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 	this->TotalRequest_ = buffer;
 
-
-	std::cout << "RECIEVED_REQUEST:" << this->TotalRequest_ << "[FINAL]\n";
-
 	if (Chunk.ItIsChunked(buffer) == true)
 	{
 		std::cout << "CGI:Dealing with ChunkedRequest\n";
 
 		if (this->Info_.fileUploadDirectory.empty())
+		{
+			std::cerr << "The upload path is not configured in a correct manner.\n";
 			throw CGI_ExceptionClass(500);
+		}
 
 		this->ClientSocket_ = ClientSocket;
 
@@ -332,7 +338,10 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	else
 	{
 		if (this->Info_.fileUploadDirectory.empty())
+		{
+			std::cerr << "The upload path is not configured in a correct manner.\n";
 			throw CGI_ExceptionClass(500); // The upload path is not configurated in .conf
+		}
 
 		this->ClientSocket_ = ClientSocket;
 
@@ -388,7 +397,7 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 	if (this->pid == -1)
 	{
 		std::cerr << "Error in Fork\n";
-		exit (EXIT_FAILURE);
+		throw CGI_ExceptionClass(500);
 	}
 
 	if (this->pid == 0)
@@ -502,9 +511,10 @@ std::string&	CGI::Parent_process()
 	//std::cout << "Response: " << this->FinalResponse << std::endl;
 	if ((this->FinalResponse.empty() == true) || (this->FinalResponse.find("HTTP/1.1") == std::string::npos))
 	{
+		std::cerr << "No Response or a Wrong HTTP response was returned by the script\n";
 		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI
 	}
-	//send(this->ClientSocket_, response.c_str(), response.size(), 0);
+
 	return (this->FinalResponse);
 }
 
