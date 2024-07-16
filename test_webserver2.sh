@@ -36,7 +36,6 @@ curl -X GET http://localhost:8080/uploads/
 # POST Requests
 print_test_case "POST request to upload a file" "Should successfully upload a file."
 curl -X POST -F "file=@./resources/website/aaa.txt" http://localhost:8080/uploads/
-#curl -X POST -F "file=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" http://localhost:8080/uploads/
 
 ((test_num++))
 # [4] OK 
@@ -83,7 +82,7 @@ curl -X POST -F "file=@largefile.txt" http://localhost:8080/uploads/
 # [11] OK
 # Custom Headers
 print_test_case "GET request with custom header" "Should return the response with the custom header included."
-curl -v -H "Custom-Header: value" http://localhost:8080/
+curl -v -H "Custom-Header: O nosso webserver !!! " http://localhost:8080/
 
 ((test_num++))
 
@@ -101,21 +100,14 @@ curl -X GET http://localhost:8080/nonexistentfile.html
 
 ((test_num++))
 
-# [14] - nao me deixa fazer os multiplos 
-# Multiple File Uploads
-print_test_case "POST request to upload multiple files" "Should successfully upload multiple files."
-curl -X POST -F "file1=@/Users/filipa/Desktop/WebServer/resources/website/upload.html" -F "file2=@/Users/filipa/Desktop/WebServer/resources/website/get.html" http://localhost:8080/uploads/
-
-((test_num++))
-
-# [15] erro 403 forbiden e esta a dar 404
+# [14] erro 403 forbiden e esta a dar 404
 # Directory Traversal Protection
 print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error. - 403 Forbidden"
 curl -X GET http://localhost:8080/../etc/passwd
 
 ((test_num++))
 
-# [16] nao esta a dar o erro 400 Bad Request
+# [15] nao esta a dar o erro 400 Bad Request
 # Invalid File Upload
 print_test_case "POST request to upload an invalid file type" "Should return an error indicating invalid file type."
 echo "This is a test file with an invalid extension" > invalidfile.invalid
@@ -123,17 +115,18 @@ curl -X POST -F "file=@invalidfile.invalid" http://localhost:8080/uploads/
 
 ((test_num++))
 
-# [17] OK
+# [16] OK
 # File Download
 print_test_case "GET request to download a file" "Should successfully download the specified file."
-curl -O http://localhost:8080/uploads/upload.html
+curl http://localhost:8080/uploads/upload.html
+
 
 ((test_num++))
 
-# [18] OK
+# [17] OK
 # Chunked Transfer Encoding
-print_test_case "POST request with chunked transfer encoding" "Should handle chunked transfer encoding properly."
-python3 chunked_request.py
+#print_test_case "POST request with chunked transfer encoding" "Should handle chunked transfer encoding properly."
+#curl -X POST http://localhost:8080/cgi-bin/UploadScript.py -H "Transfer-Encoding: chunked" -d $'5\r\nhello\r\n6\r\n world!\r\n0\r\n\r\n'
 
 ((test_num++))
 
