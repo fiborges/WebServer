@@ -5,7 +5,6 @@ ServerErrorHandler::ServerErrorHandler()
 	initializeErrorMessages();
 }
 
-// Inicializa o mapa de mensagens de erro
 void ServerErrorHandler::initializeErrorMessages()
 {
 	errorMessages[400] = "Bad Request";
@@ -46,9 +45,7 @@ void ServerErrorHandler::initializeErrorMessages()
 	errorMessages[508] = "Loop Detected";
 	errorMessages[510] = "Not Extended";
 	errorMessages[511] = "Network Authentication Required";
-	// Adicionar mais erros conforme vamos vendo que aparecem
 }
-
 
 std::string ServerErrorHandler::generateErrorPage(int errorCode, const std::string& errorMessage)
 {
@@ -146,13 +143,9 @@ std::string ServerErrorHandler::AgenerateErrorPage_3(std::string errorCodeStr)
 std::string ServerErrorHandler::BgenerateErrorPage_2(std::string errorCodeStr)
 {
     std::string aaa = errorCodeStr;
-    // ss << errorCode;
-    // std::string errorCodeStr = ss.str();
-    //std::cout << "=====> AAA errorCodeStr: " << aaa << std::endl;
 
     if (errorCodeStr.substr(0, 3).find('x') != std::string::npos)
     {
-        //std::cout << "=====>>> errorCodeStr no error[0]: " << aaa[0] << std::endl;
         if (aaa[0] == '4')
         {
             aaa = "4xx";
@@ -161,10 +154,8 @@ std::string ServerErrorHandler::BgenerateErrorPage_2(std::string errorCodeStr)
         }
         else if (aaa[0] == '5')
         {
-            //std::cout << "=====>>> errorCodeStr no error[0]: " << aaa[0] << std::endl;
             aaa = "5xx";
             errorCodeStr = aaa;
-           //std::cout << "=====>>> errorCodeStr no error completo: " << errorCodeStr << std::endl;
             return AgenerateErrorPage_3(aaa);
         }
         else
@@ -173,24 +164,10 @@ std::string ServerErrorHandler::BgenerateErrorPage_2(std::string errorCodeStr)
             errorCodeStr = aaa;
             return AgenerateErrorPage_2(errorCodeStr);
         }
-
-    
-       // std::cout << "=====>>> errorCodeStr no error: " << aaa << std::endl;
-
     }
     else
-        return generateErrorPage(500, "Internal Server Error"); // Erro padrão
+        return generateErrorPage(500, "Internal Server Error");
 }
-
-// std::string ServerErrorHandler::getErrorMessage_2(std::string errorCode)
-// {
-// 	std::map<int, std::string>::iterator it = errorMessages.find(errorCode);
-// 	if (it != errorMessages.end())
-// 		return it->second;
-// 	else
-// 		return "Unknown Error"; // Default error message
-// }
-
 
 std::string ServerErrorHandler::generateErrorPage(int errorCode)
 {
@@ -198,7 +175,7 @@ std::string ServerErrorHandler::generateErrorPage(int errorCode)
 	if (it != errorMessages.end())
 		return generateErrorPage(errorCode, it->second);
 	else
-		return generateErrorPage(500, "Internal Server Error"); // Erro padrão
+		return generateErrorPage(500, "Internal Server Error");
 }
 
 std::string ServerErrorHandler::getErrorMessage(int errorCode)
@@ -207,11 +184,8 @@ std::string ServerErrorHandler::getErrorMessage(int errorCode)
 	if (it != errorMessages.end())
 		return it->second;
 	else
-		return "Unknown Error"; // Default error message
+		return "Unknown Error";
 }
-
-
-
 
 std::string ServerErrorHandler::generateIndex(const std::string& name)
 {

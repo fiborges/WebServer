@@ -23,16 +23,11 @@ public:
 	std::string generatePost();
 	std::string generateUpload();
 
-	// std::string generateErrorPagePublic_2(std::string errorCodeStr) {
-    //     return BgenerateErrorPage_2(errorCodeStr);
-    // }
-
 private:
 	std::map<int, std::string> errorMessages;
 	std::string AgenerateErrorPage_2(std::string errorCodeStr);
 	std::string AgenerateErrorPage_3(std::string errorCodeStr);
 	std::string generateErrorPage(int errorCode, const std::string& errorMessage);
-
 
 	void initializeErrorMessages();
 };
