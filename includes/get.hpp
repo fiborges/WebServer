@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/26 15:14:05 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/12 11:15:58 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/16 12:35:02 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,6 @@ extern volatile sig_atomic_t flag;
 extern std::vector<std::string> createdFiles;
 extern std::map<int, std::map<std::string, ParserConfig> > serversByPortAndHost;
 
-
 class ServerInfo
 {
 	private:
@@ -100,7 +99,6 @@ class ServerInfo
 		std::string complete_path;
 		
 		int check_file;
-		
 
 	public:
 		ServerInfo();
@@ -108,6 +106,8 @@ class ServerInfo
 
 		int	clientSocket;
 		int sair;
+		std::set<std::string> threeDigitsSet;
+		std::map<std::string, std::string> nameAfterSlashSets;
 
 		void		setSocketFD(int socket);
 		int			getSocketFD() const;
@@ -126,7 +126,6 @@ class ServerInfo
 		void		addPortToList(int port);
 		std::vector<int> getPortList() const;
 		std::vector<int>& getSockets();
-		//void		handleRedirectRequest(HTTrequestMSG& request, ServerInfo& server);
 		void		setRedirectResponse(const std::string &location, const conf_File_Info &config);
 		void		setContentLength(size_t length);
 		size_t		getContentLength() const;
@@ -139,19 +138,10 @@ class ServerInfo
 		void		setRootOriginalDirectory(const std::string& dir);
 		void		handleError(const std::string& errorMessage);
 
-		int getCheckFile()
-		{
-			return check_file;
-		}
+		int			getCheckFile();
+		void		setCheckFile(int value);	
 
-		// Setter
-		void setCheckFile(int value)
-		{
-			check_file = value;
-		}
-		
-
-		void cleanup2();
+		void		cleanup2();
 };
 
 std::string extractFileNameFromURL(const std::string& url);
@@ -166,11 +156,10 @@ void		processRequest(const std::string& request, ServerInfo& server);
 bool		processRulesRequest(HTTrequestMSG& requestMsg, ServerInfo& server);
 void		handleRequest(HTTrequestMSG& request, ServerInfo& server, conf_File_Info &serverConfig);
 std::string readFileContent(const std::string& filePath);
-std::vector<std::string> readDirectoryContent(const std::string& directoryPath);
 bool		ends_with(const std::string& value, const std::string& ending);
 std::string getContentType(const std::string& filePath);
 bool		fileExistsInDirectory(const std::string& directory, const std::string& filename);
-void		processErrorPage(std::string second, int errorCode, const std::string& rootDirectory);
+void		processErrorPage(std::string second, int errorCode, const std::string &rootDirectory, ServerInfo &server);
 void		handleError2(int errorCode, ServerInfo& server, conf_File_Info& serverConfig, const HTTrequestMSG& requestMsg);
 std::string	getNewPath(const std::string& root, const std::string& path);
 std::vector<std::string> tokenize(const std::string& str, char delimiter);
@@ -181,6 +170,8 @@ std::string	removeLastSlash(const std::string& fullPath);
 bool		handleDirectoryListing(conf_File_Info& serverConfig, HTTrequestMSG& requestMsg);
 bool		fileExists(const std::string& filePath);
 bool		isDirectory(const std::string& path);
+bool		isExtensionValid(const std::string& fileName, const std::set<std::string>& allowedExtensions);
+bool		isFileNameValid(const std::string& fileName);
 
 void		createIndexFile(conf_File_Info &serverConfig, const std::string& rootDirectory);
 void		createHtmlFiles(const std::string& rootDirectory);

@@ -14,6 +14,9 @@ public:
 	std::string generateErrorPage(int errorCode);
 	std::string getErrorMessage(int errorCode);
 
+	std::string BgenerateErrorPage_2(std::string errorCodeStr);
+	std::string getErrorMessage_2(std::string errorCode);
+
 	std::string generateIndex(const std::string& name);
 	std::string generateDelete();
 	std::string generateGet();
@@ -22,7 +25,10 @@ public:
 
 private:
 	std::map<int, std::string> errorMessages;
+	std::string AgenerateErrorPage_2(std::string errorCodeStr);
+	std::string AgenerateErrorPage_3(std::string errorCodeStr);
 	std::string generateErrorPage(int errorCode, const std::string& errorMessage);
+
 	void initializeErrorMessages();
 };
 

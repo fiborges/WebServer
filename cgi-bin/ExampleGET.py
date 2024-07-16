@@ -39,8 +39,8 @@ print()
 
 form = cgi.FieldStorage()
 
-num1 = form.getvalue("num1")
-print(f"Valor recebido para num1: {num1}")
+#num1 = form.getvalue("num1")
+#print(f"Valor recebido para num1: {num1}")
 
 # Recebendo dois números do formulário
 num1 = form.getvalue("num1", "0")

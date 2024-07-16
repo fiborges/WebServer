@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Webserver Home</title>
+	<style>
+
+        /* Body of the page */
+		body {
+			font-family: Arial, sans-serif;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 70vh;
+			margin: 0;
+			background-color: #01012b;
+		}
+
+        /* Animation [WebServer] */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* header size and pulse [WebServer]*/
+        h1 {
+            font-family: "Arial", monospace;
+            font-size: 4.5em;
+            font-weight: 900;
+            animation: pulse 3s infinite;
+        }
+
+        /* Container of the page */
+		.container {
+			text-align: center;
+			max-width: 850px;
+			width: 100%;
+			background-color: #94bbd0;
+			padding: 20px;
+			border-radius: 10px;
+			box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+		}
+
+        /* Buttons */
+		.buttons {
+			font-size: 20px;
+			/*background-color: #2b14bf;*/
+			/*color: rgb(179, 18, 18);*/
+			padding: 10px 20px;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			margin-bottom: 20px;
+			margin-left: 10px;
+			margin-top: 5px;
+		}
+
+        /* Credits 1 */
+        .credits_1 {
+            text-align: center;
+            padding: 15px;
+            background-color: #5f94c9;
+            margin-top: 20px; /* Add margin-top to create space between buttons and credits */
+            border-radius: 10px; /* Add this line to round the corners */
+        }
+
+        /* Credits 2 */
+            .credits_2 {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        /* hyperlink colors */
+        a[href*="https://profile.intra.42.fr"] {
+            color: rgb(7, 7, 114);
+        }
+
+        a[href*="https://profile.intra.42.fr"]:hover {
+            color: rgb(255, 255, 255);
+        }
+
+        a[href*="https://github.com"] {
+            color: rgb(7, 7, 114);
+        }
+
+        a[href*="https://github.com"]:hover {
+            color: rgb(255, 255, 255);
+        }
+
+        /*
+        .navigation {
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            list-style: none;
+        }*/
+
+        /*
+        .navigation a {
+            margin-left: 8px;
+            margin-right: 8px;
+            text-decoration: none;
+            color: #fff;
+            padding: 8px 15px;
+            transition: all 0.5s ease;
+        }*/
+
+        /*
+        .navigation a:hover {
+            scale: 120%;
+        }*/
+
+        /*
+        .content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+        }*/
+
+
+        /* hyperlink colors */
+        /*a:link {
+            color: white;
+        }*/
+
+        /* already visited */
+        /*a:visited {
+            color: rgb(122, 122, 122);
+        }*/
+
+        /* hovering */
+        /*a:hover {
+            color: white;
+        }*/
+
+        .glow-on-hover {
+            border: none;
+            outline: none;
+            color: #fff;
+            /*background: #57621f;*/
+            cursor: pointer;
+            position: relative;
+            z-index: 0;
+            border-radius: 10px;
+            }
+
+        .glow-on-hover:before {
+            content: '';
+            background: linear-gradient(45deg, #ff0000, #ff0000);
+            position: absolute;
+            top: -2px;
+            left:-2px;
+            background-size: 400%;
+            z-index: -1;
+            filter: blur(5px);
+            width: calc(100% + 5px);
+            height: calc(100% + 5px);
+            animation: glowing 20s linear infinite;
+            opacity: 0;
+            transition: opacity .3s ease-in-out;
+            border-radius: 10px;
+        }
+
+        /* change colors letters in buttons */
+        .glow-on-hover:active {
+            color: #000000
+        }
+
+        /* change background in buttons */
+        .glow-on-hover:active:after {
+            background: #72bae0;
+        }
+
+        /* glow arroud buttons */
+        .glow-on-hover:hover:before {
+            opacity: 1;
+        }
+
+        .glow-on-hover:after {
+            z-index: -1;
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #090345;
+            left: 0;
+            top: 0;
+            border-radius: 10px;
+        }
+
+        /*
+        @keyframes pumping {
+            0% { scale: 100%; }
+            50% { scale: 105%; }
+            100% { scale: 100%; }
+        }*/
+
+        /*
+        @keyframes glowing {
+            0% { background-position: 0 0; }
+            50% { background-position: 400% 0; }
+            100% { background-position: 0 0; }
+        }*/
+
+
+
+
+	</style>
+    <link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico" >
+</head>
+
+
+<body>
+    <div class="container">
+        <h1>WebServer</h1>
+            <a href="/index.html"><button class="buttons glow-on-hover"><b>YYFolder</b></button></a>
+            <a href="/get.html"><button class="buttons glow-on-hover"><b>Get Page</b></button></a>
+            <a href="/post.html"><button class="buttons glow-on-hover"><b>Post Page</b></button></a>
+            <a href="/upload.html"><button class="buttons glow-on-hover"><b>Upload Page</b></button></a>
+            <a href="/delete.html"><button class="buttons glow-on-hover"><b>Delete Page</b></button></a>
+    <div class="credits_1">
+        <h3>CREDITS</h3>
+        <table class="credits_2">
+            <tr>
+                <td style="text-align: center;"><b>Frederico Bajouco</b> </b> [ </b></td>
+                <td style="text-align: center;"><a href="https://profile.intra.42.fr/users/fde-carv">Intra 42</a> </b> | </b> </td>
+                <td style="text-align: center;"><a href="https://github.com/krammersf">Github</a> </b> ] </b> </td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"><b>Filipa Borges</b></b> [ </b></td>
+                <td style="text-align: center;"><a href="https://profile.intra.42.fr/users/firibeir">Intra 42</a> </b> | </b> </td>
+                <td style="text-align: center;"><a href="https://github.com/fiborges">Github</a> </b> ] </b> </td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"></td>
+                <td style="text-align: center;"><b>Bruno Soares</b></b> [ </b></td>
+                <td style="text-align: center;"><a href="https://profile.intra.42.fr/users/brolivei">Intra 42</a> </b> | </b> </td>
+                <td style="text-align: center;"><a href="https://github.com/BrunoAlone">Github</a> </b> ] </b> </td>
+            </tr>
+        </table>
+    </div>
+    </div>
+</body>
+
+</html>
