@@ -6,7 +6,7 @@
 /*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:01:17 by brolivei          #+#    #+#             */
-/*   Updated: 2024/07/15 11:42:27 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/16 12:28:08 by brolivei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,8 +54,8 @@ void	CGI::CreateScriptURI()
 	else
 		throw CGI_ExceptionClass(415); // erro 415: Unsupported Media Type
 
-	std::cout << "SCRIPT_URI CREATED:" << this->ScriptURI_ << std::endl;
-	std::cout << "PATH_CGI:" << this->Info_.Path_CGI << std::endl;
+	//std::cout << "SCRIPT_URI CREATED:" << this->ScriptURI_ << std::endl;
+	//std::cout << "PATH_CGI:" << this->Info_.Path_CGI << std::endl;
 	if (this->Info_.Path_CGI.empty())
 		throw CGI_ExceptionClass(404);
 
@@ -63,7 +63,7 @@ void	CGI::CreateScriptURI()
 		throw CGI_ExceptionClass(404); // Not found the CGI resource
 	this->ScriptURI_.insert(0, ".");
 
-	std::cout << "SCRIPT_URI AFTER INSERTION:" << this->ScriptURI_ << std::endl;
+	//std::cout << "SCRIPT_URI AFTER INSERTION:" << this->ScriptURI_ << std::endl;
 
 	if (!FileExists(this->ScriptURI_))
 		throw CGI_ExceptionClass(404); // The Script does not exist
@@ -82,7 +82,7 @@ void	CGI::ExtractPathInfo(std::string& buffer, conf_File_Info& info)
 	// 	Necessario verificar aqui se PATH_INFO está de acordo com o diretorio de uploads autorizado
 	// no ficheiro de configuração.
 
-	std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
+	//std::cout << "PATH_INFO FOUND: " << this->Path_Info_ << std::endl;
 
 	if (info.fileUploadDirectory.find(this->Path_Info_) == std::string::npos)
 		throw NotAcceptedUploadPath();
@@ -167,8 +167,6 @@ void	CGI::SendAllRequestToScript()
 	size_t	contentLength = this->TotalRequest_.size();
 	size_t	bytesWritten = 0;
 
-	std::cout << "TOTAL_REQUEST:\n\n" << this->TotalRequest_ << "\n\n";
-
 	while (bytesWritten < contentLength)
 	{
 		size_t	chunkSize = std::min(contentLength - bytesWritten, static_cast<size_t>(PIPE_BUF));
@@ -186,7 +184,7 @@ void	CGI::SendAllRequestToScript()
 
 std::string	CGI::GetUploadDir(const std::string& path)
 {
-	std::cout << "UPLOAD_PATH_RECIEVED:" << path << std::endl;
+	//std::cout << "UPLOAD_PATH_RECIEVED:" << path << std::endl;
 	if (path[0] == '/')
 	{
 		if (DirExists(path))
@@ -195,7 +193,7 @@ std::string	CGI::GetUploadDir(const std::string& path)
 		tmp = path;
 		tmp.insert(0, this->Info_.Path_CGI);
 		tmp.insert(0, ".");
-		std::cout << "PATH_TOTAL:" << tmp << std::endl;
+		//std::cout << "PATH_TOTAL:" << tmp << std::endl;
 		if (DirExists(tmp))
 			return "." + path;
 		throw CGI_ExceptionClass(500); // The directory to upload is not created
@@ -208,7 +206,7 @@ std::string	CGI::GetUploadDir(const std::string& path)
 		tmp.erase(0, 1);
 		tmp.insert(0, this->Info_.Path_CGI);
 		tmp.insert(0, ".");
-		std::cout << "PATH_TOTAL:" << tmp << std::endl;
+		//std::cout << "PATH_TOTAL:" << tmp << std::endl;
 		if (DirExists(tmp))
 			return path; // É relativo e está verificado se correto.
 		else
@@ -281,7 +279,7 @@ void	CGI::ExtractChunkBody()
 	//this->Body_.append('\0');
 	this->FileContent_ = this->Body_;
 
-	std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
+	//std::cout << "BODY_FOUND_IN_CHUNKED:" << this->Body_ << "[FINISH]\n";
 }
 
 void	CGI::ExtractFormFromBody()
@@ -302,12 +300,9 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 	this->TotalRequest_ = buffer;
 
-
-	std::cout << "RECIEVED_REQUEST:" << this->TotalRequest_ << "[FINAL]\n";
-
 	if (Chunk.ItIsChunked(buffer) == true)
 	{
-		std::cout << "CGI:Dealing with ChunkedRequest\n";
+		//std::cout << "CGI:Dealing with ChunkedRequest\n";
 
 		if (this->Info_.fileUploadDirectory.empty())
 			throw CGI_ExceptionClass(500);
@@ -323,7 +318,7 @@ std::string&	CGI::PerformCGI(const int ClientSocket, std::string& buffer)
 
 	else if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
 	{
-		std::cout << "Dealing with get request\n";
+		//std::cout << "Dealing with get request\n";
 		this->ClientSocket_ = ClientSocket;
 
 		CreateScriptURI(); //BAJ
@@ -436,7 +431,6 @@ void	CGI::Child_process()
 	execve(python_args[0], const_cast<char**>(python_args), this->Env_.data());
 
 	std::cerr << "Error in execve\n";
-	exit(EXIT_FAILURE);
 }
 
 void	CGI::WaitFiveSeconds()
@@ -464,10 +458,8 @@ std::string&	CGI::Parent_process()
 		SendContentToScript();
 	else if (this->Request_.cgi_env["REQUEST_METHOD"] == "POST"  && this->FileContent_.empty() == false)
 		SendContentToScript();
-	//if (this->Request_.cgi_env["REQUEST_METHOD"] == "GET")
 	else
 	{
-		std::cout << "ENTER HERE\n\n";
 		SendAllRequestToScript();
 	}
 
@@ -480,7 +472,6 @@ std::string&	CGI::Parent_process()
 		kill(this->pid, SIGKILL);
 		throw CGI_ExceptionClass(504); // Gateway Timeout
 	}
-	//wait(NULL);
 
 	while (1)
 	{
@@ -499,12 +490,12 @@ std::string&	CGI::Parent_process()
 			break;
 	}
 	close(this->C_FD[0]);
-	//std::cout << "Response: " << this->FinalResponse << std::endl;
+
 	if ((this->FinalResponse.empty() == true) || (this->FinalResponse.find("HTTP/1.1") == std::string::npos))
 	{
-		throw CGI_ExceptionClass(500); // Internal error. //ESTA AQUI
+		throw CGI_ExceptionClass(500); // Internal error.
 	}
-	//send(this->ClientSocket_, response.c_str(), response.size(), 0);
+
 	return (this->FinalResponse);
 }
 
