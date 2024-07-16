@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/16 12:32:36 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/16 13:37:25 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -826,10 +826,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 
 	server.setRootOriginalDirectory(serverConfig.RootDirectory);
 	std::string BALA = requestMsg.path;
-	std::cout << "BALA: " << BALA << std::endl; 
 	std::string browserRelativePath = removeLastSlash(requestMsg.path);
-	std::cout << "browserRelativePath: " << browserRelativePath << std::endl;
-
 
 	std::map<int, std::string> errorMap;
 	for (std::map<int, std::string>::const_iterator it = serverConfig.errorMap.begin(); it != serverConfig.errorMap.end(); ++it)
@@ -848,10 +845,16 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 		{
 			if (it->first == browserRelativePath)
 			{
+				int bodySizeBytes = server.getContentLength();
+				bodySizeBytes -= 200;
+				if (bodySizeBytes > serverConfig.maxRequestSize)
+				{
+					handleError2(413, server, serverConfig, requestMsg);
+					return false;
+				}
 				if (it->first == "/")
 				{
 					std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
-					std::cout << "newMixedPath: " << newMixedPath << std::endl;
 					std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
 					std::string completeFullPath = completeNewMixedPath + requestMsg.path;
 					server.setCompletePath(completeFullPath);
@@ -889,13 +892,6 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 					return false;
 				}
 				
-				int bodySizeBytes = server.getContentLength();
-				bodySizeBytes -= 200;
-				if (bodySizeBytes > serverConfig.maxRequestSize)
-				{
-					handleError2(413, server, serverConfig, requestMsg);
-					return false;
-				}
 
 				std::string newMixedPath = getNewPath(serverConfig.RootDirectory, it->second.RootDirectory);
 				std::string completeNewMixedPath = server.getCompletePath(newMixedPath);
@@ -1044,9 +1040,9 @@ void processRequest(const std::string &request, ServerInfo &server)
 						conf_File_Info configInfo = configInfoPtr;
 						server.addConfig(portIt->first, configInfo);
 						alreadyExists = true;
-						// std::cout << "==> Port: " << configInfo.portListen << std::endl;
-						// std::cout << "==> Host: " << configInfo.host << std::endl;
-						// std::cout << "==> ServerName: " << configInfo.ServerName << std::endl;
+						std::cout << "==> Port: " << configInfo.portListen << std::endl;
+						std::cout << "==> Host: " << configInfo.host << std::endl;
+						std::cout << "==> ServerName: " << configInfo.ServerName << std::endl;
 					}
 					else
 						std::cout << "Configuration already exists for this host and port." << std::endl;
