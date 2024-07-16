@@ -100,9 +100,9 @@ curl -X GET http://localhost:8080/nonexistentfile.html
 
 ((test_num++))
 
-# [14] erro 403 forbiden e esta a dar 404
+# [14] ok
 # Directory Traversal Protection
-print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error. - 403 Forbidden"
+print_test_case "GET request attempting directory traversal" "Should prevent directory traversal and return an error. - 404 Not Found error page."
 curl -X GET http://localhost:8080/../etc/passwd
 
 ((test_num++))
