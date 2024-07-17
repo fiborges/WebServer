@@ -6,7 +6,7 @@
 /*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/17 10:32:09 by fde-carv         ###   ########.fr       */
+/*   Updated: 2024/07/17 17:50:03 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -825,7 +825,6 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 	conf_File_Info &serverConfig = server.getConfig(listeningPort);
 
 	server.setRootOriginalDirectory(serverConfig.RootDirectory);
-	std::string BALA = requestMsg.path;
 	std::string browserRelativePath = removeLastSlash(requestMsg.path);
 
 	std::map<int, std::string> errorMap;
@@ -846,7 +845,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 			if (it->first == browserRelativePath)
 			{
 				int bodySizeBytes = server.getContentLength();
-				bodySizeBytes -= 200;
+				//bodySizeBytes -= 200;
 				if (bodySizeBytes > serverConfig.maxRequestSize)
 				{
 					handleError2(413, server, serverConfig, requestMsg);
@@ -953,7 +952,7 @@ bool processRulesRequest(HTTrequestMSG &requestMsg, ServerInfo &server)
 				server.setCompletePath(aaa);
 
 				int bodySizeBytes = server.getContentLength();
-				bodySizeBytes -= 200;
+				//bodySizeBytes -= 200;
 				if (bodySizeBytes > serverConfig.maxRequestSize)
 				{
 					handleError2(413, server, serverConfig, requestMsg);
