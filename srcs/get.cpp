@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: brolivei <brolivei@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: fde-carv <fde-carv@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/03 21:07:55 by fde-carv          #+#    #+#             */
-/*   Updated: 2024/07/16 14:27:32 by brolivei         ###   ########.fr       */
+/*   Updated: 2024/07/17 10:32:09 by fde-carv         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -551,8 +551,8 @@ std::string removeLastSlash(const std::string &fullPath)
 bool handleDirectoryListing(conf_File_Info &serverConfig, HTTrequestMSG &requestMsg, ServerInfo &server)
 {
 	(void)requestMsg;
-	if (serverConfig.directoryListingEnabled)
-	{
+	//if (serverConfig.directoryListingEnabled)
+	//{
 		std::string rootDirectory = serverConfig.RootDirectory;
 		if (!rootDirectory.empty() && rootDirectory[0] == '/')
 			rootDirectory = rootDirectory.substr(1);
@@ -638,7 +638,7 @@ bool handleDirectoryListing(conf_File_Info &serverConfig, HTTrequestMSG &request
 				handleError2(404, server, serverConfig, requestMsg);
 			}
 		}
-	}
+	//}
 	return true;
 }
 
@@ -1364,8 +1364,9 @@ void ServerInfo::handleGetRequest(HTTrequestMSG &requestMsg, ServerInfo &server,
 			}
 			else
 			{
-				std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
-				handleError2(403, server, serverConfig, requestMsg);
+				//std::cerr << "[DEBUG] Index file not found or is not a regular file: " << indexPath << std::endl;
+				//handleError2(403, server, serverConfig, requestMsg);
+				printLog(methodToString(requestMsg.method), requestMsg.path, requestMsg.version, server.getResponse(), server);
 				return;
 			}
 		}
